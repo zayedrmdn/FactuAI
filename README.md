@@ -61,7 +61,7 @@ You're free to view, use, or build on this work for learning or experimentation,
 **Zayed Ramadan Rahmat**  
 Final Year CS (AI) Student at APU  
 📍 Kuala Lumpur, Malaysia  
-📫 [LinkedIn](https://linkedin.com/in/yourusername) | [Email](mailto:your@email.com)
+📫 [LinkedIn](https://linkedin.com/in/zayedrmdn) | [Email](mailto:zayedrmdn@email.com)
 
 ---
 
