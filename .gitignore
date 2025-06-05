@@ -1,0 +1,23 @@
+# Ignore virtual environment
+venv/
+
+# Ignore Hugging Face model checkpoints
+models/checkpoint-*/
+
+# Ignore common temp/cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+*.tmp
+
+# Ignore Jupyter auto-save files
+*.ipynb_checkpoints/
+
+# Ignore VSCode settings (optional)
+.vscode/
+
+# Optional: ignore raw or intermediate data
+data/raw/
+logs/
