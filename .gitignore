@@ -21,3 +21,6 @@ __pycache__/
 # Optional: ignore raw or intermediate data
 data/raw/
 logs/
+
+# Ignore configuration files
+.env*
