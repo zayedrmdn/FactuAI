@@ -24,3 +24,6 @@ logs/
 
 # Ignore configuration files
 .env*
+# Ignore Jupyter notebooks and notebook folder
+*.ipynb
+notebooks/
