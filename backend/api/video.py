@@ -7,7 +7,7 @@ Returns: { "text": "...extracted text..." }
 """
 
 from flask import Blueprint, request, jsonify
-from common.logging_config import logger
+from core.logging import logger
 import tempfile
 import os
 import subprocess

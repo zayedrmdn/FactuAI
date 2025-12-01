@@ -2,6 +2,12 @@
 
 import { TextSize } from "../../types/ui";
 import { FactCheckResult } from "../../types/factcheck";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Accordion, AccordionItem } from "@/components/ui/accordion";
+import { CheckCircle2, AlertTriangle, XCircle, HelpCircle, ExternalLink, Quote } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ClaimCardProps {
   result: FactCheckResult;
@@ -10,29 +16,19 @@ interface ClaimCardProps {
   animationDelay: number;
 }
 
-const VERDICT_COLORS: Record<string, string> = {
-  true: "#16a34a",
-  mostly_true: "#16a34a",
-  half_true: "#d97706",
-  barely_true: "#d97706",
-  false: "#dc2626",
-  mostly_false: "#dc2626",
-  unknown: "#6b7280",
-};
-
-const VERDICT_LABELS: Record<string, string> = {
-  true: "True",
-  mostly_true: "Mostly True",
-  half_true: "Half True", 
-  barely_true: "Barely True",
-  false: "False",
-  mostly_false: "Mostly False",
-  unknown: "Unknown",
+const VERDICT_CONFIG: Record<string, { variant: "success" | "warning" | "destructive" | "secondary", label: string, icon: any }> = {
+  true: { variant: "success", label: "True", icon: CheckCircle2 },
+  mostly_true: { variant: "success", label: "Mostly True", icon: CheckCircle2 },
+  half_true: { variant: "warning", label: "Half True", icon: AlertTriangle },
+  barely_true: { variant: "warning", label: "Barely True", icon: AlertTriangle },
+  false: { variant: "destructive", label: "False", icon: XCircle },
+  mostly_false: { variant: "destructive", label: "Mostly False", icon: XCircle },
+  unknown: { variant: "secondary", label: "Unknown", icon: HelpCircle },
 };
 
 export default function ClaimCard({ result, index, textSize, animationDelay }: ClaimCardProps) {
-  const verdictColor = VERDICT_COLORS[result.label] || VERDICT_COLORS.unknown;
-  const verdictLabel = VERDICT_LABELS[result.label] || result.label;
+  const config = VERDICT_CONFIG[result.label] || VERDICT_CONFIG.unknown;
+  const VerdictIcon = config.icon;
 
   const textSizeClass = {
     sm: 'text-sm',
@@ -40,108 +36,127 @@ export default function ClaimCard({ result, index, textSize, animationDelay }: C
     lg: 'text-lg'
   }[textSize];
 
+  // Calculate progress color based on confidence
+  const getProgressColor = (score: number) => {
+    if (score >= 0.8) return "oklch(0.623 0.214 163.525)"; // emerald-500
+    if (score >= 0.5) return "oklch(0.769 0.188 70.08)"; // amber-500
+    return "oklch(0.627 0.265 303.9)"; // purple/indigo or red
+  };
+
   return (
-    <div
-      className="border dark:border-neutral-700 rounded-lg p-4 space-y-3 animate-in slide-in-from-left duration-300 bg-white dark:bg-neutral-800"
-      style={{ animationDelay: `${animationDelay}ms` }}
+    <Card 
+      className="overflow-hidden animate-in slide-in-from-left duration-300 border-l-4"
+      style={{ 
+        animationDelay: `${animationDelay}ms`,
+        borderLeftColor: config.variant === 'success' ? 'var(--emerald-500)' : 
+                        config.variant === 'warning' ? 'var(--amber-500)' : 
+                        config.variant === 'destructive' ? 'var(--destructive)' : 
+                        'var(--secondary)'
+      }}
     >
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <h4 className="font-medium text-gray-900 dark:text-gray-100">
-            Claim {index + 1}
-          </h4>
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="text-muted-foreground">Claim {index + 1}</Badge>
+              <Badge variant={config.variant} className="gap-1">
+                <VerdictIcon className="h-3 w-3" />
+                {config.label}
+              </Badge>
+            </div>
+            <CardTitle className={cn("font-medium leading-relaxed", textSizeClass)}>
+              {result.claim}
+            </CardTitle>
+          </div>
           {result.confidence !== undefined && (
-            <span className="text-xs text-muted-foreground bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
-              {(result.confidence * 100).toFixed(1)}% confidence
-            </span>
+            <div className="flex flex-col items-end gap-1 min-w-[100px]">
+              <span className="text-xs font-medium text-muted-foreground">Confidence</span>
+              <div className="flex items-center gap-2 w-full">
+                <Progress value={result.confidence * 100} className="h-2" indicatorColor={getProgressColor(result.confidence)} />
+                <span className="text-xs font-bold">{(result.confidence * 100).toFixed(0)}%</span>
+              </div>
+            </div>
           )}
         </div>
+      </CardHeader>
 
-        <p className={`${textSizeClass} text-gray-800 dark:text-gray-200 mb-3`}>
-          {result.claim}
-        </p>
+      <CardContent className="space-y-4">
+        {/* Explanation */}
+        {result.explanation && (
+          <div className="rounded-md bg-muted/50 p-3 text-sm text-muted-foreground">
+            {result.explanation}
+          </div>
+        )}
 
-        <div className="mb-3">
-          <span
-            className="inline-block px-3 py-1 rounded-full text-white text-sm font-medium"
-            style={{ backgroundColor: verdictColor }}
+        {/* Evidence Accordion */}
+        <Accordion>
+          <AccordionItem 
+            title={
+              <div className="flex items-center gap-2">
+                <Quote className="h-4 w-4" />
+                <span>Evidence & Analysis</span>
+              </div>
+            }
           >
-            {verdictLabel}
-          </span>
-        </div>
-
-        {result.source_quotes && result.source_quotes.length > 0 ? (
-          <div className="space-y-2">
-            <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">Evidence</h5>
-            <div className="space-y-3">
-              {result.source_quotes.map((quote, idx) => (
-                <div key={idx} className="bg-gray-50 dark:bg-gray-700 p-3 rounded border-l-4 border-green-500">
-                  <div className="flex items-start gap-2">
-                    <span className="text-green-600 dark:text-green-400 text-sm font-bold mt-0.5">✓</span>
-                    <div className="flex-1">
-                      <p className="text-sm text-gray-700 dark:text-gray-300 mb-2 italic">
-                        "{quote.quote}"
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-gray-600 dark:text-gray-400">
-                          — {quote.source}
-                        </span>
-                        <a
-                          href={quote.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:underline"
-                        >
-                          [source]
-                        </a>
-                      </div>
+             {result.source_quotes && result.source_quotes.length > 0 ? (
+              <div className="space-y-3 pt-2">
+                {result.source_quotes.map((quote, idx) => (
+                  <div key={idx} className="relative rounded-lg border bg-card p-4 shadow-sm">
+                    <div className="absolute -left-3 top-4 rounded-full bg-primary p-1 text-primary-foreground shadow-sm">
+                      <CheckCircle2 className="h-3 w-3" />
+                    </div>
+                    <blockquote className="border-l-2 border-primary/20 pl-4 text-sm italic text-muted-foreground">
+                      "{quote.quote}"
+                    </blockquote>
+                    <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+                      <span>— {quote.source}</span>
+                      <a
+                        href={quote.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-primary hover:underline"
+                      >
+                        Source <ExternalLink className="h-3 w-3" />
+                      </a>
                     </div>
                   </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                {result.evidence || "No specific evidence quotes available."}
+              </p>
+            )}
+          </AccordionItem>
+
+          {result.sources?.length > 0 && (
+            <AccordionItem 
+              title={
+                <div className="flex items-center gap-2">
+                  <ExternalLink className="h-4 w-4" />
+                  <span>Sources ({result.sources.length})</span>
                 </div>
-              ))}
-            </div>
-          </div>
-        ) : result.evidence && (
-          <div className="space-y-2">
-            <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">Evidence</h5>
-            <p className="text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 p-3 rounded">
-              {result.evidence}
-            </p>
-          </div>
-        )}
-
-        {result.explanation && (
-          <div className="space-y-2">
-            <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">Explanation</h5>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {result.explanation}
-            </p>
-          </div>
-        )}
-
-        {result.sources?.length > 0 && (
-          <div className="space-y-2">
-            <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Sources ({result.sources.length})
-            </h5>
-            <ul className="space-y-1">
-              {result.sources.map((url, sourceIndex) => (
-                <li key={sourceIndex} className="flex items-start gap-2">
-                  <span className="text-xs text-gray-400 mt-1">{sourceIndex + 1}.</span>
-                  <a
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:underline break-all text-sm"
-                  >
-                    {url}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
-    </div>
+              }
+            >
+              <ul className="space-y-2 pt-2">
+                {result.sources.map((url, sourceIndex) => (
+                  <li key={sourceIndex} className="flex items-start gap-2 text-sm">
+                    <span className="mt-1 text-xs text-muted-foreground">{sourceIndex + 1}.</span>
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline break-all"
+                    >
+                      {url}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </AccordionItem>
+          )}
+        </Accordion>
+      </CardContent>
+    </Card>
   );
 }

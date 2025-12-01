@@ -8,7 +8,7 @@ Returns:              { "text": "…extracted text…", "ai_score": 0.85, "ai_co
 """
 
 from flask import Blueprint, request, jsonify
-from common.logging_config import logger
+from core.logging import logger
 
 import pytesseract
 from PIL import Image

@@ -100,7 +100,7 @@ class ServiceManager:
     
     def _init_search_client(self) -> None:
         """Initialize search client."""
-        from services.search.client import GoogleSearchClient
+        from services.search.google_search import GoogleSearchClient
         self._search_client = GoogleSearchClient()
     
     def get_llm_client(self):

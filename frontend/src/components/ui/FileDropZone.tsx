@@ -1,4 +1,6 @@
 import React from 'react';
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface FileDropZoneProps {
   onFileSelect: (file: File) => void;
@@ -52,26 +54,34 @@ export function FileDropZone({
     <div
       onDragOver={handleDragOver}
       onDrop={handleDrop}
-      className={`border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center transition-colors hover:border-gray-400 dark:hover:border-gray-500 ${
-        isProcessing || disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-      } ${className}`}
       onClick={pickFile}
+      className={cn(
+        "group relative flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/5 px-6 py-10 text-center transition-all duration-200 hover:border-primary/50 hover:bg-muted/20",
+        (isProcessing || disabled) && "pointer-events-none opacity-60",
+        className
+      )}
     >
-      <Icon className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-      <p className="text-sm text-muted-foreground mb-2">{title}</p>
-      <p className="text-xs text-muted-foreground mb-4">{description}</p>
+      <div className="mb-4 rounded-full bg-muted p-3 ring-1 ring-border transition-all group-hover:scale-110 group-hover:bg-background">
+        <Icon className="h-8 w-8 text-muted-foreground transition-colors group-hover:text-primary" />
+      </div>
       
-      <button
+      <h3 className="mb-2 text-lg font-semibold text-foreground">{title}</h3>
+      <p className="mb-6 text-sm text-muted-foreground max-w-xs mx-auto leading-relaxed">
+        {description}
+      </p>
+      
+      <Button
         onClick={(e) => {
           e.stopPropagation();
           pickFile();
         }}
         disabled={isProcessing || disabled}
-        className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded text-sm transition mx-auto"
+        variant="secondary"
+        className="pointer-events-none" 
       >
-        <Icon className="w-4 h-4" />
+        <Icon className="mr-2 h-4 w-4" />
         {isProcessing ? "Processing..." : buttonText}
-      </button>
+      </Button>
     </div>
   );
 }

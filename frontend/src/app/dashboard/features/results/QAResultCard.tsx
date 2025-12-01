@@ -1,8 +1,13 @@
 "use client";
 
-import OverallScore from "@/components/ui/OverallScore";
 import { QAResult } from "../../types/factcheck";
 import { TextSize } from "../../types/ui";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Accordion, AccordionItem } from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
+import { ExternalLink, HelpCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export function QAResultCard({
   result,
@@ -20,58 +25,76 @@ export function QAResultCard({
   // Ensure confidence is a valid number
   const safeConfidence = typeof confidence === 'number' && !isNaN(confidence) ? confidence : 0.8;
 
+  // Calculate progress color
+  const getProgressColor = (score: number) => {
+    if (score >= 0.8) return "oklch(0.623 0.214 163.525)"; // emerald-500
+    if (score >= 0.5) return "oklch(0.769 0.188 70.08)"; // amber-500
+    return "oklch(0.627 0.265 303.9)"; // purple/indigo or red
+  };
+
+  const textSizeClass = {
+    sm: 'text-sm',
+    md: 'text-base',
+    lg: 'text-lg'
+  }[textSize];
+
   return (
-    <div
+    <Card 
+      className="overflow-hidden animate-in slide-in-from-left duration-300 border-l-4 border-l-primary"
       style={{ animationDelay: `${animationDelay}ms` }}
-      className="p-6 mb-4 bg-white dark:bg-gray-800 rounded-lg border animate-in"
     >
-      {/* header: question + circular confidence */}
-      <div className="flex items-start justify-between">
-        <h3 className="font-semibold text-base md:text-lg">
-          Q{index + 1}: {question}
-        </h3>
-        <div className="w-12 h-12">
-          {/* OverallScore expects 0–100 */}
-          <OverallScore
-            score={safeConfidence * 100}
-            title="Confidence"
-            className="w-12 h-12"
-          />
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-1">
+            <Badge variant="secondary" className="mb-2">Question {index + 1}</Badge>
+            <CardTitle className="text-lg font-medium leading-relaxed">
+              {question}
+            </CardTitle>
+          </div>
+          <div className="flex flex-col items-end gap-1 min-w-[100px]">
+            <span className="text-xs font-medium text-muted-foreground">Confidence</span>
+            <div className="flex items-center gap-2 w-full">
+              <Progress value={safeConfidence * 100} className="h-2" indicatorColor={getProgressColor(safeConfidence)} />
+              <span className="text-xs font-bold">{(safeConfidence * 100).toFixed(0)}%</span>
+            </div>
+          </div>
         </div>
-      </div>
+      </CardHeader>
 
-      {/* answer text */}
-      <p
-        className={`mt-4 text-gray-900 dark:text-gray-100 leading-relaxed ${
-          textSize === "sm" ? "text-sm" :
-          textSize === "lg" ? "text-lg" : "text-base"
-        }`}
-      >
-        {answer}
-      </p>
-
-      {/* sources list */}
-      {sources.length > 0 && (
-        <div className="mt-4">
-          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            Sources
-          </h4>
-          <ul className="mt-2 space-y-1 pl-4 list-disc text-sm text-blue-600 dark:text-blue-400">
-            {sources.map((url, i) => (
-              <li key={i}>
-                <a
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:underline break-all"
-                >
-                  {new URL(url).hostname}
-                </a>
-              </li>
-            ))}
-          </ul>
+      <CardContent className="space-y-4">
+        <div className={cn("text-foreground leading-relaxed", textSizeClass)}>
+          {answer}
         </div>
-      )}
-    </div>
+
+        {sources.length > 0 && (
+          <Accordion>
+            <AccordionItem 
+              title={
+                <div className="flex items-center gap-2">
+                  <ExternalLink className="h-4 w-4" />
+                  <span>Sources ({sources.length})</span>
+                </div>
+              }
+            >
+              <ul className="space-y-2 pt-2">
+                {sources.map((url, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm">
+                    <span className="mt-1 text-xs text-muted-foreground">{i + 1}.</span>
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline break-all"
+                    >
+                      {url}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </AccordionItem>
+          </Accordion>
+        )}
+      </CardContent>
+    </Card>
   );
 }

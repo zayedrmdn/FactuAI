@@ -3,15 +3,10 @@
 import time
 from .service_manager import service_manager
 from services.ocr import OCRService
-from pipeline.factcheck.claims.pipeline import (
-    build_evidence,
-    summarise_input_text,
-    summarise
-)
-from pipeline.factcheck.claims.extraction.extractor import extract_claims_llm
+from pipeline.orchestrator import build_evidence
+from pipeline.summarization import summarise_input_text, summarise_evidence as summarise
+from pipeline.extraction.extractor import extract_claims_llm
 from services.classifier_intent.intent_parser import detect_intent
-from pipeline.factcheck.questions.llm_driver import question_to_claim
-from pipeline.factcheck.questions.question_handler import handle_enhanced_question
 from core.logging import logger
 
 
@@ -83,20 +78,11 @@ class PipelineOrchestrator:
         }
 
     def _handle_fact_question(self, text: str, max_claims: int):
-        # try enhanced QA first
-        qa = handle_enhanced_question(text, self.llm, self.search_client)
-        if qa and "results" in qa:
-            logger.info("[PIPELINE] handled via enhanced QA path")
-            logger.debug(
-                f"QA response: summary type={type(qa['summary'])}, count={len(qa['results'])}"
-            )
-            return qa
-
-        # fallback to claim path
+        # fallback to claim path (enhanced QA not implemented)
         logger.info("[PIPELINE] fallback to claim path")
-        claim   = question_to_claim(text, self.llm)
+        claim = text  # treat question as claim for now
         summary = summarise_input_text(text, self.llm)
-        result  = self._run_check(claim)
+        result = self._run_check(claim)
         return {"summary": summary, "results": [{"claim": claim, **result}]}
 
     def _handle_multi_claim(self, text: str, max_claims: int):
@@ -132,64 +118,75 @@ class PipelineOrchestrator:
     ) -> dict:
         logger.debug(f"[PIPELINE] running check for: {claim!r}")
 
-        # 1) Build search query
-        query = self.search_client.build_query(claim)
-        logger.debug(f"[PIPELINE] using query: {query}")
+        try:
+            # 1) Build search query
+            query = self.search_client.build_query(claim)
+            logger.debug(f"[PIPELINE] using query: {query}")
 
-        # 2) Fetch raw results and normalize to dicts
-        raw = self.search_client.search(query)
-        normalized = []
-        for entry in raw:
-            if isinstance(entry, str):
-                normalized.append({"title": "", "link": entry})
-            else:
-                url = entry.get("url") or entry.get("link") or ""
-                normalized.append({
-                    "title": entry.get("title", ""),
-                    "link":  url
-                })
+            # 2) Fetch raw results and normalize to dicts
+            raw = self.search_client.search(query)
+            normalized = []
+            for entry in raw:
+                if isinstance(entry, str):
+                    normalized.append({"title": "", "link": entry})
+                else:
+                    url = entry.get("url") or entry.get("link") or ""
+                    normalized.append({
+                        "title": entry.get("title", ""),
+                        "link":  url
+                    })
 
-        resp = {"items": normalized}
+            resp = {"items": normalized}
 
-        # 3) Gather evidence, passing along any overrides
-        be_kwargs = {"llm": self.llm}
-        if max_google is not None:
-            be_kwargs["max_google"] = max_google
-        if max_news is not None:
-            be_kwargs["max_news"] = max_news
+            # 3) Gather evidence, passing along any overrides
+            be_kwargs = {"llm": self.llm}
+            if max_google is not None:
+                be_kwargs["max_google"] = max_google
+            if max_news is not None:
+                be_kwargs["max_news"] = max_news
 
-        evidence, sources, quotes = build_evidence(resp, claim, **be_kwargs)
-        if not evidence:
-            logger.debug("[PIPELINE] no evidence found")
+            evidence, sources, quotes = build_evidence(resp, claim, **be_kwargs)
+            if not evidence:
+                logger.debug("[PIPELINE] no evidence found")
+                return {
+                    "label":         "unknown",
+                    "confidence":    0.0,
+                    "explanation":   "No credible evidence found",
+                    "evidence":      "",
+                    "sources":       sources,
+                    "source_quotes": []
+                }
+
+            # 4) Classify
+            label, conf = self.clf.classify_with_evidence(
+                claim, evidence, return_conf=True
+            )
+            logger.debug(f"[PIPELINE] label={label} confidence={conf:.2f}")
+
+            # 5) Justify
+            try:
+                explanation = self.clf.justify(label, claim, evidence, llm=self.llm)
+            except Exception:
+                explanation = f"The claim is {label} based on the available evidence."
+
+            # 6) Summarize evidence
+            ev_summary = summarise(evidence, llm=self.llm)
+
+            return {
+                "label":         label,
+                "confidence":    conf,
+                "explanation":   explanation,
+                "evidence":      ev_summary,
+                "sources":       sources,
+                "source_quotes": quotes
+            }
+        except Exception as e:
+            logger.exception(f"[PIPELINE] _run_check failed: {e}")
             return {
                 "label":         "unknown",
                 "confidence":    0.0,
-                "explanation":   "No credible evidence found",
+                "explanation":   f"Error during fact-checking: {e}",
                 "evidence":      "",
-                "sources":       sources,
+                "sources":       [],
                 "source_quotes": []
             }
-
-        # 4) Classify
-        label, conf = self.clf.classify_with_evidence(
-            claim, evidence, return_conf=True
-        )
-        logger.debug(f"[PIPELINE] label={label} confidence={conf:.2f}")
-
-        # 5) Justify
-        try:
-            explanation = self.clf.justify(label, claim, evidence, llm=self.llm)
-        except Exception:
-            explanation = f"The claim is {label} based on the available evidence."
-
-        # 6) Summarize evidence
-        ev_summary = summarise(evidence, llm=self.llm)
-
-        return {
-            "label":         label,
-            "confidence":    conf,
-            "explanation":   explanation,
-            "evidence":      ev_summary,
-            "sources":       sources,
-            "source_quotes": quotes
-        }

@@ -93,7 +93,7 @@ class SmartQueryBuilder:
         # Optional number‑based terms
         if self.config.include_numbers:
             terms.extend(re.findall(r"\b\d{4}\b", text))          # years
-            terms.extend(re.findall(r"\b\d+(?:\.\d+)?%?\b", text))[:2]
+            terms.extend(re.findall(r"\b\d+(?:\.\d+)?%?\b", text)[:2])
 
         # If still too few, grab any other 3+ letter words
         if len([t for t in terms if re.search(r"[A-Za-z]", t)]) < 2:

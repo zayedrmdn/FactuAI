@@ -140,7 +140,22 @@ def best_sentences(text: str, claim: str, k: int) -> list:
         # Use semantic similarity with a relevance threshold
         claim_emb = embed_model.encode(claim, convert_to_tensor=True)
         sent_embs = embed_model.encode(raw, convert_to_tensor=True)
-        sims = util.cos_sim(claim_emb, sent_embs)[0].cpu().tolist()
+        cos = util.cos_sim(claim_emb, sent_embs)
+        if cos is None:
+            raise RuntimeError("cos_sim returned None")
+
+        try:
+            row = cos[0]
+        except Exception:
+            row = None
+
+        if row is None:
+            try:
+                sims = list(cos)[0]
+            except Exception:
+                raise RuntimeError("Unexpected shape from cos_sim result")
+        else:
+            sims = row.cpu().tolist() if hasattr(row, "cpu") else list(row)
 
         scored = list(zip(sims, raw))
         scored.sort(key=lambda x: x[0], reverse=True)

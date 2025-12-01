@@ -41,7 +41,27 @@ def rank_sentences(claim: str, sentences: List[str]) -> List[Tuple[str, float]]:
         from sentence_transformers import util
         claim_emb = embed_model.encode(claim, convert_to_tensor=True)
         sent_embs = embed_model.encode(sentences, convert_to_tensor=True)
-        sims = util.cos_sim(claim_emb, sent_embs)[0].cpu().tolist()
+        cos = util.cos_sim(claim_emb, sent_embs)
+        # defensive: ensure cos is valid and has expected shape
+        if cos is None:
+            raise RuntimeError("cos_sim returned None")
+
+        # cos may be a tensor; try to access first row safely
+        try:
+            row = cos[0]
+        except Exception:
+            # fallback: convert to list and take first element if possible
+            row = None
+
+        if row is None:
+            # attempt to coerce to list-of-lists
+            try:
+                sims = list(cos)[0]
+            except Exception:
+                raise RuntimeError("Unexpected shape from cos_sim result")
+        else:
+            sims = row.cpu().tolist() if hasattr(row, "cpu") else list(row)
+
         scored = list(zip(sentences, sims))
         return sorted(scored, key=lambda x: x[1], reverse=True)
     except Exception as e:
