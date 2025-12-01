@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from services.pipeline_orchestrator import PipelineOrchestrator
+from services.factcheck_service import PipelineOrchestrator
 
 bp_fact = Blueprint("factcheck", __name__, url_prefix="/api")
 orchestrator = PipelineOrchestrator()

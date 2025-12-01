@@ -1,8 +1,8 @@
 from flask import Blueprint, request, jsonify, Response
-from services.pipeline_orchestrator import PipelineOrchestrator
+from services.factcheck_service import PipelineOrchestrator
 import json
 import time
-from common.logging_config import logger
+from core.logging import logger
 
 bp = Blueprint("process", __name__, url_prefix="/api")
 orchestrator = PipelineOrchestrator()

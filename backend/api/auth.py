@@ -1,10 +1,10 @@
 from flask import Blueprint, request, jsonify
-from models.user import User
-from db import db
+from database.models.user import User
+from database.connection import db
 from werkzeug.security import generate_password_hash, check_password_hash
 from services.email import send_password_reset_email
 from services.tokens import generate_reset_token, verify_reset_token
-from common.logging_config import get_logger
+from core.logging import get_logger
 import re
 
 logger = get_logger(__name__)

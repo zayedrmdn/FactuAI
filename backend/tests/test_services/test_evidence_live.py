@@ -2,7 +2,7 @@ import os
 import pytest
 from dotenv import load_dotenv
 from backend.services.llm.llm_client import QwenClient
-from services.search.client import GoogleSearchClient
+from services.search.google_search import GoogleSearchClient
 from pipeline.factcheck.claims.fetchers.newsapi import fetch_newsapi_articles
 from pipeline.factcheck.claims.pipeline import build_evidence
 

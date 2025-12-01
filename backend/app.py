@@ -29,14 +29,14 @@ except ImportError:
         return data
 
 from core.config import Config
-from db import db
+from database.connection import db
 
 # Initialize services
 from services.service_manager import service_manager
 service_manager.initialize_services()
 
 # Import pipeline orchestrator and logger
-from services.pipeline_orchestrator import PipelineOrchestrator
+from services.factcheck_service import PipelineOrchestrator
 from core.logging import logger
 
 if HAS_FLASK:

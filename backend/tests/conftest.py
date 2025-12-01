@@ -15,7 +15,7 @@ from services.llm.llm_client import QwenClient
 
 # Import your app and db
 from app import app
-from db import db
+from database.connection import db
 
 
 @pytest.fixture

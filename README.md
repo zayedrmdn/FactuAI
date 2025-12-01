@@ -141,14 +141,17 @@ All models are trained with optimized preprocessing and hyperparameter tuning (O
 ```bash
 FactuAI/
 ├── backend/                   # Flask app
-│   ├── core/                  # Centralized config, logging, exceptions
-│   ├── common/                # Shared utilities (helpers)
+│   ├── core/                  # Centralized config, logging, exceptions, helpers
 │   ├── api/                   # API endpoints (blueprints)
 │   ├── services/              # Business logic
 │   │   ├── llm/               # LLM providers (OpenRouter, Nvidia, Local)
-│   │   └── classifier/        # Claim classification
-│   ├── pipeline/              # Fact-checking pipeline
-│   └── database/              # Database models and connection
+│   │   ├── classifier/        # Claim classification (BERT-based)
+│   │   ├── classifier_intent/ # Intent detection
+│   │   └── search/            # Google Search integration
+│   ├── pipeline/              # Fact-checking pipeline & orchestration
+│   ├── database/              # Database models and connection
+│   ├── schemas/               # Request/response schemas
+│   └── tests/                 # Unit and integration tests
 ├── frontend/                  # Next.js app
 │   └── src/
 │       ├── app/dashboard/
@@ -161,7 +164,7 @@ FactuAI/
 │       │   ├── services/      # API service layer
 │       │   └── types/         # TypeScript types
 │       └── components/ui/     # Shared UI components
-├── scripts/                   # Launch scripts (launch.bat, context.ps1)
+├── scripts/                   # Launch scripts, verification tools
 ├── requirements-core.txt      # Lightweight deps (Cloud Mode ~50MB)
 ├── requirements-local.txt     # Full ML deps (Local Mode ~4GB+)
 └── README.md

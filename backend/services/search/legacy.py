@@ -1,7 +1,7 @@
 # services/search/legacy.py
 
 from .builder import SmartQueryBuilder
-from .client import GoogleSearchClient
+from .google_search import GoogleSearchClient
 from core.exceptions import SearchError
 
 def extract_key_terms(claim: str) -> str:

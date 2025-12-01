@@ -1,4 +1,4 @@
-# backend/services/pipeline_orchestrator.py
+# backend/services/factcheck_service.py
 
 import time
 from .service_manager import service_manager
@@ -9,7 +9,7 @@ from pipeline.factcheck.claims.pipeline import (
     summarise
 )
 from pipeline.factcheck.claims.extraction.extractor import extract_claims_llm
-from services.classifier_intent.client import detect_intent
+from services.classifier_intent.intent_parser import detect_intent
 from pipeline.factcheck.questions.llm_driver import question_to_claim
 from pipeline.factcheck.questions.question_handler import handle_enhanced_question
 from core.logging import logger
