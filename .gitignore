@@ -50,5 +50,5 @@ scripts/extraction_outputs/
 notebooks/
 
 # Ignore virtual environment folders named 'venv-<something>'
-venv-cloud/
-venv-local/
+.venv-cloud/
+.venv-local/
