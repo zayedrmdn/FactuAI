@@ -4,6 +4,9 @@ venv/
 # Ignore Hugging Face model checkpoints
 models/checkpoint-*/
 
+# Ignore entire models directory (large model files)
+models/
+
 # Ignore common temp/cache files
 __pycache__/
 *.pyc
@@ -18,12 +21,30 @@ __pycache__/
 # Ignore VSCode settings (optional)
 .vscode/
 
-# Optional: ignore raw or intermediate data
+# Ignore raw, processed, and tokenized data
 data/raw/
+data/processed/
+data/tokenized/
+
+# Ignore logs
 logs/
+
+# Ignore Unsloth compiled cache
+unsloth_compiled_cache/
+
+# Ignore user uploads
+backend/uploads/
+
+# Ignore frontend build artifacts and dependencies
+frontend/.next/
+frontend/node_modules/
+
+# Ignore script extraction outputs
+scripts/extraction_outputs/
 
 # Ignore configuration files
 .env*
+
 # Ignore Jupyter notebooks and notebook folder
 *.ipynb
 notebooks/
