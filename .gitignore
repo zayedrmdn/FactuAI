@@ -48,3 +48,7 @@ scripts/extraction_outputs/
 # Ignore Jupyter notebooks and notebook folder
 *.ipynb
 notebooks/
+
+# Ignore virtual environment folders named 'venv-<something>'
+venv-cloud/
+venv-local/
