@@ -120,3 +120,93 @@
     @apply bg-background text-foreground;
   }
 }
+
+html {
+  transition: color 0.25s, background-color 0.25s;
+}
+
+/* Custom Navigation Animations */
+@layer utilities {
+  .nav-link {
+    @apply relative transition-colors duration-200;
+  }
+  
+  .nav-link::after {
+    content: '';
+    @apply absolute inset-x-0 -bottom-1 h-0.5 bg-blue-600 dark:bg-blue-400 transform scale-x-0 transition-transform duration-300 ease-out;
+  }
+  
+  .nav-link:hover::after {
+    @apply scale-x-100;
+  }
+  
+  .theme-toggle {
+    @apply transition-all duration-200 ease-in-out;
+  }
+  
+  .dropdown-enter {
+    @apply transform opacity-0 scale-95 translate-y-[-10px];
+  }
+  
+  .dropdown-enter-active {
+    @apply transform opacity-100 scale-100 translate-y-0 transition-all duration-200;
+  }
+  
+  .dropdown-exit {
+    @apply transform opacity-100 scale-100 translate-y-0;
+  }
+  
+  .dropdown-exit-active {
+    @apply transform opacity-0 scale-95 translate-y-[-10px] transition-all duration-200;
+  }
+  
+  .mobile-menu-enter {
+    @apply opacity-0 max-h-0;
+  }
+  
+  .mobile-menu-enter-active {
+    @apply opacity-100 max-h-96 transition-all duration-300;
+  }
+  
+  .mobile-menu-exit {
+    @apply opacity-100 max-h-96;
+  }
+  
+  .mobile-menu-exit-active {
+    @apply opacity-0 max-h-0 transition-all duration-300;
+  }
+  
+  /* Page transition animations */
+  .page-enter {
+    @apply opacity-0 transform translate-y-4;
+  }
+  
+  .page-enter-active {
+    @apply opacity-100 transform translate-y-0 transition-all duration-300;
+  }
+  
+  .page-exit {
+    @apply opacity-100 transform translate-y-0;
+  }
+  
+  .page-exit-active {
+    @apply opacity-0 transform translate-y-4 transition-all duration-300;
+  }
+}
+
+/* Custom scrollbar for better UX */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100 dark:bg-gray-800;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 dark:bg-gray-600 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400 dark:bg-gray-500;
+}

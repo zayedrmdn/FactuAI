@@ -1,0 +1,34 @@
+# Core lightweight dependencies for FactuAI (Cloud Mode)
+# Install with: pip install -r requirements-core.txt
+# These packages are sufficient for running in API/Cloud mode without local ML models
+
+# Web framework
+flask>=3.0.0
+flask-cors>=5.0.0
+flask-sqlalchemy>=3.1.0
+werkzeug>=3.0.0
+
+# Configuration
+python-dotenv>=1.0.0
+
+# Data validation
+pydantic>=2.0.0
+
+# HTTP requests
+requests>=2.31.0
+
+# Database
+sqlalchemy>=2.0.0
+psycopg2-binary>=2.9.0
+
+# OpenAI-compatible API client (for OpenRouter)
+openai>=1.0.0
+
+# Production server
+gunicorn>=21.0.0
+
+# Email services
+resend>=0.8.0
+
+# Security
+itsdangerous>=2.1.0

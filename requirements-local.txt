@@ -1,0 +1,24 @@
+# Local Mode dependencies for FactuAI (includes ML/GPU libraries)
+# Install with: pip install -r requirements-local.txt
+# This includes all core dependencies plus heavy ML libraries for local model inference
+
+# Include core dependencies first
+-r requirements-core.txt
+
+# ML/Deep Learning dependencies (PyTorch + CUDA)
+torch==2.7.0
+torchvision==0.22.0
+torchaudio==2.7.0
+transformers==4.52.4
+xformers==0.0.30
+datasets==3.6.0
+evaluate==0.4.3
+scikit-learn==1.6.1
+optuna==4.3.0
+tqdm
+
+# Data processing utilities
+pandas
+numpy
+pyarrow
+matplotlib-inline

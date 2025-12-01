@@ -1,0 +1,718 @@
+﻿=== PROJECT CONTEXT FOR AI ===
+Generated: 2025-12-01 11:47:46
+Project: FactuAI
+
+--- PROJECT STRUCTURE ---
+|-- .env
+|-- .env.example
+|-- .gitattributes
+|-- .gitignore
+|-- AUDIT_REFACTOR_PLAN.md
+|-- LICENSE
+|-- README.md
+|-- requirements-core.txt
+|-- requirements-local.txt
+|-- SETUP_INSTRUCTIONS.md
+|-- [backend/]
+    |-- .env
+    |-- app.py
+    |-- pytest.ini
+    |-- __init__.py
+    |-- [.pytest_cache/]
+    |-- [api/]
+        |-- auth.py
+        |-- factcheck.py
+        |-- image.py
+        |-- process.py
+        |-- profile.py
+        |-- video.py
+        |-- __init__.py
+    |-- [core/]
+        |-- config.py
+        |-- exceptions.py
+        |-- helpers.py
+        |-- logging.py
+        |-- __init__.py
+    |-- [database/]
+        |-- connection.py
+        |-- __init__.py
+        |-- [models/]
+            |-- user.py
+            |-- __init__.py
+    |-- [models/]
+        |-- user.py
+    |-- [pipeline/]
+        |-- config.py
+        |-- orchestrator.py
+        |-- __init__.py
+        |-- [evidence/]
+            |-- candidate.py
+            |-- ranker.py
+            |-- selector.py
+            |-- __init__.py
+        |-- [extraction/]
+            |-- extractor.py
+            |-- __init__.py
+        |-- [fetchers/]
+            |-- newsapi.py
+            |-- scraping.py
+            |-- __init__.py
+        |-- [summarization/]
+            |-- evidence_summary.py
+            |-- input_summary.py
+            |-- __init__.py
+        |-- [utils/]
+            |-- keyword_extractor.py
+            |-- __init__.py
+    |-- [schemas/]
+        |-- auth.py
+        |-- factcheck_request.py
+        |-- factcheck_response.py
+    |-- [services/]
+        |-- email.py
+        |-- ocr.py
+        |-- pipeline_orchestrator.py
+        |-- service_manager.py
+        |-- tokens.py
+        |-- __init__.py
+        |-- [classifier/]
+            |-- base.py
+            |-- cleaner.py
+            |-- client.py
+            |-- constants.py
+            |-- justifier.py
+            |-- llm_classifier.py
+            |-- __init__.py
+        |-- [classifier_intent/]
+            |-- client.py
+            |-- heuristics.py
+            |-- parser.py
+            |-- prompt.py
+            |-- __init__.py
+        |-- [llm/]
+            |-- base.py
+            |-- factory.py
+            |-- llm_client.py
+            |-- local.py
+            |-- nvidia.py
+            |-- openrouter.py
+            |-- __init__.py
+        |-- [logs/]
+            |-- __init__.py
+        |-- [search/]
+            |-- base.py
+            |-- builder.py
+            |-- client.py
+            |-- legacy.py
+            |-- __init__.py
+    |-- [tests/]
+        |-- conftest.py
+        |-- [test_models/]
+        |-- [test_routes/]
+        |-- [test_services/]
+            |-- test_evidence_live.py
+            |-- test_extractors.py
+            |-- test_extractors_standalone.py
+            |-- test_intent_classifier.py
+        |-- [test_unit/]
+            |-- test_evidence_pipeline.py
+|-- [frontend/]
+    |-- .env.local
+    |-- .gitignore
+    |-- components.json
+    |-- eslint.config.mjs
+    |-- next-env.d.ts
+    |-- next.config.ts
+    |-- package-lock.json
+    |-- package.json
+    |-- postcss.config.mjs
+    |-- README.md
+    |-- tsconfig.json
+    |-- [public/]
+        |-- factuai-logo.png
+        |-- file.svg
+        |-- globe.svg
+        |-- LOGO_README.md
+        |-- next.svg
+        |-- vercel.svg
+        |-- window.svg
+    |-- [src/]
+        |-- [app/]
+            |-- favicon.ico
+            |-- globals.css
+            |-- layout.tsx
+            |-- page.tsx
+            |-- [dashboard/]
+                |-- page.tsx
+                |-- [features/]
+                    |-- [export/]
+                        |-- index.ts
+                        |-- pdfExport.ts
+                        |-- usePdfExport.ts
+                    |-- [history/]
+                        |-- HistoryItem.tsx
+                        |-- HistoryPanel.tsx
+                    |-- [inputs/]
+                        |-- InputCard.tsx
+                        |-- InputTabs.tsx
+                        |-- [ImageInput/]
+                            |-- ImageTab.tsx
+                        |-- [TextInput/]
+                            |-- TextTab.tsx
+                        |-- [VideoInput/]
+                            |-- VideoTab.tsx
+                    |-- [results/]
+                        |-- ClaimCard.tsx
+                        |-- QAResultCard.tsx
+                        |-- ResultsView.tsx
+                    |-- [settings/]
+                        |-- SettingsDialog.tsx
+                |-- [hooks/]
+                    |-- useAppState.ts
+                    |-- useFactCheck.ts
+                    |-- useFileUpload.ts
+                    |-- useHistory.ts
+                    |-- useImageProcessing.ts
+                    |-- useInputType.ts
+                    |-- useInputValidation.ts
+                    |-- useSettings.ts
+                    |-- useVideoProcessing.ts
+                |-- [services/]
+                    |-- api.ts
+                |-- [types/]
+                    |-- api.ts
+                    |-- factcheck.ts
+                    |-- ui.ts
+                |-- [utils/]
+                    |-- constants.ts
+                    |-- fileToText.ts
+                    |-- validation.ts
+                |-- [__tests__/]
+                    |-- refactored-components.test.ts
+            |-- [forgot-password/]
+                |-- page.tsx
+            |-- [login/]
+                |-- page.tsx
+            |-- [profile/]
+                |-- page.tsx
+            |-- [register/]
+                |-- page.tsx
+            |-- [reset-password/]
+                |-- page.tsx
+        |-- [components/]
+            |-- UserAvatar.tsx
+            |-- [landing/]
+                |-- CallToAction.tsx
+                |-- Features.tsx
+                |-- Footer.tsx
+                |-- HeroSection.tsx
+                |-- HowItWorks.tsx
+                |-- LandingNav.tsx
+            |-- [ui/]
+                |-- AIDetectionScore.tsx
+                |-- button.tsx
+                |-- card.tsx
+                |-- dialog.tsx
+                |-- ErrorState.tsx
+                |-- FileDropZone.tsx
+                |-- ImagePreview.tsx
+                |-- LoadingAnimation.tsx
+                |-- OverallScore.tsx
+                |-- ProcessingStatus.tsx
+                |-- switch.tsx
+        |-- [lib/]
+            |-- utils.ts
+|-- [scripts/]
+    |-- context.ps1
+    |-- context_output.txt
+    |-- launch.bat
+
+
+--- DATABASE SCHEMA FILES (Reference Only) ---
+
+--- CRITICAL CONFIGURATION FILES ---
+
+=== FILE: frontend/package.json ===
+{
+  "name": "frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@heroicons/react": "^2.2.0",
+    "@hookform/resolvers": "^5.1.0",
+    "@radix-ui/react-dialog": "^1.1.14",
+    "@radix-ui/react-slot": "^1.2.3",
+    "@radix-ui/react-switch": "^1.2.5",
+    "@types/validator": "^13.15.2",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "framer-motion": "^12.23.6",
+    "franc": "^6.2.0",
+    "jspdf": "^3.0.1",
+    "lucide-react": "^0.513.0",
+    "next": "15.3.3",
+    "pdfjs-dist": "^5.3.31",
+    "react": "^19.0.0",
+    "react-circular-progressbar": "^2.2.0",
+    "react-dom": "^19.0.0",
+    "react-hook-form": "^7.57.0",
+    "sonner": "^2.0.5",
+    "tailwind-merge": "^3.3.0",
+    "validator": "^13.15.15",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/pdfjs-dist": "^2.10.377",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "15.3.3",
+    "tailwindcss": "^4",
+    "tw-animate-css": "^1.3.4",
+    "typescript": "^5"
+  }
+}
+
+=== END FILE ===
+
+
+=== FILE: frontend/next.config.ts ===
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  async rewrites() {
+    return [
+      {
+        source: "/api/:path*",
+        destination: "http://localhost:5000/api/:path*",
+      },
+    ];
+  },
+};
+
+export default nextConfig;
+
+=== END FILE ===
+
+
+=== FILE: frontend/tsconfig.json ===
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}
+
+=== END FILE ===
+
+
+=== FILE: backend/app.py ===
+from dotenv import load_dotenv
+load_dotenv()
+
+import os
+import sys
+print("CWD:", os.getcwd())
+print("sys.path[0]:", sys.path[0])
+
+
+try:
+    from flask import Flask, request, jsonify, send_from_directory
+    from flask_cors import CORS
+    HAS_FLASK = True
+except ImportError:
+    HAS_FLASK = False
+    # Create mock classes for testing
+    class Flask:
+        def __init__(self, name):
+            pass
+        def run(self, debug=False, use_reloader=False):
+            print("Mock Flask app would run here")
+    class MockCORS:
+        def __init__(self, app, resources=None):
+            pass
+    CORS = MockCORS
+    def request():
+        pass
+    def jsonify(data):
+        return data
+
+from core.config import Config
+from db import db
+
+# Initialize services
+from services.service_manager import service_manager
+service_manager.initialize_services()
+
+# Import pipeline orchestrator and logger
+from services.pipeline_orchestrator import PipelineOrchestrator
+from core.logging import logger
+
+if HAS_FLASK:
+    # blueprints - only import if Flask is available
+    try:
+        from api import (
+            auth_bp,
+            profile_bp,
+            bp_fact,
+            bp_process,
+            bp_image,
+            bp_video,
+        )
+        HAS_ROUTES = True
+    except ImportError as e:
+        logger.error(f"Failed to import routes: {e}")
+        HAS_ROUTES = False
+else:
+    HAS_ROUTES = False
+app = Flask(__name__)
+
+if HAS_FLASK:
+    app.config.from_object(Config)
+    CORS(app, resources={r"/api/*": {"origins": "*"}})
+
+    # database
+    db.init_app(app)
+    with app.app_context():
+        db.create_all()
+
+# Initialize pipeline orchestrator instance
+pipeline_orchestrator = PipelineOrchestrator()
+
+if HAS_FLASK and HAS_ROUTES:
+    # register routes
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(profile_bp)
+    app.register_blueprint(bp_fact)
+    app.register_blueprint(bp_process)
+    app.register_blueprint(bp_image)
+    app.register_blueprint(bp_video)
+
+if HAS_FLASK:
+    @app.route('/uploads/<path:filename>')
+    def uploaded_file(filename):
+        """Serve uploaded files"""
+        return send_from_directory('uploads', filename)
+
+    @app.route('/api/validate', methods=['POST'])
+    def validate_content():
+        """Validate content using LLM before fact-checking"""
+        try:
+            data = request.get_json()
+            text = data.get('text', '').strip()
+            
+            if not text:
+                return jsonify({
+                    "isValid": True,
+                    "error": "",
+                    "suggestion": ""
+                })
+            
+            # Use existing LLM instance from service manager
+            llm_client = service_manager.get_llm_client()
+            result = llm_client.validate_content(text)
+            return jsonify(result)
+            
+        except Exception as e:
+            logger.error(f"Validation error: {e}")
+            return jsonify({
+                "isValid": False,
+                "error": "Validation service temporarily unavailable",
+                "suggestion": "Please try again in a moment."
+            }), 500
+
+if __name__ == "__main__":
+    # Disable reloader to prevent duplicate model loading
+    app.run(debug=True, use_reloader=False)
+=== END FILE ===
+
+
+=== FILE: README.md ===
+# FactuAI
+
+**FactuAI** is a full-stack AI-powered application for:
+- ðŸ“° **News summarization**
+- ðŸ” **Fact-checking political claims**
+
+Built as part of my **Final Year Project** in Computer Science (AI) at APU, Malaysia.
+
+---
+
+## ðŸŽ¯ Goals
+
+- Extract concise summaries from long-form news articles
+- Automatically classify factual accuracy of statements (e.g. `true`, `false`, `pants_on_fire`)
+- Empower responsible media consumption using NLP and deep learning
+
+---
+
+## ðŸ› ï¸ Tech Stack
+
+| Layer       | Tech                                      |
+|-------------|-------------------------------------------|
+| Frontend    | React (Next.js), Tailwind CSS, Shadcn UI  |
+| Backend     | Flask (REST API), SQLAlchemy              |
+| Database    | PostgreSQL                                |
+| ML Models   | Hugging Face Transformers (BERT, T5)      |
+| Tools       | PyTorch, Optuna, xFormers, Jupyter        |
+
+---
+
+## ðŸš€ Quick Start
+
+### Installation
+
+FactuAI uses **separate virtual environments** for each run mode:
+
+| Mode | venv | Requirements | Size |
+|------|------|--------------|------|
+| Cloud | `.venv-cloud/` | `requirements-core.txt` | ~50MB |
+| Local | `.venv-local/` | `requirements-local.txt` | ~4GB+ |
+
+**Option 1: Automatic Setup (Recommended)**
+```bash
+cd scripts
+launch.bat cloud   # Creates .venv-cloud and starts in Cloud Mode
+# OR
+launch.bat local   # Creates .venv-local and starts in Local Mode
+```
+
+**Option 2: Manual Setup**
+```bash
+# Cloud Mode (lightweight - uses OpenRouter API)
+python -m venv .venv-cloud
+.venv-cloud\Scripts\activate     # Windows
+pip install -r requirements-core.txt
+
+# Local Mode (full ML stack - requires CUDA)
+python -m venv .venv-local
+.venv-local\Scripts\activate     # Windows
+pip install -r requirements-local.txt
+```
+
+### Configuration
+
+Create a `.env` file in the project root:
+```env
+# Run Mode: 'cloud' (default) or 'local'
+APP_RUN_MODE=cloud
+
+# LLM Provider (cloud mode only): 'openrouter' (default), 'nvidia', or 'auto'
+LLM_PROVIDER=openrouter
+
+# Database
+DB_URI=postgresql://user:pass@localhost:5432/factuai
+
+# OpenRouter API (default cloud provider)
+OPENROUTER_API_KEY=your_key_here
+OPENROUTER_MODEL=meta-llama/llama-4-maverick:free
+OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
+
+# Nvidia NIM API (alternative cloud provider)
+NVIDIA_API_KEY=your_key_here
+NVIDIA_MODEL=meta/llama-3.3-70b-instruct
+NVIDIA_BASE_URL=https://integrate.api.nvidia.com/v1
+
+# Search & News APIs
+GOOGLE_API_KEY=your_key_here
+GOOGLE_CSE_ID=your_cse_id
+NEWS_API_KEY=your_key_here
+
+# Security
+SECRET_KEY=your_secret_key
+```
+
+### Running the Application
+
+**Using Launch Script (Recommended):**
+```bash
+cd scripts
+launch.bat cloud   # Start in Cloud Mode
+launch.bat local   # Start in Local Mode
+launch.bat         # Defaults to Cloud Mode
+```
+
+**Manual Start:**
+```bash
+# Terminal 1: Backend (activate appropriate venv first)
+.venv-cloud\Scripts\activate
+cd backend && python app.py
+
+# Terminal 2: Frontend
+cd frontend && npm run dev
+```
+
+---
+
+## ðŸ§  ML Models
+
+- **Summarization**: fine-tuning T5 on [MultiNews](https://huggingface.co/datasets/alexfabbri/multi_news)
+- **Fact-checking**: fine-tuning BERT and NeoBERT on [LIAR2](https://github.com/chengxuphd/liar2)
+
+All models are trained with optimized preprocessing and hyperparameter tuning (Optuna).
+
+---
+
+## ðŸ“Œ Current Status
+
+- âœ… Dataset preprocessing (`LIAR2`, `MultiNews`)
+- âœ… Tokenization, padding, vocabulary
+- âœ… Model fine-tuning with Hugging Face
+- âœ… React-based frontend with login/register
+- âœ… Flask backend with PostgreSQL integration
+- âœ… Dual run mode support (Cloud/Local)
+- â³ In progress: dashboard summarization + fact-check endpoint
+- â³ In progress: model evaluation, export, deployment
+
+---
+
+## ðŸ“ Folder Structure
+
+```bash
+FactuAI/
+â”œâ”€â”€ backend/                   # Flask app
+â”‚   â”œâ”€â”€ core/                  # Centralized config, logging, exceptions
+â”‚   â”œâ”€â”€ common/                # Shared utilities (helpers)
+â”‚   â”œâ”€â”€ api/                   # API endpoints (blueprints)
+â”‚   â”œâ”€â”€ services/              # Business logic
+â”‚   â”‚   â”œâ”€â”€ llm/               # LLM providers (OpenRouter, Nvidia, Local)
+â”‚   â”‚   â””â”€â”€ classifier/        # Claim classification
+â”‚   â”œâ”€â”€ pipeline/              # Fact-checking pipeline
+â”‚   â””â”€â”€ database/              # Database models and connection
+â”œâ”€â”€ frontend/                  # Next.js app
+â”‚   â””â”€â”€ src/
+â”‚       â”œâ”€â”€ app/dashboard/
+â”‚       â”‚   â”œâ”€â”€ features/      # Feature-based components
+â”‚       â”‚   â”‚   â”œâ”€â”€ inputs/    # Text, image, video input
+â”‚       â”‚   â”‚   â”œâ”€â”€ results/   # Fact-check results display
+â”‚       â”‚   â”‚   â”œâ”€â”€ history/   # History panel
+â”‚       â”‚   â”‚   â””â”€â”€ settings/  # Settings dialog
+â”‚       â”‚   â”œâ”€â”€ hooks/         # React hooks
+â”‚       â”‚   â”œâ”€â”€ services/      # API service layer
+â”‚       â”‚   â””â”€â”€ types/         # TypeScript types
+â”‚       â””â”€â”€ components/ui/     # Shared UI components
+â”œâ”€â”€ scripts/                   # Launch scripts (launch.bat, context.ps1)
+â”œâ”€â”€ requirements-core.txt      # Lightweight deps (Cloud Mode ~50MB)
+â”œâ”€â”€ requirements-local.txt     # Full ML deps (Local Mode ~4GB+)
+â””â”€â”€ README.md
+```
+
+---
+
+## ðŸ›¡ï¸ License
+
+Licensed under the [MIT License](LICENSE).  
+Free for academic, research, and learning purposes.
+
+---
+
+## ðŸ‘¨â€ðŸ’» Author
+
+**Zayed Ramadan Rahmat**  
+Final Year BSc (Hons) Computer Science (AI), APU  
+ðŸ“ Kuala Lumpur, Malaysia  
+ðŸ”— [LinkedIn](https://linkedin.com/in/zayedrmdn) Â· ðŸ“§ [Email](mailto:zayedrmdn@email.com)
+
+=== END FILE ===
+
+
+=== FILE: SETUP_INSTRUCTIONS.md ===
+# Profile Feature - User Guide
+
+## âœ… Setup Complete!
+The profile feature has been successfully implemented and the database migration is complete.
+
+## ðŸš€ How to Use
+
+### Access Profile Settings
+1. Look for the user avatar and "Profile" button in the top navigation
+2. Click "Profile" to access your profile management page
+
+### Available Features
+
+#### Profile Information Tab
+- Edit your username
+- Update your email address
+- Changes are saved automatically
+
+#### Password Tab  
+- Change your password securely
+- Requires your current password for verification
+- New password must be at least 6 characters
+
+#### Profile Picture Tab
+- Upload a profile picture (PNG, JPG, JPEG, GIF)
+- View your current profile picture
+- Delete your profile picture if desired
+- Supported formats: PNG, JPG, JPEG, GIF
+
+### User Avatar
+- Your profile picture or initials will appear in the header
+- Click on your avatar area to quickly access profile settings
+
+## ðŸ”§ Technical Details
+
+### New API Endpoints
+- `GET /api/profile/<user_id>` - Get user profile
+- `PUT /api/profile/<user_id>` - Update profile info  
+- `PUT /api/profile/<user_id>/password` - Change password
+- `POST /api/profile/<user_id>/picture` - Upload profile picture
+- `DELETE /api/profile/<user_id>/picture` - Delete profile picture
+
+### Security Features
+- Password changes require current password verification
+- File uploads are validated and stored securely
+- All profile changes are properly validated
+
+### File Structure
+```
+backend/
+â”œâ”€â”€ routes/profile.py (new profile API routes)
+â”œâ”€â”€ uploads/profile_pictures/ (secure file storage)
+â”œâ”€â”€ models/user.py (updated with username/profile_picture)
+â””â”€â”€ app.py (registered profile routes)
+
+frontend/
+â”œâ”€â”€ src/app/profile/page.tsx (profile management UI)
+â”œâ”€â”€ src/components/UserAvatar.tsx (header avatar display)
+â””â”€â”€ src/app/layout.tsx (navigation with profile link)
+```
+
+## ðŸŽ‰ Enjoy Your New Profile Features!
+
+The profile system is now fully functional and integrated into your FactuAI application. All existing functionality remains unchanged while providing powerful new user management capabilities.
+
+=== END FILE ===
+
+--- NO RECENT ACTIVITY ---
+

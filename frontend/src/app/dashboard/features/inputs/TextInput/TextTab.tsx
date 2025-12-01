@@ -1,0 +1,148 @@
+import React from 'react';
+import { ClipboardIcon, ArrowUpTrayIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { toast } from "sonner";
+import { franc } from "franc";
+import { fileToText } from "../../../utils/fileToText";
+import { validateBasic } from "../../../utils/validation";
+import { TextSize } from "../../../types/ui";
+
+interface PasteUploadClearProps {
+  onPaste: () => void;
+  onUpload: () => void;
+  onClear: () => void;
+  disabled?: boolean;
+}
+
+function PasteUploadClear({ onPaste, onUpload, onClear, disabled }: PasteUploadClearProps) {
+  return (
+    <div className="flex gap-2">
+      <button
+        onClick={onPaste}
+        disabled={disabled}
+        className="flex items-center gap-1 px-3 py-1 text-xs border rounded hover:bg-gray-50 disabled:opacity-50"
+      >
+        <ClipboardIcon className="w-3 h-3" />
+        Paste
+      </button>
+      <button
+        onClick={onUpload}
+        disabled={disabled}
+        className="flex items-center gap-1 px-3 py-1 text-xs border rounded hover:bg-gray-50 disabled:opacity-50"
+      >
+        <ArrowUpTrayIcon className="w-3 h-3" />
+        Upload
+      </button>
+      <button
+        onClick={onClear}
+        disabled={disabled}
+        className="flex items-center gap-1 px-3 py-1 text-xs border rounded hover:bg-gray-50 disabled:opacity-50"
+      >
+        <XMarkIcon className="w-3 h-3" />
+        Clear
+      </button>
+    </div>
+  );
+}
+
+interface TextTabProps {
+  input: string;
+  setInput: (value: string) => void;
+  textSize: TextSize;
+  onClear: () => void;
+}
+
+export default function TextTab({ input, setInput, textSize, onClear }: TextTabProps) {
+  const validationResult = validateBasic(input);
+  const wordCount = input.trim().split(/\s+/).filter(Boolean).length;
+  const showValidationError = input.trim().length > 0 && validationResult.error;
+
+  const handleFile = async (file: File) => {
+    try {
+      const txt = await fileToText(file);
+      if (!txt) return;
+      
+      const lang = franc(txt.slice(0, 500));
+      if (lang !== "eng" && lang !== "und") {
+        toast.error("Only English text supported right now.");
+        return;
+      }
+      
+      setInput(txt);
+      toast.success("File loaded");
+    } catch (error) {
+      console.error("Error processing file:", error);
+      toast.error("Failed to process file");
+    }
+  };
+
+  const pickFile = () => {
+    const inputEl = document.createElement("input");
+    inputEl.type = "file";
+    inputEl.accept = ".txt,.pdf";
+    inputEl.onchange = (e: any) => {
+      const file = e.target.files?.[0];
+      if (file) handleFile(file);
+    };
+    inputEl.click();
+  };
+
+  const pasteFromClipboard = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (!text) {
+        toast.error("Clipboard is empty");
+        return;
+      }
+      
+      const lang = franc(text.slice(0, 500));
+      if (lang !== "eng" && lang !== "und") {
+        toast.error("Only English text supported");
+        return;
+      }
+      
+      setInput(text);
+      toast.success("Text pasted from clipboard");
+    } catch (error) {
+      console.error("Error reading clipboard:", error);
+      toast.error("Failed to read clipboard");
+    }
+  };
+
+  const textSizeClass = {
+    sm: 'text-sm',
+    md: 'text-base',
+    lg: 'text-lg'
+  }[textSize];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <PasteUploadClear
+          onPaste={pasteFromClipboard}
+          onUpload={pickFile}
+          onClear={onClear}
+          disabled={validationResult.isValid === false}
+        />
+        <div className="text-xs text-gray-500">
+          {wordCount} words
+        </div>
+      </div>
+
+      <textarea
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        placeholder="Enter text to fact-check, or use the buttons above to paste/upload..."
+        className={`w-full h-64 p-4 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${textSizeClass}`}
+      />
+
+      {showValidationError && (
+        <div className="text-sm text-red-600">
+          <p className="font-medium">{validationResult.error}</p>
+          {validationResult.suggestion && (
+            <p className="text-xs text-gray-600 mt-1">{validationResult.suggestion}</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
