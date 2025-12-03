@@ -1,18 +1,18 @@
+// Path: frontend/src/app/dashboard/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { useState } from "react";
 import SettingsDialog from "./features/settings/SettingsDialog";
 import InputCard from "./features/inputs/InputCard";
 import ResultsView from "./features/results/ResultsView";
 import HistoryPanel from "./features/history/HistoryPanel";
 import { useSettings } from "./hooks/useSettings";
 import { useAppState } from "./hooks/useAppState";
+import { RotateCcw, FileText, Sparkles } from "lucide-react"; // Added icons for better UI
 
 export default function DashboardPage() {
   const { prefs, savePrefs, isDark, toggleTheme, isLoaded: settingsLoaded } = useSettings();
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [user, setUser] = useState<any>(null);
   
   const {
     // Input and results state
@@ -54,14 +54,6 @@ export default function DashboardPage() {
     saveVideoToHistory,
   } = useAppState();
 
-  // Get user data
-  useEffect(() => {
-    const userData = localStorage.getItem("user");
-    if (userData) {
-      setUser(JSON.parse(userData));
-    }
-  }, []);
-
   // Sample demos for CTA buttons
   const loadSampleText = () => {
     setInput("Scientists have discovered that drinking 8 glasses of water daily can cure cancer. This breakthrough study was conducted at Harvard Medical School and published in Nature.");
@@ -74,22 +66,17 @@ export default function DashboardPage() {
   // Don't render until settings are loaded to prevent hydration mismatch
   if (!settingsLoaded) {
     return (
-      <div className="container mx-auto px-6 py-8">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
-          <div className="h-64 bg-gray-200 rounded"></div>
+      <div className="p-6 max-w-[1920px] mx-auto">
+        <div className="animate-pulse grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-8 h-[600px] bg-muted rounded-xl"></div>
+          <div className="lg:col-span-4 h-[600px] bg-muted rounded-xl"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30 dark:from-gray-900 dark:to-gray-800"
-    >
+    <>
       <SettingsDialog
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
@@ -99,74 +86,43 @@ export default function DashboardPage() {
         isDark={isDark}
       />
 
-      {/* Hero Section - Full Width Desktop Layout */}
-      <motion.div 
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-        className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm"
-      >
-        <div className="max-w-7xl mx-auto px-6 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 tracking-tight">
-                Welcome back, {user?.username || user?.email?.split('@')[0] || 'User'} 👋
-              </h1>
-              <p className="text-lg text-gray-600 dark:text-gray-400">
-                Start verifying news or exploring past fact-checks below.
-              </p>
-            </div>
-            <div className="hidden md:flex items-center gap-4">
-              <div className="text-right">
-                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{history.length}</div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">Fact-checks</div>
-              </div>
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-                <span className="text-xl">🔍</span>
-              </div>
-            </div>
-          </div>
+      {/* Main Content Grid - constrained max-width for large screens */}
+      <div className="p-4 lg:p-8 max-w-[1920px] mx-auto">
+        {/* Context Header */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-semibold tracking-tight">Investigation Console</h1>
+          <p className="text-muted-foreground">
+            Analyze text, images, or videos to verify claims against real-time evidence.
+          </p>
         </div>
-      </motion.div>
 
-      {/* Main Workspace - Proper Desktop Grid */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-12 gap-8 min-h-[calc(100vh-200px)]">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 items-start">
+          
           {/* Left: Main Workspace (8 columns) */}
-          <div className="col-span-12 lg:col-span-8">
+          <main className="lg:col-span-8 xl:col-span-9 flex flex-col gap-6">
+            
             {showResults ? (
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3 }}
-                className="w-full"
-              >
-                <ResultsView
-                  results={factResults}
-                  summary={summary}
-                  updated={updated}
-                  loading={loading}
-                  loadingPhase={loadingPhase}
-                  progress={progress}
-                  currentClaim={currentClaim}
-                  prefs={prefs}
-                  averageConfidence={avgConfidence}
-                  onRetry={handleRetryInput}
-                  onClear={handleClear}
-                  onCancel={handleCancel}
-                  openSettings={() => setSettingsOpen(true)}
-                  error={factCheckError}
-                />
-              </motion.div>
+              <ResultsView
+                results={factResults}
+                summary={summary}
+                updated={updated}
+                loading={loading}
+                loadingPhase={loadingPhase}
+                progress={progress}
+                currentClaim={currentClaim}
+                prefs={prefs}
+                averageConfidence={avgConfidence}
+                onRetry={handleRetryInput}
+                onClear={handleClear}
+                onCancel={handleCancel}
+                openSettings={() => setSettingsOpen(true)}
+                error={factCheckError}
+              />
             ) : (
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.2 }}
-                className="space-y-6 w-full"
-              >
-                {/* Input Panel - Full Width Desktop */}
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/10 dark:to-indigo-900/10 rounded-2xl p-8 border border-blue-100 dark:border-blue-800/30 shadow-sm transition-shadow hover:shadow-md focus-within:shadow-lg w-full min-w-[320px] sm:min-w-[480px] md:min-w-[600px] lg:min-w-[768px]">
+              /* Input Console - Wrapped to look like a Unified Tool */
+              <div className="flex flex-col rounded-xl border bg-card shadow-sm overflow-hidden min-h-[600px] h-full transition-all">
+                {/* The Input Card itself */}
+                <div className="flex-1 p-1 h-full">
                   <InputCard
                     input={input}
                     setInput={setInput}
@@ -182,52 +138,50 @@ export default function DashboardPage() {
                   />
                 </div>
 
-                {/* CTA Buttons - Left Aligned */}
-                <motion.div 
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: 0.4 }}
-                  className="flex flex-wrap gap-4"
-                >
-                  <button
-                    onClick={loadSampleText}
-                    className="flex items-center gap-3 px-6 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:shadow-md transition-all duration-200 group min-w-[160px]"
-                  >
-                    <span className="text-xl group-hover:scale-110 transition-transform">🔄</span>
-                    <span className="font-medium text-base">Load Sample</span>
-                  </button>
-                  <button
-                    onClick={loadDemoClaim}
-                    className="flex items-center gap-3 px-6 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:shadow-md transition-all duration-200 group min-w-[180px]"
-                  >
-                    <span className="text-xl group-hover:scale-110 transition-transform">🧾</span>
-                    <span className="font-medium text-base">Try Demo Claim</span>
-                  </button>
-                </motion.div>
-              </motion.div>
+                {/* Integrated Footer for Actions (No longer orphan buttons) */}
+                <div className="border-t bg-muted/30 p-4 flex flex-wrap items-center justify-between gap-4">
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Quick Start
+                  </span>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={loadSampleText}
+                      className="inline-flex items-center gap-2 rounded-md border bg-background px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" />
+                      Load Medical Sample
+                    </button>
+                    <button
+                      onClick={loadDemoClaim}
+                      className="inline-flex items-center gap-2 rounded-md border bg-background px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                    >
+                      <FileText className="h-3.5 w-3.5" />
+                      Load Conspiracy Sample
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
-          </div>
+          </main>
 
-          {/* Right: Sidebar (4 columns) */}
-          <div className="col-span-12 lg:col-span-4">
-            <motion.div 
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.4, delay: 0.3 }}
-              className="w-full h-full"
-            >
-              <HistoryPanel
-                open={historyOpen}
-                toggle={() => setHistoryOpen(!historyOpen)}
-                history={history}
-                load={loadHistoryItem}
-                del={deleteHistoryItem}
-                clearAll={clearAllHistory}
-              />
-            </motion.div>
-          </div>
+          {/* Right: History Sidebar (4 columns) - Sticky & Constrained */}
+          <aside className="hidden lg:block lg:col-span-4 xl:col-span-3 sticky top-6 h-[calc(100vh-3rem)] overflow-hidden flex flex-col">
+            
+            {/* The HistoryPanel is wrapped to force internal scrolling */}
+            <div className="flex-1 overflow-hidden border rounded-xl bg-card shadow-sm">
+                <HistoryPanel
+                  open={true} // Always open on desktop view
+                  toggle={() => setHistoryOpen(!historyOpen)}
+                  history={history}
+                  load={loadHistoryItem}
+                  del={deleteHistoryItem}
+                  clearAll={clearAllHistory}
+                />
+            </div>
+          </aside>
+
         </div>
       </div>
-    </motion.div>
+    </>
   );
 }

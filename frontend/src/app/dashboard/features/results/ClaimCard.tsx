@@ -101,20 +101,22 @@ export default function ClaimCard({ result, index, textSize, animationDelay }: C
              {result.source_quotes && result.source_quotes.length > 0 ? (
               <div className="space-y-3 pt-2">
                 {result.source_quotes.map((quote, idx) => (
-                  <div key={idx} className="relative rounded-lg border bg-card p-4 shadow-sm">
+                  <div key={idx} className="relative rounded-lg border bg-card p-4 shadow-sm min-w-0">
                     <div className="absolute -left-3 top-4 rounded-full bg-primary p-1 text-primary-foreground shadow-sm">
                       <CheckCircle2 className="h-3 w-3" />
                     </div>
-                    <blockquote className="border-l-2 border-primary/20 pl-4 text-sm italic text-muted-foreground">
-                      "{quote.quote}"
-                    </blockquote>
-                    <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-                      <span>— {quote.source}</span>
+                    <div className="min-w-0">
+                      <blockquote className="border-l-2 border-primary/20 pl-4 text-sm italic text-muted-foreground whitespace-normal break-words w-full min-w-0">
+                        "{quote.quote}"
+                      </blockquote>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground w-full flex-wrap gap-2 min-w-0">
+                      <span className="break-words min-w-0">{quote.source}</span>
                       <a
                         href={quote.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-primary hover:underline"
+                        className="flex items-center gap-1 text-primary hover:underline shrink-0"
                       >
                         Source <ExternalLink className="h-3 w-3" />
                       </a>

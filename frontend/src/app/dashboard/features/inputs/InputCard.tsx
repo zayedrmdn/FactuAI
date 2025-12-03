@@ -103,8 +103,8 @@ export default function InputCard({
   }, [setInput, onClear]);
 
   return (
-    <Card className="w-full shadow-sm border-border/60">
-      <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-6">
+    <Card className="w-full shadow-sm border-border/60 h-full flex flex-col">
+      <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-6 flex-shrink-0">
         <div className="space-y-1">
           <CardTitle className="text-xl font-semibold tracking-tight text-foreground">
             Investigation Console
@@ -124,7 +124,7 @@ export default function InputCard({
         </Button>
       </CardHeader>
 
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-6 flex-1">
         <InputTabs
           input={input}
           setInput={handleTextInput}

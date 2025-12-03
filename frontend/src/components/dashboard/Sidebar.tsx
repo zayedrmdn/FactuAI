@@ -1,11 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
-  History,
   User,
   LogOut,
   ChevronLeft,
@@ -13,6 +12,12 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface SidebarProps {
   collapsed: boolean;
@@ -26,11 +31,6 @@ const navItems = [
     icon: LayoutDashboard,
   },
   {
-    title: "History",
-    href: "/dashboard/history",
-    icon: History,
-  },
-  {
     title: "Profile",
     href: "/dashboard/profile",
     icon: User,
@@ -39,72 +39,109 @@ const navItems = [
 
 export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    router.push("/");
+    window.location.reload();
+  };
 
   return (
-    <aside
-      className={cn(
-        "fixed left-0 top-0 z-40 h-screen border-r bg-sidebar transition-all duration-300 ease-in-out",
-        collapsed ? "w-16" : "w-64"
-      )}
-    >
-      <div className="flex h-full flex-col">
+    <TooltipProvider delayDuration={0}>
+      <aside
+        className={cn(
+          "fixed left-0 top-0 z-40 flex h-screen flex-col border-r bg-sidebar transition-all duration-300 ease-in-out",
+          collapsed ? "w-16" : "w-64"
+        )}
+      >
         {/* Logo Area */}
-        <div className="flex h-16 items-center border-b border-sidebar-border px-4">
-          <div className="flex items-center gap-2 font-bold text-sidebar-foreground">
-            <ShieldCheck className="h-6 w-6 text-primary" />
+        <div className="flex h-16 shrink-0 items-center border-b border-sidebar-border px-4">
+          <Link href="/dashboard" className="flex items-center gap-2 font-bold text-sidebar-foreground">
+            <ShieldCheck className="h-6 w-6 shrink-0 text-primary" />
             {!collapsed && <span className="text-xl">FactuAI</span>}
-          </div>
+          </Link>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 space-y-1 p-2">
+        {/* Navigation - grows to fill space */}
+        <nav className="flex-1 space-y-1 overflow-y-auto p-2">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
-            return (
+            const linkContent = (
               <Link
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
                   isActive
                     ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                    : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
+                  collapsed && "justify-center px-2"
                 )}
               >
                 <item.icon className="h-5 w-5 shrink-0" />
                 {!collapsed && <span>{item.title}</span>}
               </Link>
             );
+
+            if (collapsed) {
+              return (
+                <Tooltip key={item.href}>
+                  <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
+                  <TooltipContent side="right" sideOffset={8}>
+                    {item.title}
+                  </TooltipContent>
+                </Tooltip>
+              );
+            }
+            return linkContent;
           })}
         </nav>
 
-        {/* Footer Actions */}
-        <div className="border-t border-sidebar-border p-2">
-          <Button
-            variant="ghost"
-            className={cn(
-              "w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-              collapsed && "justify-center px-2"
-            )}
-            onClick={() => {
-                // Handle logout
-                console.log("Logout clicked");
-            }}
-          >
-            <LogOut className="h-5 w-5 shrink-0" />
-            {!collapsed && <span>Log out</span>}
-          </Button>
-          
+        {/* Footer - pinned to bottom */}
+        <div className="mt-auto shrink-0 border-t border-sidebar-border p-2">
+          {collapsed ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="w-full text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right" sideOffset={8}>
+                Log out
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <Button
+              variant="ghost"
+              className="w-full justify-start gap-3 text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive"
+              onClick={handleLogout}
+            >
+              <LogOut className="h-5 w-5 shrink-0" />
+              <span>Log out</span>
+            </Button>
+          )}
+
+          {/* Collapse Toggle */}
           <Button
             variant="ghost"
             size="icon"
             className="mt-2 w-full text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
             onClick={onToggle}
           >
-             {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+            {collapsed ? (
+              <ChevronRight className="h-4 w-4" />
+            ) : (
+              <ChevronLeft className="h-4 w-4" />
+            )}
           </Button>
         </div>
-      </div>
-    </aside>
+      </aside>
+    </TooltipProvider>
   );
 }

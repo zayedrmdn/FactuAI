@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Loader2, User, Lock, Camera, Trash2 } from "lucide-react";
-import { UserAvatar } from "@/components/UserAvatar";
+import UserAvatar from "@/components/UserAvatar";
 
 const profileSchema = z.object({
   username: z.string().min(2, "Username must be at least 2 characters").optional(),
@@ -200,7 +200,7 @@ export default function ProfilePage() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex flex-col items-center gap-4 sm:flex-row">
-                <UserAvatar user={user} className="h-20 w-20 text-2xl" />
+                <UserAvatar />
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="picture" className="cursor-pointer">
                     <div className="flex items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm hover:bg-accent hover:text-accent-foreground">

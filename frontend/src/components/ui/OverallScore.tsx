@@ -51,8 +51,8 @@ export default function OverallScore({
   }
 
   return (
-    <div className={`max-w-xs mx-auto mb-6 ${className}`}>
-      <div className="w-24 h-24 mx-auto mb-3">
+    <div className={`w-full flex flex-col items-center ${className}`}>
+      <div className="w-24 h-24 mb-3">
         <CircularProgressbar
           value={score}
           text={`${score.toFixed(0)}%`}
@@ -66,7 +66,7 @@ export default function OverallScore({
         />
       </div>
 
-      <div className="text-center space-y-2">
+      <div className="w-full text-center space-y-2">
         <div className="text-xs font-medium text-gray-600 dark:text-gray-400">
           {title}
         </div>
@@ -75,25 +75,25 @@ export default function OverallScore({
         </div>
         
         {/* Legend */}
-        <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1 pt-2 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex flex-wrap justify-center gap-4 w-full mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400">
           <div className="flex items-center justify-center gap-1">
-            <div className="w-2 h-2 bg-green-600 rounded-full" />
+            <div className="w-2 h-2 bg-green-600 rounded-full shrink-0" />
             <span>Very High (≥80%)</span>
           </div>
           <div className="flex items-center justify-center gap-1">
-            <div className="w-2 h-2 bg-lime-600 rounded-full" />
+            <div className="w-2 h-2 bg-lime-600 rounded-full shrink-0" />
             <span>High (60-79%)</span>
           </div>
           <div className="flex items-center justify-center gap-1">
-            <div className="w-2 h-2 bg-amber-600 rounded-full" />
+            <div className="w-2 h-2 bg-amber-600 rounded-full shrink-0" />
             <span>Medium (40-59%)</span>
           </div>
           <div className="flex items-center justify-center gap-1">
-            <div className="w-2 h-2 bg-orange-600 rounded-full" />
+            <div className="w-2 h-2 bg-orange-600 rounded-full shrink-0" />
             <span>Low (20-39%)</span>
           </div>
           <div className="flex items-center justify-center gap-1">
-            <div className="w-2 h-2 bg-red-600 rounded-full" />
+            <div className="w-2 h-2 bg-red-600 rounded-full shrink-0" />
             <span>Very Low (&lt;20%)</span>
           </div>
         </div>
