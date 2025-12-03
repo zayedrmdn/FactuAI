@@ -14,7 +14,7 @@ interface VideoTabProps {
   onVideoProcessed: (text: string, filename?: string, videoUrl?: string) => void;
 }
 
-export default function VideoTab({ onVideoProcessed }: VideoTabProps) {
+export default function VideoTab({ onVideoProcessed }: Readonly<VideoTabProps>) {
   const [videoPreview, setVideoPreview] = useState<VideoPreviewData | null>(null);
   
   const { uploadVideo, isProcessing } = useVideoProcessing({
@@ -39,23 +39,7 @@ export default function VideoTab({ onVideoProcessed }: VideoTabProps) {
 
   return (
     <div className="space-y-4">
-      {!videoPreview ? (
-        <>
-          <FileDropZone
-            onFileSelect={uploadVideo}
-            accept="video/*"
-            isProcessing={isProcessing}
-            icon={VideoCameraIcon}
-            title="Drop a video here or click to upload"
-            description="Speech will be converted to text using AI speech recognition"
-            buttonText="Select Video File"
-          />
-          <ProcessingStatus 
-            isProcessing={isProcessing}
-            message="Processing video... This may take a few minutes"
-          />
-        </>
-      ) : (
+      {videoPreview ? (
         <div className="border rounded-lg p-4 space-y-4">
           <div className="flex items-center justify-between">
             <div>
@@ -74,13 +58,31 @@ export default function VideoTab({ onVideoProcessed }: VideoTabProps) {
             src={videoPreview.videoUrl}
             controls
             className="w-full max-h-40 rounded"
-          />
+          >
+            <track kind="captions" />
+          </video>
           
           <div className="text-xs text-muted-foreground">
             <p className="font-medium mb-1">Extracted Text:</p>
             <p className="line-clamp-3">{videoPreview.extractedText}</p>
           </div>
         </div>
+      ) : (
+        <>
+          <FileDropZone
+            onFileSelect={uploadVideo}
+            accept="video/*"
+            isProcessing={isProcessing}
+            icon={VideoCameraIcon}
+            title="Drop a video here or click to upload"
+            description="Speech will be converted to text using AI speech recognition"
+            buttonText="Select Video File"
+          />
+          <ProcessingStatus 
+            isProcessing={isProcessing}
+            message="Processing video... This may take a few minutes"
+          />
+        </>
       )}
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   FileText,
@@ -10,6 +10,9 @@ import {
   X,
   RefreshCw,
   Download,
+  CheckCircle2,
+  AlertTriangle,
+  XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -72,13 +75,11 @@ export default function ResultsView({
   openSettings,
   error,
   className = ""
-}: ResultsViewProps) {
+}: Readonly<ResultsViewProps>) {
 
-  // detect pure QA vs pure claim vs mixed
+  // detect pure QA mode
   const isQAOnly = results.length > 0 
     && results.every(r => isQAResult(r));
-  const isClaimOnly = results.length > 0 
-    && results.every(r => !isQAResult(r));
 
   // PDF export hook
   const { exportPdf } = usePdfExport({
@@ -99,11 +100,14 @@ export default function ResultsView({
       await navigator.clipboard.writeText(summary);
       toast.success("Summary copied to clipboard");
     } catch (err) {
+      console.error("Copy failed:", err);
       toast.error("Failed to copy to clipboard");
     }
   };
 
-  const copyResults = async () => {
+  /* Copy all results to clipboard - currently unused but kept for future use */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _copyResults = async () => {
     if (!results.length) {
       toast.error("No results to copy");
       return;
@@ -144,6 +148,7 @@ export default function ResultsView({
       await navigator.clipboard.writeText(text);
       toast.success("Results copied to clipboard");
     } catch (err) {
+      console.error("Copy failed:", err);
       toast.error("Failed to copy to clipboard");
     }
   };
@@ -167,6 +172,19 @@ export default function ResultsView({
       }
     }
   };
+
+  // Calculate stats
+  const stats = results.reduce((acc, r) => {
+    if (!isQAResult(r)) {
+      const label = r.label || 'unknown';
+      if (['true', 'mostly_true'].includes(label)) acc.trueCount++;
+      else if (['false', 'mostly_false'].includes(label)) acc.falseCount++;
+      else acc.mixedCount++;
+      acc.total++;
+    }
+    return acc;
+  }, { total: 0, trueCount: 0, falseCount: 0, mixedCount: 0 });
+
 
   // Show loading state
   if (loading) {
@@ -201,7 +219,7 @@ export default function ResultsView({
         <CardContent className="p-4 md:p-6">
           <ErrorState
             title="Analysis Failed"
-            message={error}
+            error={error}
             onRetry={onRetry}
           />
         </CardContent>
@@ -210,93 +228,141 @@ export default function ResultsView({
   }
 
   return (
-    <div className={cn("space-y-6 w-full max-w-7xl mx-auto", className)}>
-      {/* Summary Card */}
-      <Card className="border-border/60 shadow-sm">
-        <CardHeader className="flex flex-row items-start justify-between pb-4 p-4 md:p-6">
-          <div className="space-y-1">
-            <CardTitle className="text-xl font-semibold tracking-tight">Analysis Summary</CardTitle>
-            <CardDescription>
-              {updated ? `Last updated: ${new Date(updated).toLocaleString()}` : "Analysis complete"}
-            </CardDescription>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="icon" onClick={openSettings} title="Settings">
-              <Settings className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="icon" onClick={onClear} title="Clear Results">
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6 p-4 md:p-6">
-          {/* Scores */}
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
-            <div className="flex items-center justify-center rounded-lg border bg-muted/30 p-4 w-full min-w-0">
-              <OverallScore score={averageConfidence} />
-            </div>
-            {aiScore !== null && aiScore !== undefined && (
-              <div className="flex items-center justify-center rounded-lg border bg-muted/30 p-4 w-full min-w-0">
-                <AIDetectionScore score={aiScore} error={aiError} />
+    <div className={cn("flex flex-col w-full space-y-8 max-w-6xl mx-auto pb-10", className)}>
+      {/* Summary Card Grid Layout */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        {/* Column 1: Overall Score */}
+        <Card className="border border-slate-200 shadow-sm rounded-xl bg-white overflow-hidden flex flex-col">
+           <CardContent className="p-6 flex-1 flex flex-col items-center justify-center space-y-4">
+              <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Trust Score</h3>
+              <div className="scale-110">
+                <OverallScore score={averageConfidence} />
               </div>
-            )}
-          </div>
+              {aiScore !== null && aiScore !== undefined && (
+                 <div className="pt-2 w-full border-t border-slate-100 mt-2">
+                    <AIDetectionScore score={aiScore} error={aiError} />
+                 </div>
+              )}
+           </CardContent>
+        </Card>
 
-          {/* Summary Text */}
-          <div className="rounded-lg bg-muted/50 p-4 min-w-0">
-            <p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap break-words">
-              {summary || "No summary available."}
-            </p>
-          </div>
+        {/* Column 2: Stats & Breakdown */}
+        <Card className="border border-slate-200 shadow-sm rounded-xl bg-white overflow-hidden flex flex-col">
+           <CardContent className="p-6 flex-1 flex flex-col justify-center space-y-6">
+              <div className="space-y-1">
+                <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Analysis Breakdown</h3>
+                <p className="text-2xl font-bold text-slate-900">{stats.total} <span className="text-base font-normal text-slate-500">Claims Analyzed</span></p>
+              </div>
+              
+              <div className="space-y-3">
+                 <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2 text-slate-700">
+                       <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                       <span>Verified / True</span>
+                    </div>
+                    <span className="font-medium text-slate-900">{stats.trueCount}</span>
+                 </div>
+                 <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2 text-slate-700">
+                       <XCircle className="h-4 w-4 text-rose-500" />
+                       <span>False / Misleading</span>
+                    </div>
+                    <span className="font-medium text-slate-900">{stats.falseCount}</span>
+                 </div>
+                 <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2 text-slate-700">
+                       <AlertTriangle className="h-4 w-4 text-amber-500" />
+                       <span>Mixed / Unclear</span>
+                    </div>
+                    <span className="font-medium text-slate-900">{stats.mixedCount}</span>
+                 </div>
+              </div>
+           </CardContent>
+        </Card>
 
-          {/* Actions */}
-          <div className="flex flex-wrap gap-2">
-            <Button variant="secondary" size="sm" onClick={copySummary}>
-              <Copy className="mr-2 h-4 w-4" />
-              Copy Summary
-            </Button>
-            <Button variant="secondary" size="sm" onClick={copyResults}>
-              <FileText className="mr-2 h-4 w-4" />
-              Copy Details
-            </Button>
-            <Button variant="secondary" size="sm" onClick={() => exportPdf()}>
-              <Download className="mr-2 h-4 w-4" />
-              Export PDF
-            </Button>
-            <Button variant="secondary" size="sm" onClick={shareResults}>
-              <Share2 className="mr-2 h-4 w-4" />
-              Share
-            </Button>
-            <Button variant="outline" size="sm" onClick={onRetry} className="ml-auto">
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Retry
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+        {/* Column 3: Actions & Metadata */}
+        <Card className="border border-slate-200 shadow-sm rounded-xl bg-slate-50/50 overflow-hidden flex flex-col">
+           <CardContent className="p-6 flex-1 flex flex-col justify-between space-y-4">
+              <div className="space-y-2">
+                 <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Actions</h3>
+                    <div className="flex gap-1">
+                       <Button variant="ghost" size="icon" onClick={openSettings} className="h-8 w-8 text-slate-400 hover:text-slate-700">
+                         <Settings className="h-4 w-4" />
+                       </Button>
+                       <Button variant="ghost" size="icon" onClick={onClear} className="h-8 w-8 text-slate-400 hover:text-rose-600 hover:bg-rose-50">
+                         <X className="h-4 w-4" />
+                       </Button>
+                    </div>
+                 </div>
+                 <p className="text-xs text-slate-400">
+                   Last updated: {updated ? new Date(updated).toLocaleTimeString() : "Just now"}
+                 </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                 <Button variant="outline" size="sm" onClick={copySummary} className="w-full bg-white">
+                    <Copy className="mr-2 h-3.5 w-3.5" /> Copy
+                 </Button>
+                 <Button variant="outline" size="sm" onClick={() => exportPdf()} className="w-full bg-white">
+                    <Download className="mr-2 h-3.5 w-3.5" /> PDF
+                 </Button>
+                 <Button variant="outline" size="sm" onClick={shareResults} className="w-full bg-white col-span-2">
+                    <Share2 className="mr-2 h-3.5 w-3.5" /> Share Report
+                 </Button>
+              </div>
+              
+              <Button variant="default" size="sm" onClick={onRetry} className="w-full mt-auto">
+                <RefreshCw className="mr-2 h-3.5 w-3.5" /> New Analysis
+              </Button>
+           </CardContent>
+        </Card>
+      </div>
+
+      {/* Executive Summary Text Block */}
+      {summary && (
+        <Card className="border border-slate-200 shadow-sm rounded-xl bg-white">
+           <CardContent className="p-6">
+              <h4 className="text-sm font-semibold text-slate-900 mb-3 uppercase tracking-wider flex items-center gap-2">
+                 <FileText className="h-4 w-4 text-slate-400" />
+                 Executive Summary
+              </h4>
+              <p className="text-base leading-relaxed text-slate-700 whitespace-pre-wrap break-words">
+                 {summary}
+              </p>
+           </CardContent>
+        </Card>
+      )}
 
       {/* Detailed Results */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold tracking-tight">Detailed Findings</h3>
-        {results.map((result, idx) => (
-          isQAResult(result) ? (
-            <QAResultCard
-              key={idx}
-              result={result}
-              index={idx}
-              textSize={prefs.textSize}
-              animationDelay={idx * 100}
-            />
-          ) : (
-            <ClaimCard
-              key={idx}
-              result={result}
-              index={idx}
-              textSize={prefs.textSize}
-              animationDelay={idx * 100}
-            />
-          )
-        ))}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between px-1">
+          <h3 className="text-lg font-semibold text-slate-900">Detailed Findings</h3>
+          <span className="text-sm text-slate-500">{results.length} Claims Analyzed</span>
+        </div>
+        
+        <div className="flex flex-col space-y-6">
+          {results.map((result, idx) => (
+            isQAResult(result) ? (
+              <QAResultCard
+                key={`qa-${result.question.slice(0, 50)}-${idx}`}
+                result={result}
+                index={idx}
+                textSize={prefs.textSize}
+                animationDelay={idx * 100}
+              />
+            ) : (
+              <ClaimCard
+                key={`claim-${result.claim.slice(0, 50)}-${idx}`}
+                result={result}
+                index={idx}
+                textSize={prefs.textSize}
+                animationDelay={idx * 100}
+              />
+            )
+          ))}
+        </div>
       </div>
     </div>
   );

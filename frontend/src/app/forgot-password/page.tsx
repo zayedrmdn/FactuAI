@@ -50,6 +50,7 @@ export default function ForgotPasswordPage() {
         setError(result.message || "An error occurred. Please try again.");
       }
     } catch (err) {
+      console.error("Forgot password request failed:", err);
       setError("Network error. Please check your connection and try again.");
     } finally {
       setIsSubmitting(false);
@@ -105,16 +106,14 @@ export default function ForgotPasswordPage() {
               </h2>
 
               <p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
-                We've sent a password reset link to{" "}
-                <span className="font-medium text-gray-900 dark:text-white">
-                  {getValues("email")}
-                </span>
-                . Click the link in the email to reset your password.
+                We&apos;ve sent a password reset link to{" "}
+                <span className="font-medium text-gray-900 dark:text-white">{getValues("email")}</span>.
+                Click the link in the email to reset your password.
               </p>
 
               <div className="space-y-4">
                 <div className="text-sm text-gray-500 dark:text-gray-400">
-                  Didn't receive the email? Check your spam folder or try again.
+                  Didn&apos;t receive the email? Check your spam folder or try again.
                 </div>
 
                 <Link
@@ -190,7 +189,7 @@ export default function ForgotPasswordPage() {
                 Forgot Password?
               </h2>
               <p className="text-gray-600 dark:text-gray-400 text-sm">
-                Enter your email and we'll send you a reset link
+                Enter your email and we&apos;ll send you a reset link
               </p>
             </div>
 

@@ -21,6 +21,13 @@ interface Props {
   isDark: boolean;
 }
 
+/** Get text size label */
+function getTextSizeLabel(opt: "sm" | "md" | "lg"): string {
+  if (opt === "sm") return "Small";
+  if (opt === "md") return "Medium";
+  return "Large";
+}
+
 export default function SettingsDialog({
   open,
   onOpenChange,
@@ -28,7 +35,7 @@ export default function SettingsDialog({
   savePrefs,
   toggleTheme,
   isDark,
-}: Props) {
+}: Readonly<Props>) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
@@ -44,9 +51,9 @@ export default function SettingsDialog({
               <button
                 onClick={() => toggleTheme(false)}
                 className={`flex items-center gap-2 px-3 py-2 rounded border transition ${
-                  !isDark
-                    ? "bg-blue-50 border-blue-300 text-blue-700"
-                    : "border-gray-300 hover:bg-gray-50"
+                  isDark
+                    ? "border-gray-300 hover:bg-gray-50"
+                    : "bg-blue-50 border-blue-300 text-blue-700"
                 }`}
               >
                 <SunIcon className="w-4 h-4" />
@@ -82,11 +89,7 @@ export default function SettingsDialog({
                     className="w-4 h-4"
                   />
                   <span className="capitalize">
-                    {opt === "sm"
-                      ? "Small"
-                      : opt === "md"
-                      ? "Medium"
-                      : "Large"}
+                    {getTextSizeLabel(opt)}
                   </span>
                 </label>
               ))}

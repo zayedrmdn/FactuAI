@@ -57,49 +57,27 @@ def process_progressive(text: str, include_summary: bool):
         return f"data: {json.dumps({'type': event_type, **data})}\n\n"
 
     try:
-        yield send_event("phase", {"message": "Extracting claims...", "progress": 10})
-        time.sleep(0.1)
-
-        bundle = orchestrator.check_text(text, max_claims=5)
-
-        if "validation_error" in bundle:
-            yield send_event("error", {"message": bundle["validation_error"]})
-            yield send_event("complete", {})
-            return
-
-        claims_results = bundle.get("results", [])
-        summary_text = bundle.get("summary", "")
-
-        if not claims_results:
-            yield send_event("phase", {"message": "No claims found", "progress": 100})
-            yield send_event("complete", {})
-            return
-
-        # Phase 2: send summary if requested
-        if include_summary and summary_text:
-            yield send_event("phase", {"message": "Summary generated", "progress": 25})
-            yield send_event("summary", {"summary": summary_text})
-            time.sleep(0.1)
-
-        # Phase 3: stream claim results
-        progress_start = 25 if include_summary else 15
-        progress_end = 95
-        total = len(claims_results)
-
-        for idx, claim_obj in enumerate(claims_results, start=1):
-            claim_progress = progress_start + (idx * (progress_end - progress_start) / total)
-
-            yield send_event(
-                "phase",
-                {
-                    "message": f"Processing claim {idx}...",
-                    "progress": claim_progress,
-                    "claim_index": idx - 1,
-                },
-            )
-
-            yield send_event("result", {"result": claim_obj})
-            time.sleep(0.1)
+        # Use the generator version of check_text
+        for event in orchestrator.check_text_generator(text, max_claims=5):
+            
+            if event["type"] == "phase":
+                yield send_event("phase", {
+                    "message": event["message"],
+                    "progress": event["progress"],
+                    "claim_index": event.get("claim_index")
+                })
+                
+            elif event["type"] == "summary":
+                if include_summary:
+                    yield send_event("summary", {"summary": event["summary"]})
+                    
+            elif event["type"] == "result":
+                yield send_event("result", {"result": event["result"]})
+                
+            elif event["type"] == "error":
+                yield send_event("error", {"message": event["message"]})
+                yield send_event("complete", {})
+                return
 
         # Phase 4: complete
         yield send_event("phase", {"message": "Complete!", "progress": 100})
@@ -107,5 +85,6 @@ def process_progressive(text: str, include_summary: bool):
         yield send_event("complete", {})
 
     except Exception as e:
-        logger.debug(f"[API] Error in progressive processing: {e}")
+        logger.exception(f"[API] Error in progressive processing: {e}")
         yield send_event("error", {"message": str(e)})
+        yield send_event("complete", {})

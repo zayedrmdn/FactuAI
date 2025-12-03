@@ -39,6 +39,10 @@ The project enforces a strict design system using Tailwind CSS variables defined
 ### State Management
 
 - **Dashboard Layout State**: Managed locally in `layout.tsx` (sidebar collapse).
+
+## Troubleshooting
+
+- If the backend crashes on Windows with `UnicodeEncodeError` (charmap codec errors) when printing logs, this usually means a message contains non-ASCII characters the console can't render. The backend now sanitizes log output to ASCII with replacement to avoid the crash. To preserve special characters in logs, configure the console to use UTF-8 or redirect logs to a UTF-8 encoded file.
 - **Fact-Check State**: Managed via `useFactCheck` hook (preserved).
 - **User State**: Persisted in `localStorage` and managed via `useState` in Profile/Auth pages.
 

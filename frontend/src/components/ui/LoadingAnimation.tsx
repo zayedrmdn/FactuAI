@@ -1,10 +1,10 @@
 "use client";
 
 interface LoadingAnimationProps {
-  phase: string;
-  progress: number;
-  currentClaim?: number;
-  className?: string;
+  readonly phase: string;
+  readonly progress: number;
+  readonly currentClaim?: number;
+  readonly className?: string;
 }
 
 export default function LoadingAnimation({ 
@@ -12,7 +12,7 @@ export default function LoadingAnimation({
   progress, 
   currentClaim,
   className = ""
-}: LoadingAnimationProps) {
+}: Readonly<LoadingAnimationProps>) {
   return (
     <div className={`relative p-8 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg border border-purple-200 dark:border-purple-700 ${className}`}>
       <div className="absolute inset-0 bg-gradient-to-r from-purple-400/10 to-blue-400/10 rounded-lg animate-pulse" />

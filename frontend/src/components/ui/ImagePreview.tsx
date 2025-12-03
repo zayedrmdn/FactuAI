@@ -5,22 +5,95 @@ import "react-circular-progressbar/dist/styles.css";
 import { ArrowPathIcon, ShieldCheckIcon, PhotoIcon, Cog6ToothIcon } from "@heroicons/react/24/outline";
 
 interface ImagePreviewData {
-  url: string;
-  aiScore: number | null;
-  aiError?: string;
-  extractedText: string;
+  readonly url: string;
+  readonly aiScore: number | null;
+  readonly aiError?: string;
+  readonly extractedText: string;
 }
 
 interface Props {
-  imagePreview: ImagePreviewData;
-  validationResult: { isValid: boolean };
-  input: string;
-  loading: null | "summary" | "factcheck";
-  onRetry: () => void;
-  onFactCheck: () => void;
-  onClear: () => void;
-  openSettings: () => void;
+  readonly imagePreview: ImagePreviewData;
+  readonly validationResult: { readonly isValid: boolean };
+  readonly input: string;
+  readonly loading: null | "summary" | "factcheck";
+  readonly onRetry: () => void;
+  readonly onFactCheck: () => void;
+  readonly onClear: () => void;
+  readonly openSettings: () => void;
 }
+
+/** Helper function to get color based on AI score */
+function getScoreColor(score: number): string {
+  if (score >= 70) return "#dc2626";
+  if (score >= 30) return "#d97706";
+  return "#16a34a";
+}
+
+/** Helper function to get label based on AI score */
+function getScoreLabel(score: number): string {
+  if (score >= 70) return "Likely AI";
+  if (score >= 30) return "Possibly AI";
+  return "Likely Real";
+}
+
+/** Sub-component for AI detection error state */
+function AIDetectionError({ error }: { readonly error: string }) {
+  return (
+    <div className="text-center text-sm text-muted-foreground p-4 border rounded-lg">
+      <p className="font-medium mb-1">AI Detection</p>
+      <p className="text-xs text-red-500">{error}</p>
+    </div>
+  );
+}
+
+/** Sub-component for AI score display */
+function AIScoreDisplay({ score }: { readonly score: number }) {
+  const color = getScoreColor(score);
+  const label = getScoreLabel(score);
+  
+  return (
+    <div className="w-32 h-32">
+      <CircularProgressbar
+        value={score}
+        text={`${score.toFixed(1)}%`}
+        styles={buildStyles({
+          pathColor: color,
+          textColor: color,
+          trailColor: "#e5e7eb",
+        })}
+      />
+      <div className="text-center mt-2">
+        <div className="text-sm font-medium" style={{ color }}>
+          {label}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Sub-component for AI detection unavailable state */
+function AIDetectionUnavailable() {
+  return (
+    <div className="text-center text-sm text-muted-foreground p-4">
+      AI detection not available
+    </div>
+  );
+}
+
+/** Sub-component for rendering AI detection section */
+function AIDetectionSection({ imagePreview }: { readonly imagePreview: ImagePreviewData }) {
+  if (imagePreview.aiError) {
+    return <AIDetectionError error={imagePreview.aiError} />;
+  }
+  
+  if (imagePreview.aiScore !== null) {
+    return <AIScoreDisplay score={imagePreview.aiScore} />;
+  }
+  
+  return <AIDetectionUnavailable />;
+}
+
+const FALLBACK_IMAGE = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE2MCIgdmlld0JveD0iMCAwIDIwMCAxNjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTYwIiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjEwMCIgeT0iODAiIGZpbGw9IiM5Q0E0QUYiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5JbWFnZSBub3QgYXZhaWxhYmxlPC90ZXh0Pgo8L3N2Zz4=";
 
 export default function ImagePreview({
   imagePreview,
@@ -31,8 +104,12 @@ export default function ImagePreview({
   onFactCheck,
   onClear,
   openSettings,
-}: Props) {
+}: Readonly<Props>) {
   const hasExtractedText = imagePreview.extractedText && imagePreview.extractedText.trim().length > 0;
+
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    e.currentTarget.src = FALLBACK_IMAGE;
+  };
 
   return (
     <Card>
@@ -57,11 +134,9 @@ export default function ImagePreview({
             <div className="border rounded-lg overflow-hidden">
               <img
                 src={imagePreview.url}
-                alt="Processed image"
+                alt="Uploaded content for analysis"
                 className="w-full h-64 object-contain bg-gray-50 dark:bg-gray-900"
-                onError={(e) => {
-                  e.currentTarget.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE2MCIgdmlld0JveD0iMCAwIDIwMCAxNjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTYwIiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjEwMCIgeT0iODAiIGZpbGw9IiM5Q0E0QUYiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5JbWFnZSBub3QgYXZhaWxhYmxlPC90ZXh0Pgo8L3N2Zz4=";
-                }}
+                onError={handleImageError}
               />
             </div>
           </div>
@@ -70,39 +145,7 @@ export default function ImagePreview({
           <div className="space-y-3">
             <h3 className="text-sm font-medium text-muted-foreground">AI Detection</h3>
             <div className="flex justify-center">
-              {imagePreview.aiError ? (
-                <div className="text-center text-sm text-muted-foreground p-4 border rounded-lg">
-                  <p className="font-medium mb-1">AI Detection</p>
-                  <p className="text-xs text-red-500">{imagePreview.aiError}</p>
-                </div>
-              ) : imagePreview.aiScore !== null ? (
-                <div className="w-32 h-32">
-                  <CircularProgressbar
-                    value={imagePreview.aiScore}
-                    text={`${imagePreview.aiScore.toFixed(1)}%`}
-                    styles={buildStyles({
-                      pathColor: imagePreview.aiScore >= 70 ? "#dc2626" : 
-                               imagePreview.aiScore >= 30 ? "#d97706" : "#16a34a",
-                      textColor: imagePreview.aiScore >= 70 ? "#dc2626" : 
-                               imagePreview.aiScore >= 30 ? "#d97706" : "#16a34a",
-                      trailColor: "#e5e7eb",
-                    })}
-                  />
-                  <div className="text-center mt-2">
-                    <div className="text-sm font-medium" style={{ 
-                      color: imagePreview.aiScore >= 70 ? "#dc2626" : 
-                             imagePreview.aiScore >= 30 ? "#d97706" : "#16a34a" 
-                    }}>
-                      {imagePreview.aiScore >= 70 ? "Likely AI" :
-                       imagePreview.aiScore >= 30 ? "Possibly AI" : "Likely Real"}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center text-sm text-muted-foreground p-4">
-                  AI detection not available
-                </div>
-              )}
+              <AIDetectionSection imagePreview={imagePreview} />
             </div>
           </div>
         </div>

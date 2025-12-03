@@ -21,8 +21,6 @@ export function useAppState() {
     summary,
     updated,
     factCheckError,
-    aiScore,
-    aiError,
     avgConfidence,
     handleFactCheck: baseHandleFactCheck,
     handleCancel,
@@ -63,7 +61,7 @@ export function useAppState() {
     
     // Auto-save to history if input exists
     if (data?.imageData && input.trim()) {
-      saveImageToHistory(input, data.imageData.url, data.imageData.aiScore, data.imageData.aiError);
+      saveImageToHistory(input, data.imageData.url, data.imageData.aiScore);
     }
     if (data?.videoData && input.trim()) {
       saveVideoToHistory(input, data.videoData.filename, data.videoData.videoUrl);
@@ -122,16 +120,19 @@ export function useAppState() {
     setInput(item.input);
     
     // Set input type and data
-    const data: any = {};
+    const data: {
+      imageData?: { url: string; aiScore: number | null; aiError?: string };
+      videoData?: { filename: string; videoUrl?: string };
+    } = {};
     if (item.type === "image" && item.metadata?.imageUrl) {
       data.imageData = {
         url: item.metadata.imageUrl,
-        aiScore: item.metadata.aiScore,
+        aiScore: item.metadata.aiScore ?? null,
       };
     }
     if (item.type === "video" && item.metadata?.videoUrl) {
       data.videoData = {
-        filename: item.metadata.filename,
+        filename: item.metadata.filename ?? "",
         videoUrl: item.metadata.videoUrl,
       };
     }

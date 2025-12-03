@@ -1,7 +1,7 @@
 import { ExtractTextResponse, VideoTextResponse, FactCheckResponse } from '../types/api';
 
 class APIService {
-  private baseURL = 'http://localhost:5000/api';
+  private readonly baseURL = 'http://localhost:5000/api';
   
   private async makeRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const response = await fetch(`${this.baseURL}/${endpoint}`, {
@@ -19,7 +19,7 @@ class APIService {
     return response.json();
   }
   
-  async uploadFile(endpoint: string, file: File, fileFieldName: string = 'file'): Promise<any> {
+  async uploadFile<T = unknown>(endpoint: string, file: File, fileFieldName: string = 'file'): Promise<T> {
     const formData = new FormData();
     formData.append(fileFieldName, file);
     

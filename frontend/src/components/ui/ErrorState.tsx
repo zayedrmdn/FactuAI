@@ -3,13 +3,13 @@
 import { ExclamationTriangleIcon, ArrowPathIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
 interface ErrorStateProps {
-  error: string;
-  onRetry?: () => void;
-  onClear?: () => void;
-  title?: string;
-  className?: string;
-  retryText?: string;
-  clearText?: string;
+  readonly error: string;
+  readonly onRetry?: () => void;
+  readonly onClear?: () => void;
+  readonly title?: string;
+  readonly className?: string;
+  readonly retryText?: string;
+  readonly clearText?: string;
 }
 
 export default function ErrorState({ 
@@ -20,7 +20,7 @@ export default function ErrorState({
   className = "",
   retryText = "Try Again",
   clearText = "Clear"
-}: ErrorStateProps) {
+}: Readonly<ErrorStateProps>) {
   return (
     <div className={`relative p-8 bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 rounded-lg border border-red-200 dark:border-red-700 animate-in slide-in-from-top duration-500 ${className}`}>
       <div className="text-center space-y-6">

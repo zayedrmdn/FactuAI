@@ -77,7 +77,7 @@ def build_evidence(
 
         # 4) rank all candidates (so we can attach scores for quoting)
         ranked = rank_sentences(claim, [c["text"] for c in candidates])
-        score_map = {text: score for text, score in ranked}
+        score_map = dict(ranked)
         for c in candidates:
             c["score"] = score_map.get(c["text"], 0.0)
 

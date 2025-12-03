@@ -7,10 +7,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Loader2, User, Lock, Camera, Trash2 } from "lucide-react";
+import { Loader2, Camera, Trash2 } from "lucide-react";
 import UserAvatar from "@/components/UserAvatar";
+import { useUser } from "../hooks/useUser";
 
 const profileSchema = z.object({
   username: z.string().min(2, "Username must be at least 2 characters").optional(),
@@ -30,8 +31,7 @@ type ProfileFormData = z.infer<typeof profileSchema>;
 type PasswordFormData = z.infer<typeof passwordSchema>;
 
 export default function ProfilePage() {
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, loading: userLoading, refetch } = useUser();
   const [uploading, setUploading] = useState(false);
 
   const profileForm = useForm<ProfileFormData>({
@@ -43,40 +43,22 @@ export default function ProfilePage() {
   });
 
   useEffect(() => {
-    loadUserProfile();
-  }, []);
-
-  const loadUserProfile = async () => {
-    try {
-      const userData = localStorage.getItem("user");
-      if (!userData) {
-        window.location.href = "/login";
-        return;
-      }
-
-      const userInfo = JSON.parse(userData);
-      const response = await fetch(`http://localhost:5000/api/profile/${userInfo.id}`);
-      
-      if (response.ok) {
-        const profileData = await response.json();
-        setUser(profileData);
-        profileForm.reset({
-          username: profileData.username || "",
-          email: profileData.email,
-        });
-      } else {
-        toast.error("Failed to load profile");
-      }
-    } catch (error) {
-      toast.error("Error loading profile");
-    } finally {
-      setLoading(false);
+    if (user) {
+      profileForm.reset({
+        username: user.username || "",
+        email: user.email,
+      });
     }
-  };
+  }, [user, profileForm]);
 
   const updateProfile = async (data: ProfileFormData) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/profile/${user.id}`, {
+      if (!user) {
+        toast.error("Not logged in");
+        return;
+      }
+      const userId = user.id;
+      const response = await fetch(`/api/profile/${userId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -86,20 +68,26 @@ export default function ProfilePage() {
 
       if (response.ok) {
         toast.success("Profile updated successfully");
-        setUser(result.user);
-        localStorage.setItem("user", JSON.stringify(result.user));
-        window.dispatchEvent(new Event('profileUpdated'));
+        // Refetch user data to update the global state
+        refetch();
+        globalThis.dispatchEvent(new Event('profileUpdated'));
       } else {
         toast.error(result.error || "Failed to update profile");
       }
-    } catch (error) {
+    } catch (err) {
+      console.error("Profile update error:", err);
       toast.error("Error updating profile");
     }
   };
 
   const changePassword = async (data: PasswordFormData) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/profile/${user.id}/password`, {
+      if (!user) {
+        toast.error("Not logged in");
+        return;
+      }
+      const userId = user.id;
+      const response = await fetch(`/api/profile/${userId}/password`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -116,7 +104,8 @@ export default function ProfilePage() {
       } else {
         toast.error(result.error || "Failed to change password");
       }
-    } catch (error) {
+    } catch (err) {
+      console.error("Password change error:", err);
       toast.error("Error changing password");
     }
   };
@@ -124,13 +113,18 @@ export default function ProfilePage() {
   const handlePictureUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    if (!user) {
+      toast.error("Not logged in");
+      return;
+    }
 
     const formData = new FormData();
     formData.append("file", file);
 
     setUploading(true);
     try {
-      const response = await fetch(`http://localhost:5000/api/profile/${user.id}/picture`, {
+      const userId = user.id;
+      const response = await fetch(`/api/profile/${userId}/picture`, {
         method: "POST",
         body: formData,
       });
@@ -139,14 +133,14 @@ export default function ProfilePage() {
 
       if (response.ok) {
         toast.success("Profile picture updated successfully");
-        const updatedUser = result.user || { ...user, profile_picture: result.profile_picture };
-        setUser(updatedUser);
-        localStorage.setItem("user", JSON.stringify(updatedUser));
-        window.dispatchEvent(new Event('profileUpdated'));
+        // Refetch user data to update the global state
+        refetch();
+        globalThis.dispatchEvent(new Event('profileUpdated'));
       } else {
         toast.error(result.error || "Failed to upload picture");
       }
-    } catch (error) {
+    } catch (err) {
+      console.error("Picture upload error:", err);
       toast.error("Error uploading picture");
     } finally {
       setUploading(false);
@@ -155,7 +149,12 @@ export default function ProfilePage() {
 
   const deletePicture = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/api/profile/${user.id}/picture`, {
+      if (!user) {
+        toast.error("Not logged in");
+        return;
+      }
+      const userId = user.id;
+      const response = await fetch(`/api/profile/${userId}/picture`, {
         method: "DELETE",
       });
 
@@ -163,19 +162,19 @@ export default function ProfilePage() {
 
       if (response.ok) {
         toast.success("Profile picture deleted successfully");
-        const updatedUser = { ...user, profile_picture: null };
-        setUser(updatedUser);
-        localStorage.setItem("user", JSON.stringify(updatedUser));
-        window.dispatchEvent(new Event('profileUpdated'));
+        // Refetch user data to update the global state
+        refetch();
+        globalThis.dispatchEvent(new Event('profileUpdated'));
       } else {
         toast.error(result.error || "Failed to delete picture");
       }
-    } catch (error) {
+    } catch (err) {
+      console.error("Picture delete error:", err);
       toast.error("Error deleting picture");
     }
   };
 
-  if (loading) {
+  if (userLoading || !user) {
     return (
       <div className="flex h-[50vh] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

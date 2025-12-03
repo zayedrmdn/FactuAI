@@ -8,7 +8,7 @@ import ResultsView from "./features/results/ResultsView";
 import HistoryPanel from "./features/history/HistoryPanel";
 import { useSettings } from "./hooks/useSettings";
 import { useAppState } from "./hooks/useAppState";
-import { RotateCcw, FileText, Sparkles } from "lucide-react"; // Added icons for better UI
+import { RotateCcw, FileText } from "lucide-react"; // Added icons for better UI
 
 export default function DashboardPage() {
   const { prefs, savePrefs, isDark, toggleTheme, isLoaded: settingsLoaded } = useSettings();
@@ -34,8 +34,6 @@ export default function DashboardPage() {
     factCheckError,
     
     // History state
-    historyOpen,
-    setHistoryOpen,
     history,
     
     // Handlers
@@ -170,8 +168,6 @@ export default function DashboardPage() {
             {/* The HistoryPanel is wrapped to force internal scrolling */}
             <div className="flex-1 overflow-hidden border rounded-xl bg-card shadow-sm">
                 <HistoryPanel
-                  open={true} // Always open on desktop view
-                  toggle={() => setHistoryOpen(!historyOpen)}
                   history={history}
                   load={loadHistoryItem}
                   del={deleteHistoryItem}

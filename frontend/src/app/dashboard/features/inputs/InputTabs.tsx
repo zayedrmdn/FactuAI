@@ -5,7 +5,6 @@ import TextTab from './TextInput/TextTab';
 import ImageTab from './ImageInput/ImageTab';
 import VideoTab from './VideoInput/VideoTab';
 import { InputType, TextSize } from '../../types/ui';
-import { validateBasic } from '../../utils/validation';
 import { cn } from "@/lib/utils";
 
 interface InputTabsProps {
@@ -32,9 +31,8 @@ export default function InputTabs({
   onImageProcessed,
   onVideoProcessed,
   onInputTypeChange
-}: InputTabsProps) {
+}: Readonly<InputTabsProps>) {
   const [activeTab, setActiveTab] = useState<InputType>('text');
-  const validationResult = validateBasic(input);
 
   const handleTabChange = (tabId: InputType) => {
     setActiveTab(tabId);

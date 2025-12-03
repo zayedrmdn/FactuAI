@@ -87,8 +87,7 @@ export function useHistory() {
   const saveImageToHistory = useCallback((
     text: string,
     imageUrl: string,
-    aiScore: number | null,
-    aiError?: string
+    aiScore: number | null
   ) => {
     if (!isHistoryLoaded) return;
 

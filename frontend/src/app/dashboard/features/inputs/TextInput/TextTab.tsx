@@ -13,7 +13,7 @@ interface PasteUploadClearProps {
   disabled?: boolean;
 }
 
-function PasteUploadClear({ onPaste, onUpload, onClear, disabled }: PasteUploadClearProps) {
+function PasteUploadClear({ onPaste, onUpload, onClear, disabled }: Readonly<PasteUploadClearProps>) {
   return (
     <div className="flex gap-2">
       <button
@@ -51,7 +51,7 @@ interface TextTabProps {
   onClear: () => void;
 }
 
-export default function TextTab({ input, setInput, textSize, onClear }: TextTabProps) {
+export default function TextTab({ input, setInput, textSize, onClear }: Readonly<TextTabProps>) {
   const validationResult = validateBasic(input);
   const wordCount = input.trim().split(/\s+/).filter(Boolean).length;
   const showValidationError = input.trim().length > 0 && validationResult.error;
@@ -79,8 +79,9 @@ export default function TextTab({ input, setInput, textSize, onClear }: TextTabP
     const inputEl = document.createElement("input");
     inputEl.type = "file";
     inputEl.accept = ".txt,.pdf";
-    inputEl.onchange = (e: any) => {
-      const file = e.target.files?.[0];
+    inputEl.onchange = (e: Event) => {
+      const target = e.target as HTMLInputElement;
+      const file = target.files?.[0];
       if (file) handleFile(file);
     };
     inputEl.click();

@@ -45,16 +45,16 @@ export default function HeroSection() {
             {/* Trust Indicators */}
             <div className="flex flex-wrap gap-4 text-sm text-gray-500 dark:text-gray-400">
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                Built with AI (BERT, T5)
+                <span className="w-2 h-2 bg-green-500 rounded-full" aria-hidden="true"></span>
+                <span>Built with AI (BERT, T5)</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                Research-backed
+                <span className="w-2 h-2 bg-blue-500 rounded-full" aria-hidden="true"></span>
+                <span>Research-backed</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
-                Privacy-focused
+                <span className="w-2 h-2 bg-purple-500 rounded-full" aria-hidden="true"></span>
+                <span>Privacy-focused</span>
               </div>
             </div>
           </div>
