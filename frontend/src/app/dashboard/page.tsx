@@ -87,7 +87,7 @@ export default function DashboardPage() {
       />
 
       {/* Main Content Grid - constrained max-width for large screens */}
-      <div className="p-4 lg:p-8 max-w-[1920px] mx-auto">
+      <div className="p-4 lg:p-8 max-w-[1920px] mx-auto flex flex-col h-full">
         {/* Context Header */}
         <div className="mb-6">
           <h1 className="text-2xl font-semibold tracking-tight">Investigation Console</h1>
@@ -96,10 +96,10 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 items-start">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 items-start flex-1">
           
           {/* Left: Main Workspace (8 columns) */}
-          <main className="lg:col-span-8 xl:col-span-9 flex flex-col gap-6">
+          <main className="lg:col-span-8 xl:col-span-9 flex flex-col gap-6 h-full">
             
             {showResults ? (
               <ResultsView
