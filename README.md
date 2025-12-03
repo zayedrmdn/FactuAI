@@ -128,7 +128,7 @@ All models are trained with optimized preprocessing and hyperparameter tuning (O
 - ✅ Dataset preprocessing (`LIAR2`, `MultiNews`)
 - ✅ Tokenization, padding, vocabulary
 - ✅ Model fine-tuning with Hugging Face
-- ✅ React-based frontend with login/register
+- ✅ Production-ready Dashboard with App Shell and modern UI
 - ✅ Flask backend with PostgreSQL integration
 - ✅ Dual run mode support (Cloud/Local)
 - ⏳ In progress: dashboard summarization + fact-check endpoint
