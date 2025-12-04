@@ -149,6 +149,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en">
       <head>
+        {/* React Grab: Development tool for AI-assisted development and faster context retrieval.
+            Only loaded in development mode for security and bundle size reasons.
+            See PROJECT_DOCUMENTATION.md for more details. */}
         {process.env.NODE_ENV === "development" && (
           <Script
             src="//unpkg.com/react-grab/dist/index.global.js"
