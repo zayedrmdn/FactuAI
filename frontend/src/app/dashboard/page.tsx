@@ -8,7 +8,7 @@ import ResultsView from "./features/results/ResultsView";
 import HistoryPanel from "./features/history/HistoryPanel";
 import { useSettings } from "./hooks/useSettings";
 import { useAppState } from "./hooks/useAppState";
-import { RotateCcw, FileText, Sparkles } from "lucide-react"; // Added icons for better UI
+import { RotateCcw, FileText } from "lucide-react"; // Added icons for better UI
 
 export default function DashboardPage() {
   const { prefs, savePrefs, isDark, toggleTheme, isLoaded: settingsLoaded } = useSettings();
@@ -34,8 +34,6 @@ export default function DashboardPage() {
     factCheckError,
     
     // History state
-    historyOpen,
-    setHistoryOpen,
     history,
     
     // Handlers
@@ -87,7 +85,7 @@ export default function DashboardPage() {
       />
 
       {/* Main Content Grid - constrained max-width for large screens */}
-      <div className="p-4 lg:p-8 max-w-[1920px] mx-auto">
+      <div className="p-4 lg:p-8 max-w-[1920px] mx-auto flex flex-col h-full">
         {/* Context Header */}
         <div className="mb-6">
           <h1 className="text-2xl font-semibold tracking-tight">Investigation Console</h1>
@@ -96,10 +94,10 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 items-start">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 items-start flex-1">
           
           {/* Left: Main Workspace (8 columns) */}
-          <main className="lg:col-span-8 xl:col-span-9 flex flex-col gap-6">
+          <main className="lg:col-span-8 xl:col-span-9 flex flex-col gap-6 h-full">
             
             {showResults ? (
               <ResultsView
@@ -170,8 +168,6 @@ export default function DashboardPage() {
             {/* The HistoryPanel is wrapped to force internal scrolling */}
             <div className="flex-1 overflow-hidden border rounded-xl bg-card shadow-sm">
                 <HistoryPanel
-                  open={true} // Always open on desktop view
-                  toggle={() => setHistoryOpen(!historyOpen)}
                   history={history}
                   load={loadHistoryItem}
                   del={deleteHistoryItem}

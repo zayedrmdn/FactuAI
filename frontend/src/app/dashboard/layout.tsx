@@ -3,28 +3,22 @@
 import { useState } from "react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { Header } from "@/components/dashboard/Header";
-import { cn } from "@/lib/utils";
 
 export default function DashboardLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+}>) {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex h-screen w-full overflow-hidden bg-slate-50">
       <Sidebar
         collapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
       />
 
-      <div
-        className={cn(
-          "flex flex-1 flex-col transition-all duration-300 ease-in-out",
-          sidebarCollapsed ? "ml-16" : "ml-64"
-        )}
-      >
+      <div className="flex flex-1 flex-col overflow-hidden">
         <Header collapsed={sidebarCollapsed} />
 
         <main className="flex-1 overflow-y-auto">

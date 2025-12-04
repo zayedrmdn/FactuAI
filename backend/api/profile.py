@@ -7,6 +7,9 @@ from werkzeug.utils import secure_filename
 
 profile_bp = Blueprint("profile", __name__)
 
+# Constants for response messages
+USER_NOT_FOUND_MSG = "User not found"
+
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 UPLOAD_FOLDER = 'uploads/profile_pictures'
 
@@ -18,7 +21,7 @@ def get_profile(user_id):
     """Get user profile information"""
     user = User.query.get(user_id)
     if not user:
-        return jsonify({"error": "User not found"}), 404
+        return jsonify({"error": USER_NOT_FOUND_MSG}), 404
     
     # Handle case where new columns might not exist yet
     username = getattr(user, 'username', None)
@@ -36,7 +39,7 @@ def update_profile(user_id):
     """Update user profile information"""
     user = User.query.get(user_id)
     if not user:
-        return jsonify({"error": "User not found"}), 404
+        return jsonify({"error": USER_NOT_FOUND_MSG}), 404
     
     data = request.get_json()
     
@@ -68,7 +71,7 @@ def update_profile(user_id):
                 "profile_picture": profile_picture
             }
         }), 200
-    except Exception as e:
+    except Exception:
         db.session.rollback()
         return jsonify({"error": "Failed to update profile"}), 500
 
@@ -77,7 +80,7 @@ def change_password(user_id):
     """Change user password"""
     user = User.query.get(user_id)
     if not user:
-        return jsonify({"error": "User not found"}), 404
+        return jsonify({"error": USER_NOT_FOUND_MSG}), 404
     
     data = request.get_json()
     current_password = data.get('current_password')
@@ -98,7 +101,7 @@ def change_password(user_id):
         user.password = generate_password_hash(new_password)
         db.session.commit()
         return jsonify({"message": "Password changed successfully"}), 200
-    except Exception as e:
+    except Exception:
         db.session.rollback()
         return jsonify({"error": "Failed to change password"}), 500
 
@@ -107,7 +110,7 @@ def upload_profile_picture(user_id):
     """Upload profile picture"""
     user = User.query.get(user_id)
     if not user:
-        return jsonify({"error": "User not found"}), 404
+        return jsonify({"error": USER_NOT_FOUND_MSG}), 404
     
     if 'file' not in request.files:
         return jsonify({"error": "No file provided"}), 400
@@ -145,7 +148,7 @@ def upload_profile_picture(user_id):
                     "profile_picture": profile_picture
                 }
             }), 200
-        except Exception as e:
+        except Exception:
             return jsonify({"error": "Failed to upload profile picture"}), 500
     
     return jsonify({"error": "Invalid file type. Only PNG, JPG, JPEG, and GIF are allowed"}), 400
@@ -155,7 +158,7 @@ def delete_profile_picture(user_id):
     """Delete profile picture"""
     user = User.query.get(user_id)
     if not user:
-        return jsonify({"error": "User not found"}), 404
+        return jsonify({"error": USER_NOT_FOUND_MSG}), 404
     
     try:
         # Delete file if it exists
@@ -171,6 +174,6 @@ def delete_profile_picture(user_id):
         db.session.commit()
         
         return jsonify({"message": "Profile picture deleted successfully"}), 200
-    except Exception as e:
+    except Exception:
         db.session.rollback()
         return jsonify({"error": "Failed to delete profile picture"}), 500

@@ -11,6 +11,14 @@ from pipeline.evidence.ranker import rank_sentences
 from core.logging import logger
 
 
+def _safe_log_string(text: str) -> str:
+    """
+    Safely encode a string for logging on Windows consoles.
+    Replaces non-ASCII characters with '?' to prevent UnicodeEncodeError.
+    """
+    return text.encode('ascii', 'replace').decode('ascii')
+
+
 def select_best_evidence(
     claim: str,
     candidates: List[Dict[str, Any]],
@@ -54,7 +62,7 @@ def select_best_evidence(
                 + "\n".join(f"{i+1}. {c['text']}" for i, c in enumerate(top5)) + "\n\n"
                 "Based on your analysis, provide ONLY the numbers of the selected sentences, separated by commas (e.g., '1, 3'). If NONE, just reply 'NONE'."
             )
-            logger.debug(f"[SELECTOR] LLM prompt: {prompt}")
+            logger.debug(f"[SELECTOR] LLM prompt: {_safe_log_string(prompt)}")
 
             resp = llm.generate_response(prompt, max_tokens=200).strip().upper()
             if not resp.startswith("NONE"):

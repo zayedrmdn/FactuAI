@@ -20,8 +20,8 @@ import {
 } from "@/components/ui/tooltip";
 
 interface SidebarProps {
-  collapsed: boolean;
-  onToggle: () => void;
+  readonly collapsed: boolean;
+  readonly onToggle: () => void;
 }
 
 const navItems = [
@@ -37,30 +37,44 @@ const navItems = [
   },
 ];
 
-export function Sidebar({ collapsed, onToggle }: SidebarProps) {
+export function Sidebar({ collapsed, onToggle }: Readonly<SidebarProps>) {
   const pathname = usePathname();
   const router = useRouter();
 
   const handleLogout = () => {
     localStorage.removeItem("user");
     router.push("/");
-    window.location.reload();
+    globalThis.location.reload();
   };
 
   return (
     <TooltipProvider delayDuration={0}>
       <aside
         className={cn(
-          "fixed left-0 top-0 z-40 flex h-screen flex-col border-r bg-sidebar transition-all duration-300 ease-in-out",
+          "flex h-full shrink-0 flex-col border-r bg-sidebar transition-all duration-300 ease-in-out",
           collapsed ? "w-16" : "w-64"
         )}
       >
         {/* Logo Area */}
-        <div className="flex h-16 shrink-0 items-center border-b border-sidebar-border px-4">
+        <div className="flex h-16 shrink-0 items-center justify-between border-b border-sidebar-border px-4">
           <Link href="/dashboard" className="flex items-center gap-2 font-bold text-sidebar-foreground">
             <ShieldCheck className="h-6 w-6 shrink-0 text-primary" />
             {!collapsed && <span className="text-xl">FactuAI</span>}
           </Link>
+          
+          {/* Collapse Toggle */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            onClick={onToggle}
+          >
+            {collapsed ? (
+              <ChevronRight className="h-4 w-4" />
+            ) : (
+              <ChevronLeft className="h-4 w-4" />
+            )}
+          </Button>
         </div>
 
         {/* Navigation - grows to fill space */}
@@ -126,20 +140,6 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
               <span>Log out</span>
             </Button>
           )}
-
-          {/* Collapse Toggle */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="mt-2 w-full text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-            onClick={onToggle}
-          >
-            {collapsed ? (
-              <ChevronRight className="h-4 w-4" />
-            ) : (
-              <ChevronLeft className="h-4 w-4" />
-            )}
-          </Button>
         </div>
       </aside>
     </TooltipProvider>

@@ -135,79 +135,73 @@ def download_image_from_url(image_url: str) -> bytes:
         logger.error(f"Failed to download image from URL: {e}")
         raise
 
-@bp_image.post("/extract-text")
-def extract_text() -> tuple:
-    """Run OCR on an uploaded image or image URL and detect if it's AI-generated."""
-    logger.info("=== NEW API REQUEST: /api/extract-text ===")
+
+def _process_url_input(data: dict) -> tuple:
+    """Process image from URL input. Returns (image_bytes, image, image_url, error_response)."""
+    image_url = data.get('url', '').strip()
     
-    image_bytes = None
-    image_url = None
+    if not image_url:
+        logger.warning("No image URL provided")
+        return None, None, None, (jsonify({"error": "No image URL provided"}), 400)
     
-    # ── 1  Check input type (file or URL) ──────────────────────────
-    if request.content_type and 'application/json' in request.content_type:
-        # URL input
-        logger.info("Processing image URL request")
-        data = request.get_json()
-        image_url = data.get('url', '').strip()
-        
-        if not image_url:
-            logger.warning("No image URL provided")
-            return jsonify({"error": "No image URL provided"}), 400
-        
-        logger.info(f"Processing image URL: {image_url}")
-        
-        try:
-            image_bytes = download_image_from_url(image_url)
-            image = Image.open(io.BytesIO(image_bytes))
-        except Exception as e:
-            logger.error(f"Failed to process image URL: {e}")
-            return jsonify({"error": f"Failed to process image URL: {str(e)}"}), 400
-    else:
-        # File upload
-        logger.info("Processing file upload request")
-        if "image" not in request.files:
-            logger.warning("No image field in request")
-            return jsonify({"error": "No image field named 'image'"}), 400
+    logger.info(f"Processing image URL: {image_url}")
+    
+    try:
+        image_bytes = download_image_from_url(image_url)
+        image = Image.open(io.BytesIO(image_bytes))
+        return image_bytes, image, image_url, None
+    except Exception as e:
+        logger.error(f"Failed to process image URL: {e}")
+        return None, None, None, (jsonify({"error": f"Failed to process image URL: {str(e)}"}), 400)
 
-        file = request.files["image"]
-        if file.filename == "":
-            logger.warning("No file selected")
-            return jsonify({"error": "No file selected"}), 400
 
-        logger.info(f"Processing uploaded file: {file.filename}")
+def _process_file_upload() -> tuple:
+    """Process image from file upload. Returns (image_bytes, image, error_response)."""
+    if "image" not in request.files:
+        logger.warning("No image field in request")
+        return None, None, (jsonify({"error": "No image field named 'image'"}), 400)
 
-        # ── 2  Load the image in‑memory ─────────────────────────────
-        try:
-            # Read raw bytes → PIL.Image
-            image_bytes = file.read()
-            image = Image.open(io.BytesIO(image_bytes))
-        except Exception as e:
-            logger.error(f"OCR: could not read image – {e}")
-            return jsonify({"error": "Unsupported image format"}), 400
+    file = request.files["image"]
+    if file.filename == "":
+        logger.warning("No file selected")
+        return None, None, (jsonify({"error": "No file selected"}), 400)
 
-    # ── 3  OCR with Tesseract ───────────────────────────────────
+    logger.info(f"Processing uploaded file: {file.filename}")
+
+    try:
+        image_bytes = file.read()
+        image = Image.open(io.BytesIO(image_bytes))
+        return image_bytes, image, None
+    except Exception as e:
+        logger.error(f"OCR: could not read image – {e}")
+        return None, None, (jsonify({"error": "Unsupported image format"}), 400)
+
+
+def _run_ocr(image: Image.Image) -> tuple:
+    """Run OCR on image. Returns (text, error_response)."""
     logger.info("Starting OCR processing...")
     try:
         text = pytesseract.image_to_string(image).strip()
         logger.info(f"OCR completed - extracted {len(text)} characters")
+        return text, None
     except Exception as e:
         logger.error(f"OCR failed: {e}", exc_info=True)
-        return jsonify({"error": f"OCR processing failed: {e}"}), 500
+        return None, (jsonify({"error": f"OCR processing failed: {e}"}), 500)
 
-    # ── 4  AI Detection ─────────────────────────────────────────
+
+def _run_ai_detection(image_bytes: bytes, image_url: str | None) -> dict:
+    """Run AI detection on image. Returns AI detection result."""
     logger.info("Starting AI detection...")
     if image_url:
-        # Use URL-based AI detection for better accuracy
         logger.info("Using URL-based AI detection")
-        ai_result = detect_ai_image_url(image_url)
+        return detect_ai_image_url(image_url)
     else:
-        # Use bytes-based AI detection for uploaded files
         logger.info("Using bytes-based AI detection")
-        ai_result = detect_ai_image(image_bytes)
-    
-    logger.info(f"AI detection completed: {ai_result}")
-    
-    # Prepare response
+        return detect_ai_image(image_bytes)
+
+
+def _build_response(text: str, ai_result: dict) -> tuple:
+    """Build the response data from OCR and AI detection results."""
     response_data = {"text": text}
     
     if ai_result['success']:
@@ -218,7 +212,6 @@ def extract_text() -> tuple:
         logger.info(f"AI detection successful: {ai_result['ai_percentage']}%")
     else:
         logger.warning(f"AI detection failed: {ai_result.get('error', 'Unknown error')}")
-        # Don't fail the whole request if AI detection fails
         response_data.update({
             "ai_score": None,
             "ai_percentage": None,
@@ -230,4 +223,37 @@ def extract_text() -> tuple:
         return jsonify({"error": "No text found and AI detection failed"}), 400
 
     logger.info(f"Request completed successfully - OCR: {len(text)} chars, AI: {ai_result.get('ai_percentage', 'N/A')}%")
-    return jsonify(response_data)
+    return jsonify(response_data), 200
+
+
+@bp_image.post("/extract-text")
+def extract_text() -> tuple:
+    """Run OCR on an uploaded image or image URL and detect if it's AI-generated."""
+    logger.info("=== NEW API REQUEST: /api/extract-text ===")
+    
+    image_url = None
+    
+    # 1. Check input type and process accordingly
+    if request.content_type and 'application/json' in request.content_type:
+        logger.info("Processing image URL request")
+        data = request.get_json()
+        image_bytes, image, image_url, error = _process_url_input(data)
+        if error:
+            return error
+    else:
+        logger.info("Processing file upload request")
+        image_bytes, image, error = _process_file_upload()
+        if error:
+            return error
+
+    # 2. Run OCR
+    text, error = _run_ocr(image)
+    if error:
+        return error
+
+    # 3. Run AI Detection
+    ai_result = _run_ai_detection(image_bytes, image_url)
+    logger.info(f"AI detection completed: {ai_result}")
+    
+    # 4. Build and return response
+    return _build_response(text, ai_result)

@@ -1,12 +1,12 @@
 "use client";
 
+import Script from "next/script";
+
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Geist, Geist_Mono } from "next/font/google";
 import { motion, AnimatePresence } from "framer-motion";
-import { Switch } from "@/components/ui/switch";
 import { Toaster } from "sonner";
 import { ChevronDownIcon, MoonIcon, SunIcon } from "lucide-react";
 import UserAvatar from "@/components/UserAvatar";
@@ -16,14 +16,31 @@ import "./globals.css";
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+/** Helper function to get the main container className */
+function getMainClassName(isHomePage: boolean, onAuthPage: boolean): string {
+  if (isHomePage) {
+    return ""; // Homepage handles its own layout
+  }
+  if (onAuthPage) {
+    return "container mx-auto px-6 py-8 flex justify-center items-start min-h-screen";
+  }
+  return "flex justify-center items-center min-h-screen px-4";
+}
+
+interface UserData {
+  username?: string;
+  email?: string;
+}
+
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const pathname = usePathname();
   const onAuthPage = !["/login", "/register"].includes(pathname); // true when authenticated pages
   const isHomePage = pathname === "/";
+  const isDashboard = pathname?.startsWith("/dashboard");
 
   const [isDark, setIsDark] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<UserData | null>(null);
 
   /* initial theme */
   useEffect(() => {
@@ -56,7 +73,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     };
 
     // Listen for storage changes from other tabs/components
-    window.addEventListener('storage', handleStorageChange);
+    globalThis.addEventListener('storage', handleStorageChange);
     
     // Also listen for custom theme change events within the same tab
     const handleThemeChange = (e: CustomEvent) => {
@@ -70,11 +87,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       }
     };
 
-    window.addEventListener('themeChange', handleThemeChange as EventListener);
+    globalThis.addEventListener('themeChange', handleThemeChange as EventListener);
 
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('themeChange', handleThemeChange as EventListener);
+      globalThis.removeEventListener('storage', handleStorageChange);
+      globalThis.removeEventListener('themeChange', handleThemeChange as EventListener);
     };
   }, []);
 
@@ -118,7 +135,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     localStorage.setItem("theme", newTheme);
     
     // Dispatch custom event to sync with other components
-    window.dispatchEvent(new CustomEvent('themeChange', { 
+    globalThis.dispatchEvent(new CustomEvent('themeChange', { 
       detail: { theme: newTheme } 
     }));
   };
@@ -126,16 +143,25 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const handleLogout = () => {
     localStorage.removeItem("user");
     setShowProfileDropdown(false);
-    window.location.href = "/login";
+    globalThis.location.href = "/login";
   };
 
   return (
     <html lang="en">
+      <head>
+        {process.env.NODE_ENV === "development" && (
+          <Script
+            src="//unpkg.com/react-grab/dist/index.global.js"
+            crossOrigin="anonymous"
+            strategy="beforeInteractive"
+          />
+        )}
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 text-gray-900 dark:bg-black dark:text-white`}
       >
         {/* header */}
-        {!isHomePage && (
+        {!isHomePage && !isDashboard && (
           <header className="sticky top-0 z-50 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-md shadow border-b border-gray-200/50 dark:border-gray-700/50">
             <div className="max-w-7xl mx-auto px-4">
               <div className="flex items-center justify-between h-16">
@@ -169,9 +195,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     <motion.div
                       initial={false}
                       animate={{ 
-                        scale: !isDark ? 1 : 0,
-                        opacity: !isDark ? 1 : 0,
-                        rotate: !isDark ? 0 : 180
+                        scale: isDark ? 0 : 1,
+                        opacity: isDark ? 0 : 1,
+                        rotate: isDark ? 180 : 0
                       }}
                       transition={{ duration: 0.3 }}
                     >
@@ -244,13 +270,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         {/* main */}
         <main
-          className={
-            isHomePage
-              ? "" // Homepage handles its own layout
-              : onAuthPage
-                ? "container mx-auto px-6 py-8 flex justify-center items-start min-h-screen"
-                : "flex justify-center items-center min-h-screen px-4"
-          }
+          className={getMainClassName(isHomePage, onAuthPage)}
         >
           {children}
         </main>

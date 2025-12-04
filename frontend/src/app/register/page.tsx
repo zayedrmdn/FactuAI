@@ -57,13 +57,13 @@ export default function RegisterPage() {
 
         // Redirect the user to the login page after a short delay
         setTimeout(() => {
-          window.location.href = "/login";
+          globalThis.location.href = "/login";
         }, 1000);
       } else {
         // Display an error message if the server returns a failure response
         toast.error(result.error || "Registration failed");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Handle unexpected runtime errors and notify the user
       console.error(err);
       toast.error("Something went wrong");

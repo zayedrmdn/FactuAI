@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { ChevronDownIcon, MoonIcon, SunIcon } from "lucide-react";
 import UserAvatar from "@/components/UserAvatar";
 
@@ -14,7 +13,7 @@ export default function LandingNav() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<{ username?: string; email?: string; profile_picture?: string } | null>(null);
 
   // Handle theme
   useEffect(() => {
@@ -47,7 +46,7 @@ export default function LandingNav() {
     };
 
     // Listen for storage changes from other tabs
-    window.addEventListener('storage', handleStorageChange);
+    globalThis.addEventListener('storage', handleStorageChange);
     
     // Also listen for custom theme change events within the same tab
     const handleThemeChange = (e: CustomEvent) => {
@@ -59,11 +58,11 @@ export default function LandingNav() {
       }
     };
 
-    window.addEventListener('themeChange', handleThemeChange as EventListener);
+    globalThis.addEventListener('themeChange', handleThemeChange as EventListener);
 
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('themeChange', handleThemeChange as EventListener);
+      globalThis.removeEventListener('storage', handleStorageChange);
+      globalThis.removeEventListener('themeChange', handleThemeChange as EventListener);
     };
   }, []);
 
@@ -90,8 +89,8 @@ export default function LandingNav() {
       }
     };
     
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    globalThis.addEventListener('storage', handleStorageChange);
+    return () => globalThis.removeEventListener('storage', handleStorageChange);
   }, []);
 
   // Handle scroll effect
@@ -134,7 +133,7 @@ export default function LandingNav() {
     localStorage.setItem("theme", newTheme);
     
     // Dispatch custom event to sync with other components
-    window.dispatchEvent(new CustomEvent('themeChange', { 
+    globalThis.dispatchEvent(new CustomEvent('themeChange', { 
       detail: { theme: newTheme } 
     }));
   };
@@ -144,7 +143,7 @@ export default function LandingNav() {
     setIsAuthenticated(false);
     setUser(null);
     setShowProfileDropdown(false);
-    window.location.reload(); // Refresh to show landing page
+    globalThis.location.reload(); // Refresh to show landing page
   };
 
   const scrollToSection = (sectionId: string) => {
@@ -211,9 +210,9 @@ export default function LandingNav() {
               <motion.div
                 initial={false}
                 animate={{ 
-                  scale: !isDark ? 1 : 0,
-                  opacity: !isDark ? 1 : 0,
-                  rotate: !isDark ? 0 : 180
+                  scale: isDark ? 0 : 1,
+                  opacity: isDark ? 0 : 1,
+                  rotate: isDark ? 180 : 0
                 }}
                 transition={{ duration: 0.3 }}
               >

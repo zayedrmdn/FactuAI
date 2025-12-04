@@ -4,7 +4,6 @@ import {
   DocumentTextIcon, 
   PhotoIcon, 
   VideoCameraIcon,
-  PlayIcon,
   XMarkIcon,
   ChevronDownIcon,
   ChevronRightIcon
@@ -29,13 +28,24 @@ const VERDICT_CONFIG = {
   unknown: { label: "Unknown", color: "text-slate-600 bg-slate-50 border-slate-200" }
 };
 
+/** Get the icon box CSS classes based on item type */
+function getIconBoxClasses(type: string): string {
+  if (type === 'image') {
+    return 'bg-blue-50 text-blue-600 border-blue-100';
+  }
+  if (type === 'video') {
+    return 'bg-purple-50 text-purple-600 border-purple-100';
+  }
+  return 'bg-slate-50 text-slate-600 border-slate-100';
+}
+
 export default function HistoryItem({
   item,
   isExpanded = false,
   onToggleExpanded,
   onLoad,
   onDelete,
-}: HistoryItemProps) {
+}: Readonly<HistoryItemProps>) {
   
   const getInputTypeIcon = () => {
     switch (item.type) {
@@ -49,7 +59,7 @@ export default function HistoryItem({
     if (!item.results?.length) return null;
     
     // Simple heuristic: if any claim is false, flag as false. Otherwise use majority.
-    const verdicts = item.results.map(r => r.verdict);
+    const verdicts = item.results.map(r => r.label);
     if (verdicts.some(v => v.includes("false"))) return VERDICT_CONFIG["false"];
     if (verdicts.some(v => v.includes("half") || v.includes("barely"))) return VERDICT_CONFIG["half_true"];
     if (verdicts.every(v => v.includes("true"))) return VERDICT_CONFIG["true"];
@@ -58,7 +68,6 @@ export default function HistoryItem({
   };
 
   const assessment = getOverallAssessment();
-  const hasResults = item.results && item.results.length > 0;
   
   // Format Date: "Today at 10:30 AM" or "Dec 2"
   const dateObj = new Date(item.timestamp);
@@ -68,16 +77,16 @@ export default function HistoryItem({
   return (
     <div className={`group relative border rounded-lg transition-all duration-200 ${isExpanded ? 'bg-muted/30 border-primary/20 shadow-sm' : 'bg-card border-border hover:border-primary/20'}`}>
       
-      {/* Main Clickable Area */}
-      <div className="p-3 cursor-pointer" onClick={onToggleExpanded}>
+      {/* Main Clickable Area - using button for accessibility */}
+      <button 
+        type="button"
+        className="w-full p-3 text-left cursor-pointer" 
+        onClick={onToggleExpanded}
+      >
         <div className="flex items-start justify-between gap-3">
           
           {/* Icon Box */}
-          <div className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md border ${
-            item.type === 'image' ? 'bg-blue-50 text-blue-600 border-blue-100' :
-            item.type === 'video' ? 'bg-purple-50 text-purple-600 border-purple-100' :
-            'bg-slate-50 text-slate-600 border-slate-100'
-          }`}>
+          <div className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md border ${getIconBoxClasses(item.type)}`}>
             {getInputTypeIcon()}
           </div>
 
@@ -104,7 +113,7 @@ export default function HistoryItem({
              {isExpanded ? <ChevronDownIcon className="w-4 h-4" /> : <ChevronRightIcon className="w-4 h-4" />}
           </div>
         </div>
-      </div>
+      </button>
 
       {/* Expanded Details */}
       {isExpanded && (

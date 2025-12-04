@@ -48,20 +48,20 @@ export default function Footer() {
             <h3 className="text-lg font-semibold">Contact & Info</h3>
             <div className="space-y-2 text-gray-400">
               <p className="flex items-center gap-2">
-                <span>🎓</span>
-                APU Final Year Project
+                <span aria-hidden="true">🎓</span>
+                <span>APU Final Year Project</span>
               </p>
               <p className="flex items-center gap-2">
-                <span>🏗️</span>
-                Built by Zayed Ramadhan
+                <span aria-hidden="true">🏗️</span>
+                <span>Built by Zayed Ramadhan</span>
               </p>
               <p className="flex items-center gap-2">
-                <span>📧</span>
-                Contact for inquiries
+                <span aria-hidden="true">📧</span>
+                <span>Contact for inquiries</span>
               </p>
               <p className="flex items-center gap-2">
-                <span>📜</span>
-                SDG Goal 16 - Peace & Justice
+                <span aria-hidden="true">📜</span>
+                <span>SDG Goal 16 - Peace & Justice</span>
               </p>
             </div>
           </div>

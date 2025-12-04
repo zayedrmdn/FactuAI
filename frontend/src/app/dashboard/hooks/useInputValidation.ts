@@ -1,3 +1,5 @@
+"use client";
+
 import { z } from "zod";
 
 // Simple validation schema for basic checks only
@@ -10,6 +12,17 @@ interface ValidationResult {
   isValid: boolean;
   error: string;
   suggestion: string;
+}
+
+/** Count regex matches using exec() */
+function countMatches(text: string, pattern: RegExp): number {
+  let count = 0;
+  // Reset lastIndex for global regex
+  pattern.lastIndex = 0;
+  while (pattern.exec(text) !== null) {
+    count++;
+  }
+  return count;
 }
 
 // Real-time validation - simplified and less restrictive
@@ -75,7 +88,7 @@ export async function validateForFactCheck(text: string): Promise<ValidationResu
 
   // Call backend LLM for final validation
   try {
-    const response = await fetch("http://localhost:5000/api/validate", {
+    const response = await fetch("/api/validate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: text.trim() }),
@@ -118,10 +131,10 @@ function hasExcessiveRepetition(text: string): boolean {
   const words = text.split(/\s+/);
   const wordCount: Record<string, number> = {};
 
-  words.forEach(word => {
-    word = word.toLowerCase();
+  for (const w of words) {
+    const word = w.toLowerCase();
     wordCount[word] = (wordCount[word] || 0) + 1;
-  });
+  }
 
   // Only flag if a single word appears more than 50% of the time
   const maxRepetition = Math.max(...Object.values(wordCount));
@@ -131,72 +144,19 @@ function hasExcessiveRepetition(text: string): boolean {
 function isObviousSpam(text: string): boolean {
   const lower = text.toLowerCase();
   
-  // Very obvious spam indicators
+  // Very obvious spam indicators - split into smaller patterns
   const spamPatterns = [
-    /\b(click here|buy now|limited time|act now|free money|make money fast|get rich quick)\b/g,
+    /\b(click here|buy now|limited time|act now)\b/g,
+    /\b(free money|make money fast|get rich quick)\b/g,
     /\b(www\.|http|\.com|\.org|\.net)\b/g,
     /\b(call now|order now|subscribe now|sign up now)\b/g,
   ];
   
   let spamCount = 0;
-  spamPatterns.forEach(pattern => {
-    spamCount += (lower.match(pattern) || []).length;
-  });
+  for (const pattern of spamPatterns) {
+    spamCount += countMatches(lower, pattern);
+  }
   
   // Only flag if multiple spam indicators
   return spamCount >= 3;
 }
-function isPromotionalContent(text: string): boolean {
-  const lower = text.toLowerCase();
-  
-  const promoIndicators = [
-    /\b(buy|purchase|order|subscribe|sign up|register|download)\b/g,
-    /\b(free|discount|sale|offer|deal|limited time|act now|click here)\b/g,
-    /\b(visit our|check out our|follow us|like us|share)\b/g,
-  ];
-  
-  let promoCount = 0;
-  promoIndicators.forEach(pattern => {
-    promoCount += (lower.match(pattern) || []).length;
-  });
-  
-  const words = text.split(/\s+/).length;
-  return promoCount > Math.max(2, words * 0.1);
-}
-
-function hasFactualContent(text: string): boolean {
-  const lower = text.toLowerCase();
-  const original = text;
-
-  const factualIndicators = [
-    // Numbers and dates
-    /\b\d+/g,
-    /\b(?:percent|percentage|million|billion|trillion|thousand|hundred|score|dozen|year|years|month|months|week|weeks|day|days|hour|hours|minute|minutes|second|seconds|yesterday|today|tomorrow|january|february|march|april|may|june|july|august|september|october|november|december)\b/g,
-
-    // Reporting language
-    /\b(?:according to|study|survey|analysis|research|report|reported|findings|data|evidence|statistics|found|discovered|examined|tested|published|investigation|announced|stated|confirmed|declared|said|says|told|claimed|alleged|revealed|disclosed|admitted|cited)\b/g,
-
-    // Organizations and entities
-    /\b(?:company|corporation|firm|organization|institute|institute|university|college|academy|hospital|clinic|court|judiciary|police|military|army|navy|air force|ministry|department|agency|commission|council|association|committee|party|movement|faction)\b/g,
-
-    // News / event verbs
-    /\b(?:happened|occurred|took place|released|launched|published|died|killed|born|elected|appointed|arrested|charged|convicted|attacked|bombed|struck|deployed|overthrew|condemned|signed|ratified|voted|passed|failed|launched|created|built|invented|founded|opened|closed)\b/g,
-
-    // Geographic / proper nouns
-    /\b[A-Z][a-z]{2,}(?:\s+[A-Z][a-z]{2,})*\b/g,
-
-    // Titles and positions
-    /\b(?:president|prime minister|chancellor|governor|mayor|senator|representative|minister|secretary|director|chief|commander|leader|official|spokesperson|ambassador|delegate|commissioner)\b/g,
-  ];
-
-  let score = 0;
-  factualIndicators.slice(0, -2).forEach(p => score += (lower.match(p) || []).length);
-  score += (original.match(factualIndicators[factualIndicators.length-2]) || []).length;
-  score += (lower.match(factualIndicators[factualIndicators.length-1]) || []).length;
-
-  const words = text.split(/\s+/).length;
-  const threshold = Math.max(1, words * 0.03);
-  return score >= threshold;
-}
-
-// No changes needed; all validation is already real-time and non-redundant.

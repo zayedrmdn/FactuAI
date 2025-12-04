@@ -3,8 +3,72 @@
 import { useState, useCallback } from "react";
 import { toast } from "sonner";
 import { validateForFactCheck } from "./useInputValidation";
+import { FactCheckResult } from "../types/factcheck";
 
-const API_URL = "http://localhost:5000/api/process";
+const API_URL = "/api/process";
+
+// Type for SSE data messages
+interface SSEMessage {
+  type: 'phase' | 'result' | 'summary' | 'complete' | 'error';
+  message?: string;
+  progress?: number;
+  claim_index?: number;
+  result?: FactCheckResult;
+  summary?: string;
+}
+
+// Type for progress state setters
+interface ProgressSetters {
+  setLoadingPhase: (phase: string) => void;
+  setProgress: (progress: number) => void;
+  setCurrentClaim: (claim: number) => void;
+  setFactResults: React.Dispatch<React.SetStateAction<FactCheckResult[]>>;
+  setSummary: (summary: string) => void;
+}
+
+/** Process a single SSE message and update state accordingly */
+function processSSEMessage(
+  data: SSEMessage,
+  allResults: FactCheckResult[],
+  setters: ProgressSetters
+): void {
+  const { setLoadingPhase, setProgress, setCurrentClaim, setFactResults, setSummary } = setters;
+
+  switch (data.type) {
+    case 'phase':
+      setLoadingPhase(data.message ?? '');
+      setProgress(data.progress ?? 0);
+      if (data.claim_index !== undefined) {
+        setCurrentClaim(data.claim_index + 1);
+      }
+      break;
+    case 'result':
+      if (data.result) {
+        allResults.push(data.result);
+        setFactResults([...allResults]);
+      }
+      break;
+    case 'summary':
+      if (data.summary) {
+        setSummary(data.summary);
+      }
+      break;
+    case 'complete':
+      setProgress(100);
+      setLoadingPhase("Complete!");
+      break;
+    case 'error':
+      throw new Error(data.message ?? "Server error");
+  }
+}
+
+/** Parse SSE line and extract JSON data */
+function parseSSELine(line: string): SSEMessage | null {
+  if (!line.trim() || !line.startsWith('data: ')) {
+    return null;
+  }
+  return JSON.parse(line.slice(6)) as SSEMessage;
+}
 
 export function useFactCheck() {
   const [input, setInput] = useState("");
@@ -13,7 +77,7 @@ export function useFactCheck() {
   const [loadingPhase, setLoadingPhase] = useState("");
   const [progress, setProgress] = useState(0);
   const [currentClaim, setCurrentClaim] = useState(0);
-  const [factResults, setFactResults] = useState<any[]>([]);
+  const [factResults, setFactResults] = useState<FactCheckResult[]>([]);
   const [summary, setSummary] = useState("");
   const [updated, setUpdated] = useState("");
   const [factCheckError, setFactCheckError] = useState("");
@@ -26,12 +90,8 @@ export function useFactCheck() {
     ? (factResults.reduce((sum, r) => sum + (r.confidence ?? 0), 0) / factResults.length) * 100
     : 0;
 
-  const handleFactCheck = useCallback(async () => {
-    if (!input.trim()) return;
-
-    console.log("=== FACT CHECK STARTED ===");
-
-    // Clear previous state
+  /** Reset all state to initial values */
+  const resetState = useCallback(() => {
     setFactResults([]);
     setSummary("");
     setUpdated("");
@@ -39,6 +99,68 @@ export function useFactCheck() {
     setCurrentClaim(0);
     setLoadingPhase("");
     setFactCheckError("");
+  }, []);
+
+  /** Reset progress state on error or cancel */
+  const resetProgressState = useCallback(() => {
+    setProgress(0);
+    setCurrentClaim(0);
+  }, []);
+
+  /** Cleanup after fact-check completes */
+  const cleanup = useCallback(() => {
+    setLoading(null);
+    setLoadingPhase("");
+    setAbortController(null);
+  }, []);
+
+  /** Handle validation errors */
+  const handleValidationError = useCallback((error: string) => {
+    setFactCheckError(error);
+    setLoading(null);
+    setAbortController(null);
+  }, []);
+
+  /** Process the SSE stream from the server */
+  const processStream = useCallback(async (
+    reader: ReadableStreamDefaultReader<Uint8Array>,
+    controller: AbortController,
+    setters: ProgressSetters
+  ): Promise<FactCheckResult[]> => {
+    const decoder = new TextDecoder();
+    let buffer = "";
+    const allResults: FactCheckResult[] = [];
+
+    while (true) {
+      if (controller.signal.aborted) {
+        console.log("Request was cancelled by user");
+        reader.cancel();
+        return allResults;
+      }
+
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() ?? "";
+
+      for (const line of lines) {
+        const data = parseSSELine(line);
+        if (data) {
+          processSSEMessage(data, allResults, setters);
+        }
+      }
+    }
+
+    return allResults;
+  }, []);
+
+  const handleFactCheck = useCallback(async () => {
+    if (!input.trim()) return;
+
+    console.log("=== FACT CHECK STARTED ===");
+    resetState();
 
     // Show results view with delay
     setTimeout(() => setShowResults(true), 100);
@@ -48,23 +170,19 @@ export function useFactCheck() {
     setAbortController(controller);
     setLoading("factcheck");
 
+    // Validate input
     try {
-      // Validate input
       const validation = await validateForFactCheck(input);
       if (!validation.isValid) {
-        setFactCheckError(validation.error);
-        setLoading(null);
-        setAbortController(null);
+        handleValidationError(validation.error);
         return;
       }
-    } catch (validationError) {
-      console.error("Validation error:", validationError);
-      setFactCheckError("Validation service temporarily unavailable. Please try again.");
-      setLoading(null);
-      setAbortController(null);
+    } catch {
+      handleValidationError("Validation service temporarily unavailable. Please try again.");
       return;
     }
 
+    // Process fact-check request
     try {
       setLoadingPhase("Extracting claims...");
       setProgress(10);
@@ -84,85 +202,38 @@ export function useFactCheck() {
       const reader = res.body?.getReader();
       if (!reader) throw new Error("No response stream");
 
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let allResults: any[] = [];
-      let textSummary = "";
+      const setters: ProgressSetters = {
+        setLoadingPhase,
+        setProgress,
+        setCurrentClaim,
+        setFactResults,
+        setSummary,
+      };
 
-      while (true) {
-        if (controller.signal.aborted) {
-          console.log("Request was cancelled by user");
-          reader.cancel();
-          return;
-        }
-
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || "";
-
-        for (const line of lines) {
-          if (!line.trim() || !line.startsWith('data: ')) continue;
-
-          try {
-            const data = JSON.parse(line.slice(6));
-
-            if (data.type === 'phase') {
-              setLoadingPhase(data.message);
-              setProgress(data.progress || 0);
-              if (data.claim_index !== undefined) {
-                setCurrentClaim(data.claim_index + 1);
-              }
-            } else if (data.type === 'result') {
-              allResults.push(data.result);
-              setFactResults([...allResults]);
-            } else if (data.type === 'summary') {
-              textSummary = data.summary;
-              setSummary(textSummary);
-            } else if (data.type === 'complete') {
-              setProgress(100);
-              setLoadingPhase("Complete!");
-            } else if (data.type === 'error') {
-              throw new Error(data.message || "Server error");
-            }
-          } catch (e) {
-            console.warn("Failed to parse SSE data:", line);
-          }
-        }
-      }
-
+      const allResults = await processStream(reader, controller, setters);
       setUpdated(new Date().toISOString());
 
       if (allResults.length > 0) {
-        // TODO: Push to history here
         toast.success("Fact‑check complete");
       } else {
         setFactCheckError("No verifiable claims found in the provided text. Please try with content that contains specific factual statements.");
       }
 
-    } catch (e: any) {
-      if (e.name === 'AbortError') {
+    } catch (e: unknown) {
+      const error = e as Error;
+      if (error.name === 'AbortError') {
         console.log("Request was cancelled");
         toast.info("Fact-check cancelled");
-        // Reset progress only on cancel
-        setProgress(0);
-        setCurrentClaim(0);
+        resetProgressState();
         return;
       }
-      console.error("Fact-check error:", e);
-      setFactCheckError(e.message || "Server error occurred. Please try again.");
-      // Reset progress only on error
-      setProgress(0);
-      setCurrentClaim(0);
+      console.error("Fact-check error:", error);
+      setFactCheckError(error.message ?? "Server error occurred. Please try again.");
+      resetProgressState();
     } finally {
-      setLoading(null);
-      setLoadingPhase("");
-      setAbortController(null);
-      // Don't reset progress here - let it stay at final value (usually 100%)
+      cleanup();
     }
-  }, [input]);
+  }, [input, resetState, handleValidationError, processStream, resetProgressState, cleanup]);
 
   const handleCancel = useCallback(() => {
     if (abortController) {
@@ -228,7 +299,7 @@ export function useFactCheck() {
   }, []);
 
   // Add setters for loading historical data
-  const loadResults = useCallback((results: any[], summaryText: string, updatedTime: string) => {
+  const loadResults = useCallback((results: FactCheckResult[], summaryText: string, updatedTime: string) => {
     setFactResults(results);
     setSummary(summaryText);
     setUpdated(updatedTime);

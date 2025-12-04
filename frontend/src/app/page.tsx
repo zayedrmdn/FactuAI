@@ -12,17 +12,11 @@ import Footer from "@/components/landing/Footer";
 
 export default function HomePage() {
   const router = useRouter();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is logged in
-    const userData = localStorage.getItem("user");
-    if (userData) {
-      setIsAuthenticated(true);
-    } else {
-      setIsAuthenticated(false);
-    }
+    // Check if user is logged in - we no longer need to track this state
+    // since we show landing page for all users
     setIsLoading(false);
   }, [router]);
 

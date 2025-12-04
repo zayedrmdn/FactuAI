@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Accordion, AccordionItem } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
-import { ExternalLink, HelpCircle } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function QAResultCard({
@@ -14,16 +14,16 @@ export function QAResultCard({
   index,
   textSize,
   animationDelay
-}: {
+}: Readonly<{
   result: QAResult;
   index: number;
   textSize: TextSize;
   animationDelay: number;
-}) {
+}>) {
   const { question, answer, sources, confidence } = result;
   
   // Ensure confidence is a valid number
-  const safeConfidence = typeof confidence === 'number' && !isNaN(confidence) ? confidence : 0.8;
+  const safeConfidence = typeof confidence === 'number' && !Number.isNaN(confidence) ? confidence : 0.8;
 
   // Calculate progress color
   const getProgressColor = (score: number) => {
@@ -78,7 +78,7 @@ export function QAResultCard({
             >
               <ul className="space-y-2 pt-2">
                 {sources.map((url, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm">
+                  <li key={`source-${url.slice(0, 50)}`} className="flex items-start gap-2 text-sm">
                     <span className="mt-1 text-xs text-muted-foreground">{i + 1}.</span>
                     <a
                       href={url}

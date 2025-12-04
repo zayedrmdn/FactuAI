@@ -5,18 +5,18 @@ import "react-circular-progressbar/dist/styles.css";
 
 interface OverallScoreProps {
   /** 0–100 confidence score of the prediction */
-  score: number;
-  title?: string;
-  className?: string;
+  readonly score: number;
+  readonly title?: string;
+  readonly className?: string;
 }
 
 export default function OverallScore({ 
   score, 
   title = "Overall Confidence",
   className = ""
-}: OverallScoreProps) {
+}: Readonly<OverallScoreProps>) {
   // Handle NaN/undefined values
-  const normalizedScore = isNaN(score) || score === undefined ? 0 : Math.max(0, Math.min(100, score));
+  const normalizedScore = Number.isNaN(score) || score === undefined ? 0 : Math.max(0, Math.min(100, score));
   
   // Color based on prediction confidence
   const getColorAndLabel = (score: number) => {

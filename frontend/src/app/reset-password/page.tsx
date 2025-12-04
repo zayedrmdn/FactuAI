@@ -34,6 +34,151 @@ const resetPasswordSchema = z.object({
 
 type ResetPasswordForm = z.infer<typeof resetPasswordSchema>;
 
+/**
+ * Brand panel component for left side of split layout
+ */
+function BrandPanel({ message }: Readonly<{ message: string }>) {
+  return (
+    <div className="hidden lg:flex lg:flex-1 flex-col items-center justify-center p-12 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="text-center"
+      >
+        <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-xl">
+          <span className="text-3xl">🔍</span>
+        </div>
+        <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
+          FactuAI
+        </h1>
+        <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-md">
+          {message}
+        </p>
+      </motion.div>
+    </div>
+  );
+}
+
+/**
+ * Invalid token state component
+ */
+function InvalidTokenView() {
+  return (
+    <main className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 flex">
+      <BrandPanel message="This password reset link has expired or is invalid" />
+      <div className="flex-1 flex items-center justify-center p-8 lg:p-12">
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="w-full max-w-md"
+        >
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 border border-gray-200 dark:border-gray-700 text-center">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+              className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6"
+            >
+              <AlertCircle className="w-8 h-8 text-red-500" />
+            </motion.div>
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+              Invalid Reset Link
+            </h2>
+            <p className="text-gray-600 dark:text-gray-300 mb-6">
+              This password reset link is invalid or has expired. Please request a new one.
+            </p>
+            <div className="space-y-3">
+              <Link
+                href="/forgot-password"
+                className="block w-full px-6 py-3 bg-neutral-900 hover:bg-neutral-800 text-white font-medium rounded-lg transition-all duration-200"
+              >
+                Request New Reset Link
+              </Link>
+              <Link
+                href="/login"
+                className="inline-flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back to Login
+              </Link>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    </main>
+  );
+}
+
+/**
+ * Success state component
+ */
+function SuccessView() {
+  return (
+    <main className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 flex">
+      <BrandPanel message="Your password has been successfully updated" />
+      <div className="flex-1 flex items-center justify-center p-8 lg:p-12">
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="w-full max-w-md"
+        >
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 border border-gray-200 dark:border-gray-700 text-center">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+              className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6"
+            >
+              <CheckCircle className="w-8 h-8 text-green-500" />
+            </motion.div>
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+              Password Reset Successfully!
+            </h2>
+            <p className="text-gray-600 dark:text-gray-300 mb-6">
+              Your password has been updated. You&apos;ll be redirected to the login page shortly.
+            </p>
+            <Link
+              href="/login"
+              className="inline-flex items-center justify-center gap-2 w-full px-6 py-3 bg-neutral-900 hover:bg-neutral-800 text-white font-medium rounded-lg transition-all duration-200"
+            >
+              Continue to Login
+            </Link>
+          </div>
+        </motion.div>
+      </div>
+    </main>
+  );
+}
+
+/**
+ * Loading state component
+ */
+function LoadingView() {
+  return (
+    <main className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+      <div className="w-8 h-8 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin" />
+    </main>
+  );
+}
+
+/**
+ * Password requirement indicator
+ */
+function RequirementItem({ met, label }: Readonly<{ met: boolean; label: string }>) {
+  const textClass = met ? "text-green-600 dark:text-green-400" : "text-gray-500 dark:text-gray-400";
+  const dotClass = met ? "bg-green-500" : "bg-gray-300";
+  
+  return (
+    <div className={`flex items-center gap-2 ${textClass}`}>
+      <div className={`w-1.5 h-1.5 rounded-full ${dotClass}`} />
+      {label}
+    </div>
+  );
+}
+
 function ResetPasswordContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -59,14 +204,7 @@ function ResetPasswordContent() {
 
   // Validate token on component mount
   useEffect(() => {
-    if (!token) {
-      setTokenValid(false);
-      return;
-    }
-
-    // You could add a token validation endpoint here
-    // For now, we'll assume the token is valid if present
-    setTokenValid(true);
+    setTokenValid(Boolean(token));
   }, [token]);
 
   const onSubmit = async (data: ResetPasswordForm) => {
@@ -81,20 +219,14 @@ function ResetPasswordContent() {
     try {
       const response = await fetch("/api/auth/reset-password", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          token,
-          new_password: data.password,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, new_password: data.password }),
       });
 
       const result = await response.json();
 
       if (response.ok) {
         setIsSuccess(true);
-        // Redirect to login after 3 seconds
         setTimeout(() => {
           router.push("/login?message=Password reset successful");
         }, 3000);
@@ -102,162 +234,17 @@ function ResetPasswordContent() {
         setError(result.message || "An error occurred. Please try again.");
       }
     } catch (err) {
+      console.error("Password reset request failed:", err);
       setError("Network error. Please check your connection and try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Invalid token state
-  if (tokenValid === false) {
-    return (
-      <main className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 flex">
-        {/* Left Side - Brand & Illustration */}
-        <div className="hidden lg:flex lg:flex-1 flex-col items-center justify-center p-12 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center"
-          >
-            {/* Logo */}
-            <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-xl">
-              <span className="text-3xl">🔍</span>
-            </div>
-            
-            {/* Brand */}
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
-              FactuAI
-            </h1>
-            <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-md">
-              This password reset link has expired or is invalid
-            </p>
-          </motion.div>
-        </div>
-
-        {/* Right Side - Error Message */}
-        <div className="flex-1 flex items-center justify-center p-8 lg:p-12">
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="w-full max-w-md"
-          >
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 border border-gray-200 dark:border-gray-700 text-center">
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6"
-              >
-                <AlertCircle className="w-8 h-8 text-red-500" />
-              </motion.div>
-
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-                Invalid Reset Link
-              </h2>
-
-              <p className="text-gray-600 dark:text-gray-300 mb-6">
-                This password reset link is invalid or has expired. Please request a new one.
-              </p>
-
-              <div className="space-y-3">
-                <Link
-                  href="/forgot-password"
-                  className="block w-full px-6 py-3 bg-neutral-900 hover:bg-neutral-800 text-white font-medium rounded-lg transition-all duration-200"
-                >
-                  Request New Reset Link
-                </Link>
-                
-                <Link
-                  href="/login"
-                  className="inline-flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  Back to Login
-                </Link>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </main>
-    );
-  }
-
-  // Success state
-  if (isSuccess) {
-    return (
-      <main className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 flex">
-        {/* Left Side - Brand & Illustration */}
-        <div className="hidden lg:flex lg:flex-1 flex-col items-center justify-center p-12 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center"
-          >
-            {/* Logo */}
-            <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-xl">
-              <span className="text-3xl">🔍</span>
-            </div>
-            
-            {/* Brand */}
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
-              FactuAI
-            </h1>
-            <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-md">
-              Your password has been successfully updated
-            </p>
-          </motion.div>
-        </div>
-
-        {/* Right Side - Success Message */}
-        <div className="flex-1 flex items-center justify-center p-8 lg:p-12">
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="w-full max-w-md"
-          >
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 border border-gray-200 dark:border-gray-700 text-center">
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6"
-              >
-                <CheckCircle className="w-8 h-8 text-green-500" />
-              </motion.div>
-
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-                Password Reset Successfully!
-              </h2>
-
-              <p className="text-gray-600 dark:text-gray-300 mb-6">
-                Your password has been updated. You'll be redirected to the login page shortly.
-              </p>
-
-              <Link
-                href="/login"
-                className="inline-flex items-center justify-center gap-2 w-full px-6 py-3 bg-neutral-900 hover:bg-neutral-800 text-white font-medium rounded-lg transition-all duration-200"
-              >
-                Continue to Login
-              </Link>
-            </div>
-          </motion.div>
-        </div>
-      </main>
-    );
-  }
-
-  // Loading state
-  if (tokenValid === null) {
-    return (
-      <main className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin" />
-      </main>
-    );
-  }
+  // Handle different states
+  if (tokenValid === null) return <LoadingView />;
+  if (tokenValid === false) return <InvalidTokenView />;
+  if (isSuccess) return <SuccessView />;
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 flex">
@@ -395,62 +382,10 @@ function ResetPasswordContent() {
                     Password Requirements:
                   </h4>
                   <div className="space-y-1 text-xs">
-                    <div
-                      className={`flex items-center gap-2 ${
-                        password.length >= 8
-                          ? "text-green-600 dark:text-green-400"
-                          : "text-gray-500 dark:text-gray-400"
-                      }`}
-                    >
-                      <div
-                        className={`w-1.5 h-1.5 rounded-full ${
-                          password.length >= 8 ? "bg-green-500" : "bg-gray-300"
-                        }`}
-                      />
-                      At least 8 characters
-                    </div>
-                    <div
-                      className={`flex items-center gap-2 ${
-                        /[A-Z]/.test(password)
-                          ? "text-green-600 dark:text-green-400"
-                          : "text-gray-500 dark:text-gray-400"
-                      }`}
-                    >
-                      <div
-                        className={`w-1.5 h-1.5 rounded-full ${
-                          /[A-Z]/.test(password) ? "bg-green-500" : "bg-gray-300"
-                        }`}
-                      />
-                      One uppercase letter
-                    </div>
-                    <div
-                      className={`flex items-center gap-2 ${
-                        /[a-z]/.test(password)
-                          ? "text-green-600 dark:text-green-400"
-                          : "text-gray-500 dark:text-gray-400"
-                      }`}
-                    >
-                      <div
-                        className={`w-1.5 h-1.5 rounded-full ${
-                          /[a-z]/.test(password) ? "bg-green-500" : "bg-gray-300"
-                        }`}
-                      />
-                      One lowercase letter
-                    </div>
-                    <div
-                      className={`flex items-center gap-2 ${
-                        /\d/.test(password)
-                          ? "text-green-600 dark:text-green-400"
-                          : "text-gray-500 dark:text-gray-400"
-                      }`}
-                    >
-                      <div
-                        className={`w-1.5 h-1.5 rounded-full ${
-                          /\d/.test(password) ? "bg-green-500" : "bg-gray-300"
-                        }`}
-                      />
-                      One number
-                    </div>
+                    <RequirementItem met={password.length >= 8} label="At least 8 characters" />
+                    <RequirementItem met={/[A-Z]/.test(password)} label="One uppercase letter" />
+                    <RequirementItem met={/[a-z]/.test(password)} label="One lowercase letter" />
+                    <RequirementItem met={/\d/.test(password)} label="One number" />
                   </div>
                 </motion.div>
               )}

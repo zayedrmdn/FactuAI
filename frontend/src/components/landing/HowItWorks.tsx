@@ -45,8 +45,8 @@ export default function HowItWorks() {
             <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 via-green-500 to-purple-500 transform -translate-y-1/2 z-0"></div>
             
             <div className="grid grid-cols-4 gap-8 relative z-10">
-              {steps.map((step, index) => (
-                <div key={index} className="text-center">
+              {steps.map((step) => (
+                <div key={step.number} className="text-center">
                   <div className="bg-white dark:bg-gray-900 rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center shadow-lg border-4 border-blue-500 dark:border-blue-400">
                     <span className="text-2xl">{step.icon}</span>
                   </div>
@@ -69,8 +69,8 @@ export default function HowItWorks() {
 
         {/* Mobile/Tablet Layout */}
         <div className="lg:hidden space-y-8">
-          {steps.map((step, index) => (
-            <div key={index} className="flex items-start gap-6">
+          {steps.map((step) => (
+            <div key={step.number} className="flex items-start gap-6">
               <div className="flex-shrink-0 bg-blue-500 text-white rounded-full w-16 h-16 flex items-center justify-center text-xl font-bold">
                 {step.number}
               </div>

@@ -6,10 +6,10 @@ import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface AccordionItemProps {
-  title: React.ReactNode;
-  children: React.ReactNode;
-  defaultOpen?: boolean;
-  className?: string;
+  readonly title: React.ReactNode;
+  readonly children: React.ReactNode;
+  readonly defaultOpen?: boolean;
+  readonly className?: string;
 }
 
 export function AccordionItem({
@@ -17,7 +17,7 @@ export function AccordionItem({
   children,
   defaultOpen = false,
   className,
-}: AccordionItemProps) {
+}: Readonly<AccordionItemProps>) {
   const [isOpen, setIsOpen] = React.useState(defaultOpen);
 
   return (
@@ -56,9 +56,9 @@ export function AccordionItem({
 export function Accordion({
   children,
   className,
-}: {
+}: Readonly<{
   children: React.ReactNode;
   className?: string;
-}) {
+}>) {
   return <div className={cn("w-full", className)}>{children}</div>;
 }

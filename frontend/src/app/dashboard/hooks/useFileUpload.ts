@@ -2,16 +2,16 @@ import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { FileUploadState } from '../types/ui';
 
-interface UseFileUploadOptions {
+interface UseFileUploadOptions<T> {
   acceptedTypes: string[];
   maxSize?: number;
-  onSuccess: (file: File, result: any) => void;
+  onSuccess: (file: File, result: T) => void;
   onError?: (error: string) => void;
-  uploadFunction: (file: File) => Promise<any>;
+  uploadFunction: (file: File) => Promise<T>;
   successMessage?: string;
 }
 
-export function useFileUpload(options: UseFileUploadOptions) {
+export function useFileUpload<T>(options: UseFileUploadOptions<T>) {
   const [state, setState] = useState<FileUploadState>({
     isProcessing: false,
   });

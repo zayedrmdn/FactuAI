@@ -50,65 +50,156 @@ class PipelineOrchestrator:
             return ""
 
     def check_text(self, text: str, max_claims: int = 5) -> dict:
-        logger.debug("[PIPELINE] check_text() called")
-        if hasattr(self.llm, "clear_cache"):
-            self.llm.clear_cache()
+        """Synchronous wrapper around the generator for backward compatibility."""
+        logger.debug("[PIPELINE] check_text() called (sync wrapper)")
+        
+        results = []
+        summary = ""
+        validation_error = None
+        suggestion = None
 
-        intent = detect_intent(text, self.llm)
-        logger.debug(f"[PIPELINE] detected intent: {intent}")
+        for event in self.check_text_generator(text, max_claims):
+            if event["type"] == "result":
+                results.append(event["result"])
+            elif event["type"] == "summary":
+                summary = event["summary"]
+            elif event["type"] == "error":
+                validation_error = event["message"]
+                suggestion = event.get("suggestion")
+        
+        if validation_error:
+            return {
+                "summary": summary,
+                "results": results,
+                "validation_error": validation_error,
+                "suggestion": suggestion
+            }
+            
+        return {"summary": summary, "results": results}
 
-        handler = self._handlers.get(intent, self._handle_unknown)
-        return handler(text, max_claims)
+    def check_text_generator(self, text: str, max_claims: int = 5):
+        """Generator that yields progress events and results."""
+        logger.debug("[PIPELINE] check_text_generator() started")
+        
+        try:
+            if hasattr(self.llm, "clear_cache"):
+                self.llm.clear_cache()
 
-    def _handle_non_verifiable(self, *_):
-        logger.debug("[PIPELINE] non-verifiable input")
+            yield {"type": "phase", "message": "Detecting intent...", "progress": 5}
+            intent = detect_intent(text, self.llm)
+            logger.debug(f"[PIPELINE] detected intent: {intent}")
+
+            if intent in ["opinion", "nonsense", "instructional"]:
+                yield {
+                    "type": "error", 
+                    "message": "Input is not verifiable.", 
+                    "suggestion": "Please enter a factual claim, question, or news paragraph."
+                }
+                return
+
+            # Dispatch to appropriate handler generator
+            if intent == "fact_question":
+                yield from self._handle_fact_question_gen(text)
+            elif intent in ["news_paragraph", "multi_claim"]:
+                yield from self._handle_multi_claim_gen(text, max_claims)
+            else: # fact_claim
+                yield from self._handle_fact_claim_gen(text)
+        except Exception as e:
+            logger.exception(f"[PIPELINE] Unexpected error in check_text_generator: {e}")
+            yield {
+                "type": "error",
+                "message": f"Internal server error: {str(e)}"
+            }
+
+    def _handle_fact_question_gen(self, text: str):
+        logger.info("[PIPELINE] handling fact_question (fallback to claim)")
+        # 1. Summary
+        yield {"type": "phase", "message": "Generating summary...", "progress": 10}
+        summary = summarise_input_text(text, self.llm)
+        yield {"type": "summary", "summary": summary}
+        
+        # 2. Check
+        yield {"type": "phase", "message": "Verifying claim...", "progress": 30}
+        result = self._run_check(text) # Treating question as claim
+        yield {"type": "result", "result": {"claim": text, **result}}
+
+    def _handle_fact_claim_gen(self, text: str):
+        logger.debug("[PIPELINE] handling fact_claim")
+        # 1. Summary
+        yield {"type": "phase", "message": "Generating summary...", "progress": 10}
+        summary = summarise_input_text(text, self.llm)
+        yield {"type": "summary", "summary": summary}
+        
+        # 2. Check
+        yield {"type": "phase", "message": "Verifying claim...", "progress": 30}
+        result = self._run_check(text)
+        yield {"type": "result", "result": {"claim": text, **result}}
+
+    def _handle_multi_claim_gen(self, text: str, max_claims: int):
+        logger.debug("[PIPELINE] handling multi_claim/news_paragraph")
+        
+        # 1. Extract claims
+        yield {"type": "phase", "message": "Extracting claims...", "progress": 10}
+        claims = extract_claims_llm(text, max_claims, llm=self.llm)
+        
+        if not claims:
+             yield {
+                "type": "error", 
+                "message": "No factual claims found.", 
+                "suggestion": "Try a different text."
+            }
+             return
+
+        # 2. Summary
+        yield {"type": "phase", "message": "Generating summary...", "progress": 20}
+        summary = summarise_input_text(text, self.llm)
+        yield {"type": "summary", "summary": summary}
+
+        # 3. Process each claim
+        total = len(claims)
+        for i, claim in enumerate(claims):
+            progress = 25 + int((i / total) * 70) # 25% to 95%
+            yield {
+                "type": "phase", 
+                "message": f"Verifying claim {i+1}/{total}...", 
+                "progress": progress,
+                "claim_index": i
+            }
+            
+            result = self._run_check(
+                claim,
+                max_google=2,
+                max_news=1
+            )
+            yield {"type": "result", "result": {"claim": claim, **result}}
+
+    # --- Backwards-compatible synchronous handler wrappers ---
+    def _handle_non_verifiable(self, text: str):
+        """Synchronous handler for non-verifiable inputs.
+
+        Returns a structure similar to check_text when validation fails.
+        """
         return {
             "summary": "",
             "results": [],
             "validation_error": "Input is not verifiable.",
-            "suggestion":       "Please enter a factual claim, question, or news paragraph."
+            "suggestion": "Please enter a factual claim, question, or news paragraph."
         }
 
-    def _handle_unknown(self, *_):
-        return {
-            "summary": "",
-            "results": [],
-            "validation_error": "Intent could not be determined.",
-            "suggestion":       "Please enter a verifiable statement or question."
-        }
+    def _handle_fact_question(self, text: str):
+        """Synchronous wrapper for handling a fact_question.
 
-    def _handle_fact_question(self, text: str, max_claims: int):
-        # fallback to claim path (enhanced QA not implemented)
-        logger.info("[PIPELINE] fallback to claim path")
-        claim = text  # treat question as claim for now
-        summary = summarise_input_text(text, self.llm)
-        result = self._run_check(claim)
-        return {"summary": summary, "results": [{"claim": claim, **result}]}
+        Reuses the existing synchronous check_text wrapper for compatibility.
+        """
+        return self.check_text(text, max_claims=1)
 
-    def _handle_multi_claim(self, text: str, max_claims: int):
-        logger.debug("[PIPELINE] handling multi_claim/news_paragraph")
-        claims  = extract_claims_llm(text, max_claims, llm=self.llm)
-        summary = summarise_input_text(text, self.llm)
+    def _handle_fact_claim(self, text: str):
+        """Synchronous wrapper for handling a fact_claim."""
+        return self.check_text(text, max_claims=1)
 
-        results = [
-            {
-                "claim": c,
-                **self._run_check(
-                    c,
-                    max_google=2,  # override defaults for multi‐claim
-                    max_news=1
-                )
-            }
-            for c in claims
-        ]
-
-        return {"summary": summary, "results": results}
-
-    def _handle_fact_claim(self, text: str, max_claims: int):
-        logger.debug("[PIPELINE] handling fact_claim")
-        summary = summarise_input_text(text, self.llm)
-        result  = self._run_check(text)
-        return {"summary": summary, "results": [{"claim": text, **result}]}
+    def _handle_multi_claim(self, text: str, max_claims: int = 5):
+        """Synchronous wrapper for handling multi-claim inputs."""
+        return self.check_text(text, max_claims=max_claims)
 
     def _run_check(
         self,

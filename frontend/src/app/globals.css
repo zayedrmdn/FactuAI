@@ -1,5 +1,6 @@
+/* stylelint-disable at-rule-no-unknown */
+/* This file uses Tailwind CSS v4 syntax which includes @import "tailwindcss", @custom-variant, @theme, and @apply directives */
 @import "tailwindcss";
-@import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 

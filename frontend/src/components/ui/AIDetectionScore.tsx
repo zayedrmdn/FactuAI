@@ -5,13 +5,13 @@ import "react-circular-progressbar/dist/styles.css";
 
 interface AIDetectionScoreProps {
   /** 0–100 AI probability score */
-  score: number;
+  readonly score: number;
   /** Optional error message if detection failed */
-  error?: string;
-  className?: string;
+  readonly error?: string;
+  readonly className?: string;
 }
 
-export default function AIDetectionScore({ score, error, className = "" }: AIDetectionScoreProps) {
+export default function AIDetectionScore({ score, error, className = "" }: Readonly<AIDetectionScoreProps>) {
   if (error) {
     return (
       <div className={`max-w-xs mx-auto mb-6 ${className}`}>

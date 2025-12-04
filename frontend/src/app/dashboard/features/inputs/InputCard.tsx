@@ -36,7 +36,7 @@ export default function InputCard({
   saveImageToHistory,
   saveVideoToHistory,
 }: InputCardProps) {
-  const [currentInputType, setCurrentInputType] = useState<InputType>("text");
+  const [, setCurrentInputType] = useState<InputType>("text");
 
   const validationResult = validateBasic(input);
   const showValidationError = input.trim().length > 0 && validationResult.error;

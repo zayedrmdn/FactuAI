@@ -3,7 +3,6 @@
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,7 +29,7 @@ export default function LoginPage() {
 
   const onSubmit = async (data: FormData) => {
     try {
-      const res = await fetch("http://localhost:5000/api/login", {
+      const res = await fetch("/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -45,9 +44,10 @@ export default function LoginPage() {
 
       toast.success("Login successful");
       localStorage.setItem("user", JSON.stringify(result.user));
-      window.location.href = "/dashboard";
-    } catch (err: any) {
-      toast.error(err.message || "Something went wrong");
+      globalThis.location.href = "/dashboard";
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(error.message || "Something went wrong");
     }
   };
 
@@ -62,7 +62,7 @@ export default function LoginPage() {
         <div className="relative z-20 mt-auto">
           <blockquote className="space-y-2">
             <p className="text-lg">
-              &ldquo;In an era of misinformation, having a reliable tool to verify claims instantly is not just a luxury, it's a necessity.&rdquo;
+              &ldquo;In an era of misinformation, having a reliable tool to verify claims instantly is not just a luxury, it&apos;s a necessity.&rdquo;
             </p>
             <footer className="text-sm">The FactuAI Team</footer>
           </blockquote>

@@ -1,14 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
 import { HistoryItem as HistoryItemType } from "../../types/factcheck";
 import HistoryItem from "./HistoryItem";
 import { TrashIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 
 interface HistoryPanelProps {
-  open: boolean;
-  toggle: () => void; // Kept for interface compatibility, but unused in new sticky layout
   history: HistoryItemType[];
   load: (item: HistoryItemType) => void;
   del: (id: string) => void;
@@ -20,7 +17,7 @@ export default function HistoryPanel({
   load,
   del,
   clearAll
-}: HistoryPanelProps) {
+}: Readonly<HistoryPanelProps>) {
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState("all"); // 'all', 'text', 'image', 'video'
 

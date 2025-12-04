@@ -2,10 +2,10 @@ import React from 'react';
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
 
 interface ProcessingStatusProps {
-  isProcessing: boolean;
-  message?: string;
-  progress?: number;
-  className?: string;
+  readonly isProcessing: boolean;
+  readonly message?: string;
+  readonly progress?: number;
+  readonly className?: string;
 }
 
 export function ProcessingStatus({ 
@@ -13,7 +13,7 @@ export function ProcessingStatus({
   message = "Processing...", 
   progress,
   className = "" 
-}: ProcessingStatusProps) {
+}: Readonly<ProcessingStatusProps>) {
   if (!isProcessing) return null;
 
   return (
