@@ -86,19 +86,22 @@ export default function DashboardPage() {
         isDark={isDark}
       />
 
-      {/* Main Content Grid - constrained max-width for large screens */}
-      <div className="p-4 lg:p-8 max-w-screen-2xl mx-auto flex flex-col h-full">
-        {/* Context Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-semibold tracking-tight">Investigation Console</h1>
-          <p className="text-muted-foreground">
+      {/* Main Dashboard Container */}
+      <div className="p-4 sm:p-6 lg:p-8 max-w-screen-2xl mx-auto flex flex-col h-full">
+        {/* Page Header */}
+        <div className="mb-4 sm:mb-6">
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">
+            Investigation Console
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
             Analyze text, images, or videos to verify claims against real-time evidence.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 items-start flex-1">
-          {/* Left: Main Workspace (8 columns) */}
-          <main className="lg:col-span-8 xl:col-span-9 flex flex-col gap-6 h-full">
+        {/* Main Content - Mobile First Grid */}
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-12 items-start flex-1">
+          {/* Main Workspace */}
+          <main className="lg:col-span-8 xl:col-span-9 flex flex-col gap-4 sm:gap-6 h-full">
             {showResults ? (
               <ResultsView
                 results={factResults}
@@ -117,10 +120,9 @@ export default function DashboardPage() {
                 error={factCheckError}
               />
             ) : (
-              /* Input Console - Wrapped to look like a Unified Tool */
-              <div className="flex flex-col rounded-xl border bg-card shadow-sm overflow-hidden min-h-panel h-full transition-all">
-                {/* The Input Card itself */}
-                <div className="flex-1 p-1 h-full">
+              /* Input Console */
+              <div className="flex flex-col rounded-xl border bg-card shadow-sm overflow-hidden min-h-[500px] h-full">
+                <div className="flex-1 p-1">
                   <InputCard
                     input={input}
                     setInput={setInput}
@@ -136,25 +138,25 @@ export default function DashboardPage() {
                   />
                 </div>
 
-                {/* Integrated Footer for Actions (No longer orphan buttons) */}
-                <div className="border-t bg-muted/30 p-4 flex flex-wrap items-center justify-between gap-4">
+                {/* Quick Start Actions */}
+                <div className="border-t bg-muted/30 p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Quick Start
                   </span>
-                  <div className="flex gap-3">
+                  <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                     <button
                       onClick={loadSampleText}
-                      className="inline-flex items-center gap-2 rounded-md border bg-background px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                      className="inline-flex items-center gap-2 rounded-md border bg-background px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent hover:text-accent-foreground flex-1 sm:flex-initial justify-center"
                     >
                       <RotateCcw className="h-3.5 w-3.5" />
-                      Load Medical Sample
+                      Medical Sample
                     </button>
                     <button
                       onClick={loadDemoClaim}
-                      className="inline-flex items-center gap-2 rounded-md border bg-background px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                      className="inline-flex items-center gap-2 rounded-md border bg-background px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent hover:text-accent-foreground flex-1 sm:flex-initial justify-center"
                     >
                       <FileText className="h-3.5 w-3.5" />
-                      Load Conspiracy Sample
+                      Conspiracy Sample
                     </button>
                   </div>
                 </div>
@@ -162,10 +164,9 @@ export default function DashboardPage() {
             )}
           </main>
 
-          {/* Right: History Sidebar (4 columns) - Sticky & Constrained */}
-          <aside className="hidden lg:block lg:col-span-4 xl:col-span-3 sticky top-6 h-[calc(100vh-3rem)] overflow-hidden flex flex-col">
-            {/* The HistoryPanel is wrapped to force internal scrolling */}
-            <div className="flex-1 overflow-hidden border rounded-xl bg-card shadow-sm">
+          {/* History Sidebar - Hidden on mobile, sticky on desktop */}
+          <aside className="hidden lg:block lg:col-span-4 xl:col-span-3 sticky top-6 h-[calc(100vh-3rem)]">
+            <div className="h-full border rounded-xl bg-card shadow-sm overflow-hidden">
               <HistoryPanel
                 history={history}
                 load={loadHistoryItem}

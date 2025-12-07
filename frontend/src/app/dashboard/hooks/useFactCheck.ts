@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { validateForFactCheck } from './useInputValidation';
 import { FactCheckResult } from '../types/factcheck';
 
-const API_URL = '/api/process';
+const API_URL = 'http://localhost:5000/api/process';
 
 // Type for SSE data messages
 interface SSEMessage {
@@ -206,7 +206,7 @@ export function useFactCheck() {
       progressive: true,
       // AI Model Parameters
       provider: selection.provider,
-      model_id: selection.modelId,
+      model_id: baseModel?.modelId || selection.modelId,
       model_display_name: baseModel?.displayName || 'Unknown',
       // Model settings (with overrides if any)
       temperature,

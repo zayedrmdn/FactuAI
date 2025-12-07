@@ -214,125 +214,135 @@ export default function ResultsView({
   }
 
   return (
-    <div className={cn('flex flex-col w-full space-y-8 max-w-6xl mx-auto pb-10', className)}>
-      {/* Summary Card Grid Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Column 1: Overall Score */}
-        <Card className="border border-slate-200 shadow-sm rounded-xl bg-white overflow-hidden flex flex-col">
-          <CardContent className="p-6 flex-1 flex flex-col items-center justify-center space-y-4">
-            <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">
-              Trust Score
-            </h3>
-            <div className="scale-110">
-              <OverallScore score={averageConfidence} />
-            </div>
-            {aiScore !== null && aiScore !== undefined && (
-              <div className="pt-2 w-full border-t border-slate-100 mt-2">
-                <AIDetectionScore score={aiScore} error={aiError} />
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Column 2: Stats & Breakdown */}
-        <Card className="border border-slate-200 shadow-sm rounded-xl bg-white overflow-hidden flex flex-col">
-          <CardContent className="p-6 flex-1 flex flex-col justify-center space-y-6">
+    <div className={cn('flex flex-col w-full space-y-6 max-w-6xl mx-auto pb-10', className)}>
+      {/* Unified Summary Card - Mobile First Design */}
+      <Card className="border shadow-sm rounded-xl overflow-hidden">
+        <CardContent className="p-4 sm:p-6">
+          {/* Header Row with Title and Actions */}
+          <div className="flex items-start justify-between mb-6 pb-4 border-b">
             <div className="space-y-1">
-              <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">
-                Analysis Breakdown
-              </h3>
-              <p className="text-2xl font-bold text-slate-900">
-                {stats.total}{' '}
-                <span className="text-base font-normal text-slate-500">Claims Analyzed</span>
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2 text-slate-700">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  <span>Verified / True</span>
-                </div>
-                <span className="font-medium text-slate-900">{stats.trueCount}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2 text-slate-700">
-                  <XCircle className="h-4 w-4 text-rose-500" />
-                  <span>False / Misleading</span>
-                </div>
-                <span className="font-medium text-slate-900">{stats.falseCount}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2 text-slate-700">
-                  <AlertTriangle className="h-4 w-4 text-amber-500" />
-                  <span>Mixed / Unclear</span>
-                </div>
-                <span className="font-medium text-slate-900">{stats.mixedCount}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Column 3: Actions & Metadata */}
-        <Card className="border border-slate-200 shadow-sm rounded-xl bg-slate-50/50 overflow-hidden flex flex-col">
-          <CardContent className="p-6 flex-1 flex flex-col justify-between space-y-4">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">
-                  Actions
-                </h3>
-                <div className="flex gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={openSettings}
-                    className="h-8 w-8 text-slate-400 hover:text-slate-700"
-                  >
-                    <Settings className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={onClear}
-                    className="h-8 w-8 text-slate-400 hover:text-rose-600 hover:bg-rose-50"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-              <p className="text-xs text-slate-400">
+              <h2 className="text-lg sm:text-xl font-semibold text-slate-900">Analysis Results</h2>
+              <p className="text-xs text-slate-500">
                 Last updated: {updated ? new Date(updated).toLocaleTimeString() : 'Just now'}
               </p>
             </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <Button variant="outline" size="sm" onClick={copySummary} className="w-full bg-white">
-                <Copy className="mr-2 h-3.5 w-3.5" /> Copy
+            <div className="flex gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={openSettings}
+                className="h-8 w-8 text-slate-400 hover:text-slate-700"
+              >
+                <Settings className="h-4 w-4" />
               </Button>
               <Button
-                variant="outline"
-                size="sm"
-                onClick={() => exportPdf()}
-                className="w-full bg-white"
+                variant="ghost"
+                size="icon"
+                onClick={onClear}
+                className="h-8 w-8 text-slate-400 hover:text-rose-600 hover:bg-rose-50"
               >
-                <Download className="mr-2 h-3.5 w-3.5" /> PDF
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={shareResults}
-                className="w-full bg-white col-span-2"
-              >
-                <Share2 className="mr-2 h-3.5 w-3.5" /> Share Report
+                <X className="h-4 w-4" />
               </Button>
             </div>
+          </div>
 
-            <Button variant="default" size="sm" onClick={onRetry} className="w-full mt-auto">
-              <RefreshCw className="mr-2 h-3.5 w-3.5" /> New Analysis
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+          {/* Main Content Grid - Mobile: stack, Tablet: 2-col, Desktop: 3-col */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+            {/* Trust Score Section */}
+            <div className="flex flex-col items-center justify-center p-4 rounded-lg bg-slate-50/50 border border-slate-100">
+              <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">
+                Trust Score
+              </h3>
+              <OverallScore score={averageConfidence} />
+              {aiScore !== null && aiScore !== undefined && (
+                <div className="pt-4 w-full border-t border-slate-200 mt-4">
+                  <AIDetectionScore score={aiScore} error={aiError} />
+                </div>
+              )}
+            </div>
+
+            {/* Analysis Breakdown Section */}
+            <div className="flex flex-col justify-center p-4 rounded-lg bg-slate-50/50 border border-slate-100">
+              <div className="space-y-1 mb-4">
+                <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  Analysis Breakdown
+                </h3>
+                <p className="text-2xl font-bold text-slate-900">
+                  {stats.total}{' '}
+                  <span className="text-base font-normal text-slate-500">
+                    Claim{stats.total !== 1 ? 's' : ''}
+                  </span>
+                </p>
+              </div>
+
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2 text-slate-700">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0" />
+                    <span>Verified</span>
+                  </div>
+                  <span className="font-semibold text-slate-900">{stats.trueCount}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2 text-slate-700">
+                    <XCircle className="h-4 w-4 text-rose-500 flex-shrink-0" />
+                    <span>False</span>
+                  </div>
+                  <span className="font-semibold text-slate-900">{stats.falseCount}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2 text-slate-700">
+                    <AlertTriangle className="h-4 w-4 text-amber-500 flex-shrink-0" />
+                    <span>Unclear</span>
+                  </div>
+                  <span className="font-semibold text-slate-900">{stats.mixedCount}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions Section */}
+            <div className="flex flex-col justify-center p-4 rounded-lg bg-slate-50/50 border border-slate-100 md:col-span-2 lg:col-span-1">
+              <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">
+                Quick Actions
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-1 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={copySummary}
+                  className="w-full justify-start"
+                >
+                  <Copy className="mr-2 h-3.5 w-3.5" /> Copy
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => exportPdf()}
+                  className="w-full justify-start"
+                >
+                  <Download className="mr-2 h-3.5 w-3.5" /> PDF
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={shareResults}
+                  className="w-full justify-start"
+                >
+                  <Share2 className="mr-2 h-3.5 w-3.5" /> Share
+                </Button>
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={onRetry}
+                  className="w-full justify-start sm:col-span-4 lg:col-span-1"
+                >
+                  <RefreshCw className="mr-2 h-3.5 w-3.5" /> New Analysis
+                </Button>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Executive Summary Text Block */}
       {summary && (

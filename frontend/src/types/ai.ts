@@ -101,12 +101,14 @@ export interface AIModelSelection {
   /** Currently selected model ID */
   modelId: string;
   /** Current session overrides for model parameters */
-  sessionOverrides?: {
-    temperature?: number;
-    maxTokens?: number;
-    topP?: number;
-    systemPrompt?: string;
-  } | undefined;
+  sessionOverrides?:
+    | {
+        temperature?: number;
+        maxTokens?: number;
+        topP?: number;
+        systemPrompt?: string;
+      }
+    | undefined;
 }
 
 /**

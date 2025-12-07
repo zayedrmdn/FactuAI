@@ -56,8 +56,8 @@ export default function OverallScore({
     <div className={`w-full flex flex-col items-center ${className}`}>
       <div className="w-24 h-24 mb-3">
         <CircularProgressbar
-          value={score}
-          text={`${score.toFixed(0)}%`}
+          value={normalizedScore}
+          text={`${normalizedScore.toFixed(0)}%`}
           styles={buildStyles({
             pathColor: color,
             textColor: color,
@@ -71,7 +71,7 @@ export default function OverallScore({
       <div className="w-full text-center space-y-2">
         <div className="text-xs font-medium text-gray-600 dark:text-gray-400">{title}</div>
         <div className="text-sm font-semibold" style={{ color }}>
-          {label} ({score.toFixed(0)}%)
+          {label} ({normalizedScore.toFixed(0)}%)
         </div>
 
         {/* Legend */}
