@@ -1,30 +1,30 @@
-"use client";
+'use client';
 
-import Script from "next/script";
+import Script from 'next/script';
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Geist, Geist_Mono } from "next/font/google";
-import { motion, AnimatePresence } from "framer-motion";
-import { Toaster } from "sonner";
-import { ChevronDownIcon, MoonIcon, SunIcon } from "lucide-react";
-import UserAvatar from "@/components/UserAvatar";
-import "./globals.css";
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { Geist, Geist_Mono } from 'next/font/google';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Toaster } from 'sonner';
+import { ChevronDownIcon, MoonIcon, SunIcon } from 'lucide-react';
+import UserAvatar from '@/components/UserAvatar';
+import './globals.css';
 
 /* fonts */
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] });
+const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] });
 
 /** Helper function to get the main container className */
-function getMainClassName(isHomePage: boolean, onAuthPage: boolean): string {
-  if (isHomePage) {
-    return ""; // Homepage handles its own layout
+function getMainClassName(isHomePage: boolean, onAuthPage: boolean, isDashboard: boolean): string {
+  if (isHomePage || isDashboard) {
+    return ''; // Homepage and dashboard handle their own layout
   }
   if (onAuthPage) {
-    return "container mx-auto px-6 py-8 flex justify-center items-start min-h-screen";
+    return 'container mx-auto px-6 py-8 flex justify-center items-start min-h-screen';
   }
-  return "flex justify-center items-center min-h-screen px-4";
+  return 'flex justify-center items-center min-h-screen px-4';
 }
 
 interface UserData {
@@ -34,9 +34,9 @@ interface UserData {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const pathname = usePathname();
-  const onAuthPage = !["/login", "/register"].includes(pathname); // true when authenticated pages
-  const isHomePage = pathname === "/";
-  const isDashboard = pathname?.startsWith("/dashboard");
+  const onAuthPage = !['/login', '/register'].includes(pathname); // true when authenticated pages
+  const isHomePage = pathname === '/';
+  const isDashboard = pathname?.startsWith('/dashboard');
 
   const [isDark, setIsDark] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
@@ -44,15 +44,15 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
 
   /* initial theme */
   useEffect(() => {
-    const stored = localStorage.getItem("theme");
+    const stored = localStorage.getItem('theme');
     if (!stored) {
-      localStorage.setItem("theme", "light");
+      localStorage.setItem('theme', 'light');
       setIsDark(false);
-    } else if (stored === "dark") {
-      document.documentElement.classList.add("dark");
+    } else if (stored === 'dark') {
+      document.documentElement.classList.add('dark');
       setIsDark(true);
     } else {
-      document.documentElement.classList.remove("dark");
+      document.documentElement.classList.remove('dark');
       setIsDark(false);
     }
   }, []);
@@ -60,13 +60,13 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   /* listen for theme changes from other components */
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === "theme") {
+      if (e.key === 'theme') {
         const newTheme = e.newValue;
-        if (newTheme === "dark") {
-          document.documentElement.classList.add("dark");
+        if (newTheme === 'dark') {
+          document.documentElement.classList.add('dark');
           setIsDark(true);
         } else {
-          document.documentElement.classList.remove("dark");
+          document.documentElement.classList.remove('dark');
           setIsDark(false);
         }
       }
@@ -74,15 +74,15 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
 
     // Listen for storage changes from other tabs/components
     globalThis.addEventListener('storage', handleStorageChange);
-    
+
     // Also listen for custom theme change events within the same tab
     const handleThemeChange = (e: CustomEvent) => {
       const newTheme = e.detail.theme;
-      if (newTheme === "dark") {
-        document.documentElement.classList.add("dark");
+      if (newTheme === 'dark') {
+        document.documentElement.classList.add('dark');
         setIsDark(true);
       } else {
-        document.documentElement.classList.remove("dark");
+        document.documentElement.classList.remove('dark');
         setIsDark(false);
       }
     };
@@ -97,7 +97,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
 
   /* load user data */
   useEffect(() => {
-    const userData = localStorage.getItem("user");
+    const userData = localStorage.getItem('user');
     if (userData) {
       setUser(JSON.parse(userData));
     }
@@ -124,26 +124,28 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   /* theme toggle */
   const toggleTheme = (val: boolean) => {
     setIsDark(val);
-    const newTheme = val ? "dark" : "light";
-    
+    const newTheme = val ? 'dark' : 'light';
+
     if (val) {
-      document.documentElement.classList.add("dark");
+      document.documentElement.classList.add('dark');
     } else {
-      document.documentElement.classList.remove("dark");
+      document.documentElement.classList.remove('dark');
     }
-    
-    localStorage.setItem("theme", newTheme);
-    
+
+    localStorage.setItem('theme', newTheme);
+
     // Dispatch custom event to sync with other components
-    globalThis.dispatchEvent(new CustomEvent('themeChange', { 
-      detail: { theme: newTheme } 
-    }));
+    globalThis.dispatchEvent(
+      new CustomEvent('themeChange', {
+        detail: { theme: newTheme },
+      })
+    );
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("user");
+    localStorage.removeItem('user');
     setShowProfileDropdown(false);
-    globalThis.location.href = "/login";
+    globalThis.location.href = '/login';
   };
 
   return (
@@ -152,7 +154,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         {/* React Grab: Development tool for AI-assisted development and faster context retrieval.
             Only loaded in development mode for security and bundle size reasons.
             See PROJECT_DOCUMENTATION.md for more details. */}
-        {process.env.NODE_ENV === "development" && (
+        {process.env.NODE_ENV === 'development' && (
           <Script
             src="//unpkg.com/react-grab/dist/index.global.js"
             crossOrigin="anonymous"
@@ -173,7 +175,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                   <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-all duration-200 shadow-lg">
                     <span className="font-bold text-white">🔍</span>
                   </div>
-                  <span className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">FactuAI</span>
+                  <span className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">
+                    FactuAI
+                  </span>
                 </Link>
 
                 {/* Right - Grouped Controls */}
@@ -185,10 +189,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                   >
                     <motion.div
                       initial={false}
-                      animate={{ 
+                      animate={{
                         scale: isDark ? 1 : 0,
                         opacity: isDark ? 1 : 0,
-                        rotate: isDark ? 0 : 180
+                        rotate: isDark ? 0 : 180,
                       }}
                       transition={{ duration: 0.3 }}
                       className="absolute"
@@ -197,10 +201,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                     </motion.div>
                     <motion.div
                       initial={false}
-                      animate={{ 
+                      animate={{
                         scale: isDark ? 0 : 1,
                         opacity: isDark ? 0 : 1,
-                        rotate: isDark ? 180 : 0
+                        rotate: isDark ? 180 : 0,
                       }}
                       transition={{ duration: 0.3 }}
                     >
@@ -272,11 +276,12 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         )}
 
         {/* main */}
-        <main
-          className={getMainClassName(isHomePage, onAuthPage)}
-        >
-          {children}
-        </main>
+        {isDashboard ? (
+          // Dashboard uses its own layout structure, no wrapper needed
+          children
+        ) : (
+          <main className={getMainClassName(isHomePage, onAuthPage, isDashboard)}>{children}</main>
+        )}
 
         <Toaster />
       </body>

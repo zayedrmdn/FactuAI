@@ -9,8 +9,8 @@ REM     launch.bat local   - Start in Local Mode (full ML stack)
 REM     launch.bat         - Defaults to Cloud Mode
 REM
 REM   Virtual Environments:
-REM     .venv-cloud/  - For Cloud Mode (requirements-core.txt)
-REM     .venv-local/  - For Local Mode (requirements-local.txt)
+REM     .venv-cloud/  - For Cloud Mode (backend/requirements-core.txt)
+REM     .venv-local/  - For Local Mode (backend/requirements-local.txt)
 REM ─────────────────────────────────────────────────────────────
 
 REM Get the project root (parent of scripts folder)
@@ -30,10 +30,10 @@ echo ═════════════════════════
 REM Set venv path based on mode
 if "%RUN_MODE%"=="local" (
     set "VENV_PATH=%PROJECT_ROOT%\.venv-local"
-    set "REQUIREMENTS=%PROJECT_ROOT%\requirements-local.txt"
+    set "REQUIREMENTS=%PROJECT_ROOT%\backend\requirements-local.txt"
 ) else (
     set "VENV_PATH=%PROJECT_ROOT%\.venv-cloud"
-    set "REQUIREMENTS=%PROJECT_ROOT%\requirements-core.txt"
+    set "REQUIREMENTS=%PROJECT_ROOT%\backend\requirements-core.txt"
 )
 
 REM Check if venv exists, create if not

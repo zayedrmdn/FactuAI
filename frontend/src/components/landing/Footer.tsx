@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from 'next/link';
 
 export default function Footer() {
   return (
@@ -14,8 +14,8 @@ export default function Footer() {
               <span className="text-xl font-bold">FactuAI</span>
             </div>
             <p className="text-gray-400 leading-relaxed">
-              AI-powered news summarization and fact-checking platform. 
-              Helping you navigate information with confidence and clarity.
+              AI-powered news summarization and fact-checking platform. Helping you navigate
+              information with confidence and clarity.
             </p>
             <div className="flex items-center gap-4 text-sm text-gray-400">
               <span>🎓 Research Project</span>
@@ -31,13 +31,22 @@ export default function Footer() {
               <Link href="/" className="block text-gray-400 hover:text-white transition-colors">
                 Home
               </Link>
-              <Link href="/register" className="block text-gray-400 hover:text-white transition-colors">
+              <Link
+                href="/register"
+                className="block text-gray-400 hover:text-white transition-colors"
+              >
                 Get Started
               </Link>
-              <Link href="/login" className="block text-gray-400 hover:text-white transition-colors">
+              <Link
+                href="/login"
+                className="block text-gray-400 hover:text-white transition-colors"
+              >
                 Login
               </Link>
-              <Link href="#how-it-works" className="block text-gray-400 hover:text-white transition-colors">
+              <Link
+                href="#how-it-works"
+                className="block text-gray-400 hover:text-white transition-colors"
+              >
                 How It Works
               </Link>
             </nav>

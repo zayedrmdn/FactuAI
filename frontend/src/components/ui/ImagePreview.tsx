@@ -1,8 +1,14 @@
-"use client";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
-import "react-circular-progressbar/dist/styles.css";
-import { ArrowPathIcon, ShieldCheckIcon, PhotoIcon, Cog6ToothIcon } from "@heroicons/react/24/outline";
+'use client';
+import Image from 'next/image';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
+import 'react-circular-progressbar/dist/styles.css';
+import {
+  ArrowPathIcon,
+  ShieldCheckIcon,
+  PhotoIcon,
+  Cog6ToothIcon,
+} from '@heroicons/react/24/outline';
 
 interface ImagePreviewData {
   readonly url: string;
@@ -15,25 +21,25 @@ interface Props {
   readonly imagePreview: ImagePreviewData;
   readonly validationResult: { readonly isValid: boolean };
   readonly input: string;
-  readonly loading: null | "summary" | "factcheck";
+  readonly loading: null | 'summary' | 'factcheck';
   readonly onRetry: () => void;
   readonly onFactCheck: () => void;
   readonly onClear: () => void;
   readonly openSettings: () => void;
 }
 
-/** Helper function to get color based on AI score */
+/** Helper function to get color based on AI score - using CSS variables */
 function getScoreColor(score: number): string {
-  if (score >= 70) return "#dc2626";
-  if (score >= 30) return "#d97706";
-  return "#16a34a";
+  if (score >= 70) return 'oklch(var(--score-very-low))'; // Red for high AI detection
+  if (score >= 30) return 'oklch(var(--score-medium))'; // Amber for medium
+  return 'oklch(var(--score-very-high))'; // Green for likely real
 }
 
 /** Helper function to get label based on AI score */
 function getScoreLabel(score: number): string {
-  if (score >= 70) return "Likely AI";
-  if (score >= 30) return "Possibly AI";
-  return "Likely Real";
+  if (score >= 70) return 'Likely AI';
+  if (score >= 30) return 'Possibly AI';
+  return 'Likely Real';
 }
 
 /** Sub-component for AI detection error state */
@@ -50,7 +56,7 @@ function AIDetectionError({ error }: { readonly error: string }) {
 function AIScoreDisplay({ score }: { readonly score: number }) {
   const color = getScoreColor(score);
   const label = getScoreLabel(score);
-  
+
   return (
     <div className="w-32 h-32">
       <CircularProgressbar
@@ -59,7 +65,7 @@ function AIScoreDisplay({ score }: { readonly score: number }) {
         styles={buildStyles({
           pathColor: color,
           textColor: color,
-          trailColor: "#e5e7eb",
+          trailColor: 'oklch(var(--score-trail))',
         })}
       />
       <div className="text-center mt-2">
@@ -74,9 +80,7 @@ function AIScoreDisplay({ score }: { readonly score: number }) {
 /** Sub-component for AI detection unavailable state */
 function AIDetectionUnavailable() {
   return (
-    <div className="text-center text-sm text-muted-foreground p-4">
-      AI detection not available
-    </div>
+    <div className="text-center text-sm text-muted-foreground p-4">AI detection not available</div>
   );
 }
 
@@ -85,15 +89,16 @@ function AIDetectionSection({ imagePreview }: { readonly imagePreview: ImagePrev
   if (imagePreview.aiError) {
     return <AIDetectionError error={imagePreview.aiError} />;
   }
-  
+
   if (imagePreview.aiScore !== null) {
     return <AIScoreDisplay score={imagePreview.aiScore} />;
   }
-  
+
   return <AIDetectionUnavailable />;
 }
 
-const FALLBACK_IMAGE = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE2MCIgdmlld0JveD0iMCAwIDIwMCAxNjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTYwIiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjEwMCIgeT0iODAiIGZpbGw9IiM5Q0E0QUYiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5JbWFnZSBub3QgYXZhaWxhYmxlPC90ZXh0Pgo8L3N2Zz4=";
+const FALLBACK_IMAGE =
+  'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE2MCIgdmlld0JveD0iMCAwIDIwMCAxNjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTYwIiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjEwMCIgeT0iODAiIGZpbGw9IiM5Q0E0QUYiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5JbWFnZSBub3QgYXZhaWxhYmxlPC90ZXh0Pgo8L3N2Zz4=';
 
 export default function ImagePreview({
   imagePreview,
@@ -105,7 +110,8 @@ export default function ImagePreview({
   onClear,
   openSettings,
 }: Readonly<Props>) {
-  const hasExtractedText = imagePreview.extractedText && imagePreview.extractedText.trim().length > 0;
+  const hasExtractedText =
+    imagePreview.extractedText && imagePreview.extractedText.trim().length > 0;
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     e.currentTarget.src = FALLBACK_IMAGE;
@@ -116,11 +122,7 @@ export default function ImagePreview({
       <CardHeader className="flex justify-between items-center">
         <CardTitle>Image Analysis</CardTitle>
         <div className="flex gap-2">
-          <button
-            onClick={openSettings}
-            title="Settings"
-            className="p-1 text-muted-foreground"
-          >
+          <button onClick={openSettings} title="Settings" className="p-1 text-muted-foreground">
             <Cog6ToothIcon className="w-5 h-5" />
           </button>
         </div>
@@ -131,12 +133,14 @@ export default function ImagePreview({
           {/* Image Preview */}
           <div className="space-y-3">
             <h3 className="text-sm font-medium text-muted-foreground">Image Preview</h3>
-            <div className="border rounded-lg overflow-hidden">
-              <img
+            <div className="border rounded-lg overflow-hidden relative h-64">
+              <Image
                 src={imagePreview.url}
                 alt="Uploaded content for analysis"
-                className="w-full h-64 object-contain bg-gray-50 dark:bg-gray-900"
+                fill
+                className="object-contain bg-gray-50 dark:bg-gray-900"
                 onError={handleImageError}
+                unoptimized
               />
             </div>
           </div>
@@ -166,7 +170,7 @@ export default function ImagePreview({
                   onClick={onFactCheck}
                   className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white px-4 py-2 rounded transition"
                 >
-                  {loading === "factcheck" ? (
+                  {loading === 'factcheck' ? (
                     <ArrowPathIcon className="w-5 h-5 animate-spin" />
                   ) : (
                     <ShieldCheckIcon className="w-5 h-5" />
@@ -177,9 +181,7 @@ export default function ImagePreview({
             </div>
           ) : (
             <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border text-center">
-              <p className="text-sm text-muted-foreground">
-                No text found in this image
-              </p>
+              <p className="text-sm text-muted-foreground">No text found in this image</p>
             </div>
           )}
         </div>
@@ -193,7 +195,7 @@ export default function ImagePreview({
             <PhotoIcon className="w-5 h-5" />
             Try Another Image
           </button>
-          
+
           <button
             onClick={onClear}
             className="flex items-center gap-2 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 px-4 py-2 rounded transition"

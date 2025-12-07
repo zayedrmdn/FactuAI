@@ -1,0 +1,39 @@
+{
+  "extends": ["next/core-web-vitals", "plugin:@typescript-eslint/recommended", "prettier", "next/typescript"],
+  "plugins": ["@typescript-eslint", "simple-import-sort", "unused-imports"],
+  "rules": {
+    /* --- Error Prevention --- */
+    "no-console": ["warn", { "allow": ["warn", "error"] }], // Allow warnings and errors, warn on logs
+    "eqeqeq": "error", // Enforce ===
+    "no-unused-vars": "off", // Turn off default, use TypeScript's version below
+    "curly": "error", // Enforce curly braces for if/else/loops
+
+    /* --- TypeScript Strictness --- */
+    "@typescript-eslint/explicit-module-boundary-types": "off", // Optional: Turn on if you want to force return types
+    "@typescript-eslint/no-explicit-any": "error", // Disallow usage of 'any' type
+    "@typescript-eslint/no-unused-vars": "off", // Turn off TS version, use unused-imports plugin below
+
+    /* --- Unused Imports (Auto-fixable) --- */
+    "unused-imports/no-unused-imports": "error",
+    "unused-imports/no-unused-vars": [
+      "warn",
+      {
+        "vars": "all",
+        "varsIgnorePattern": "^_",
+        "args": "after-used",
+        "argsIgnorePattern": "^_"
+      }
+    ],
+
+    /* --- Import Organization (Auto-fixable) --- */
+    "simple-import-sort/imports": "error",
+    "simple-import-sort/exports": "error",
+    "import/first": "error",
+    "import/newline-after-import": "error",
+    "import/no-duplicates": "error",
+
+    /* --- React Best Practices --- */
+    "react/no-unknown-property": ["error", { "ignore": ["css"] }], // If using Emotion/Styled-components
+    "react/self-closing-comp": "error" // Enforce <Div /> instead of <Div></Div>
+  }
+}

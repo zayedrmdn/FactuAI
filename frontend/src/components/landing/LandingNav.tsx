@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { ChevronDownIcon, MoonIcon, SunIcon } from "lucide-react";
-import UserAvatar from "@/components/UserAvatar";
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { ChevronDownIcon, MoonIcon, SunIcon } from 'lucide-react';
+import UserAvatar from '@/components/UserAvatar';
 
 export default function LandingNav() {
   const [isDark, setIsDark] = useState(false);
@@ -13,19 +13,23 @@ export default function LandingNav() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
-  const [user, setUser] = useState<{ username?: string; email?: string; profile_picture?: string } | null>(null);
+  const [user, setUser] = useState<{
+    username?: string;
+    email?: string;
+    profile_picture?: string;
+  } | null>(null);
 
   // Handle theme
   useEffect(() => {
-    const stored = localStorage.getItem("theme");
+    const stored = localStorage.getItem('theme');
     if (!stored) {
-      localStorage.setItem("theme", "light");
+      localStorage.setItem('theme', 'light');
       setIsDark(false);
-    } else if (stored === "dark") {
-      document.documentElement.classList.add("dark");
+    } else if (stored === 'dark') {
+      document.documentElement.classList.add('dark');
       setIsDark(true);
     } else {
-      document.documentElement.classList.remove("dark");
+      document.documentElement.classList.remove('dark');
       setIsDark(false);
     }
   }, []);
@@ -33,13 +37,13 @@ export default function LandingNav() {
   // Listen for theme changes from other components
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === "theme") {
+      if (e.key === 'theme') {
         const newTheme = e.newValue;
-        if (newTheme === "dark") {
-          document.documentElement.classList.add("dark");
+        if (newTheme === 'dark') {
+          document.documentElement.classList.add('dark');
           setIsDark(true);
         } else {
-          document.documentElement.classList.remove("dark");
+          document.documentElement.classList.remove('dark');
           setIsDark(false);
         }
       }
@@ -47,11 +51,11 @@ export default function LandingNav() {
 
     // Listen for storage changes from other tabs
     globalThis.addEventListener('storage', handleStorageChange);
-    
+
     // Also listen for custom theme change events within the same tab
     const handleThemeChange = (e: CustomEvent) => {
       const newTheme = e.detail.theme;
-      if (newTheme === "dark") {
+      if (newTheme === 'dark') {
         setIsDark(true);
       } else {
         setIsDark(false);
@@ -68,7 +72,7 @@ export default function LandingNav() {
 
   // Check authentication status
   useEffect(() => {
-    const userData = localStorage.getItem("user");
+    const userData = localStorage.getItem('user');
     if (userData) {
       setIsAuthenticated(true);
       setUser(JSON.parse(userData));
@@ -76,10 +80,10 @@ export default function LandingNav() {
       setIsAuthenticated(false);
       setUser(null);
     }
-    
+
     // Listen for auth changes
     const handleStorageChange = () => {
-      const userData = localStorage.getItem("user");
+      const userData = localStorage.getItem('user');
       if (userData) {
         setIsAuthenticated(true);
         setUser(JSON.parse(userData));
@@ -88,7 +92,7 @@ export default function LandingNav() {
         setUser(null);
       }
     };
-    
+
     globalThis.addEventListener('storage', handleStorageChange);
     return () => globalThis.removeEventListener('storage', handleStorageChange);
   }, []);
@@ -98,8 +102,8 @@ export default function LandingNav() {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
     };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   // Close dropdown when clicking outside
@@ -122,24 +126,26 @@ export default function LandingNav() {
 
   const toggleTheme = (val: boolean) => {
     setIsDark(val);
-    const newTheme = val ? "dark" : "light";
-    
+    const newTheme = val ? 'dark' : 'light';
+
     if (val) {
-      document.documentElement.classList.add("dark");
+      document.documentElement.classList.add('dark');
     } else {
-      document.documentElement.classList.remove("dark");
+      document.documentElement.classList.remove('dark');
     }
-    
-    localStorage.setItem("theme", newTheme);
-    
+
+    localStorage.setItem('theme', newTheme);
+
     // Dispatch custom event to sync with other components
-    globalThis.dispatchEvent(new CustomEvent('themeChange', { 
-      detail: { theme: newTheme } 
-    }));
+    globalThis.dispatchEvent(
+      new CustomEvent('themeChange', {
+        detail: { theme: newTheme },
+      })
+    );
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("user");
+    localStorage.removeItem('user');
     setIsAuthenticated(false);
     setUser(null);
     setShowProfileDropdown(false);
@@ -155,11 +161,13 @@ export default function LandingNav() {
   };
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-      isScrolled 
-        ? "bg-white/95 dark:bg-gray-900/95 backdrop-blur-md shadow-lg border-b border-gray-200/50 dark:border-gray-700/50" 
-        : "bg-transparent"
-    }`}>
+    <nav
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        isScrolled
+          ? 'bg-white/95 dark:bg-gray-900/95 backdrop-blur-md shadow-lg border-b border-gray-200/50 dark:border-gray-700/50'
+          : 'bg-transparent'
+      }`}
+    >
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Left - Enhanced Logo with Icon */}
@@ -167,15 +175,17 @@ export default function LandingNav() {
             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-all duration-200 shadow-lg">
               <span className="font-bold text-white">🔍</span>
             </div>
-            <span className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">FactuAI</span>
+            <span className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">
+              FactuAI
+            </span>
           </Link>
 
           {/* Center - Navigation Links with Animations (Desktop) */}
           <div className="hidden md:flex items-center space-x-8">
             {[
-              { href: "#features", label: "Features" },
-              { href: "#how-it-works", label: "How It Works" },
-              { href: "#contact", label: "Contact" }
+              { href: '#features', label: 'Features' },
+              { href: '#how-it-works', label: 'How It Works' },
+              { href: '#contact', label: 'Contact' },
             ].map((link) => (
               <button
                 key={link.href}
@@ -197,10 +207,10 @@ export default function LandingNav() {
             >
               <motion.div
                 initial={false}
-                animate={{ 
+                animate={{
                   scale: isDark ? 1 : 0,
                   opacity: isDark ? 1 : 0,
-                  rotate: isDark ? 0 : 180
+                  rotate: isDark ? 0 : 180,
                 }}
                 transition={{ duration: 0.3 }}
                 className="absolute"
@@ -209,10 +219,10 @@ export default function LandingNav() {
               </motion.div>
               <motion.div
                 initial={false}
-                animate={{ 
+                animate={{
                   scale: isDark ? 0 : 1,
                   opacity: isDark ? 0 : 1,
-                  rotate: isDark ? 180 : 0
+                  rotate: isDark ? 180 : 0,
                 }}
                 transition={{ duration: 0.3 }}
               >
@@ -284,9 +294,7 @@ export default function LandingNav() {
                   </Button>
                 </Link>
                 <Link href="/register">
-                  <Button size="sm">
-                    Register
-                  </Button>
+                  <Button size="sm">Register</Button>
                 </Link>
               </div>
             )}
@@ -305,9 +313,19 @@ export default function LandingNav() {
                 transition={{ duration: 0.2 }}
               >
                 {isMobileMenuOpen ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
                 )}
               </motion.svg>
             </button>
@@ -319,7 +337,7 @@ export default function LandingNav() {
           {isMobileMenuOpen && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
+              animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3 }}
               className="md:hidden bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700"
@@ -328,9 +346,9 @@ export default function LandingNav() {
                 {/* Navigation Links */}
                 <div className="space-y-2">
                   {[
-                    { href: "#features", label: "Features" },
-                    { href: "#how-it-works", label: "How It Works" },
-                    { href: "#contact", label: "Contact" }
+                    { href: '#features', label: 'Features' },
+                    { href: '#how-it-works', label: 'How It Works' },
+                    { href: '#contact', label: 'Contact' },
                   ].map((link, index) => (
                     <motion.button
                       key={link.href}
@@ -356,12 +374,20 @@ export default function LandingNav() {
                         </span>
                       </div>
                       <div className="space-y-1">
-                        <Link href="/profile" className="block" onClick={() => setIsMobileMenuOpen(false)}>
+                        <Link
+                          href="/profile"
+                          className="block"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
                           <div className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors">
                             Profile
                           </div>
                         </Link>
-                        <Link href="/dashboard" className="block" onClick={() => setIsMobileMenuOpen(false)}>
+                        <Link
+                          href="/dashboard"
+                          className="block"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
                           <div className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors">
                             Dashboard
                           </div>

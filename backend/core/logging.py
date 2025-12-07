@@ -24,9 +24,12 @@ if not logger.handlers:
     file_formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
     file_handler.setFormatter(file_formatter)
 
-    # Console handler (simple log)
+    # Console handler (simple log) - UTF-8 encoding to prevent Unicode errors
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.DEBUG)
+    # Force UTF-8 encoding for Windows console
+    if hasattr(console_handler.stream, 'reconfigure'):
+        console_handler.stream.reconfigure(encoding='utf-8')
     console_formatter = logging.Formatter("%(message)s")
     console_handler.setFormatter(console_formatter)
 

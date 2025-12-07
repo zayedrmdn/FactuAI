@@ -12,28 +12,28 @@ export function useVideoProcessing({ onVideoProcessed }: UseVideoProcessingOptio
     acceptedTypes: ['video/'],
     maxSize: 100 * 1024 * 1024, // 100MB
     uploadFunction: async (file: File) => {
-      toast.info("Processing video... This may take a few minutes");
+      toast.info('Processing video... This may take a few minutes');
       return apiService.extractVideoText(file);
     },
     onSuccess: (file: File, result: VideoTextResponse) => {
       if (!result.text || result.text.trim().length === 0) {
-        toast.error("No speech found in the video");
+        toast.error('No speech found in the video');
         return;
       }
-      
+
       const videoUrl = URL.createObjectURL(file);
       onVideoProcessed(result.text, file.name, videoUrl);
     },
     onError: (error) => {
-      console.error("Video upload error:", error);
+      console.error('Video upload error:', error);
     },
-    successMessage: "Text extracted from video speech"
+    successMessage: 'Text extracted from video speech',
   });
 
   return {
     uploadVideo: uploadFile,
     isProcessing,
     error,
-    reset
+    reset,
   };
 }

@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { motion } from "framer-motion";
-import Link from "next/link";
-import { ArrowLeft, Mail, CheckCircle, AlertCircle } from "lucide-react";
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { motion } from 'framer-motion';
+import Link from 'next/link';
+import { ArrowLeft, Mail, CheckCircle, AlertCircle } from 'lucide-react';
 
 // Form validation schema
 const forgotPasswordSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
+  email: z.string().email('Please enter a valid email address'),
 });
 
 type ForgotPasswordForm = z.infer<typeof forgotPasswordSchema>;
@@ -34,10 +34,10 @@ export default function ForgotPasswordPage() {
     setError(null);
 
     try {
-      const response = await fetch("/api/auth/request-password-reset", {
-        method: "POST",
+      const response = await fetch('/api/auth/request-password-reset', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify(data),
       });
@@ -47,11 +47,11 @@ export default function ForgotPasswordPage() {
       if (response.ok) {
         setIsSuccess(true);
       } else {
-        setError(result.message || "An error occurred. Please try again.");
+        setError(result.message || 'An error occurred. Please try again.');
       }
     } catch (err) {
-      console.error("Forgot password request failed:", err);
-      setError("Network error. Please check your connection and try again.");
+      console.error('Forgot password request failed:', err);
+      setError('Network error. Please check your connection and try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -72,7 +72,7 @@ export default function ForgotPasswordPage() {
             <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-xl">
               <span className="text-3xl">🔍</span>
             </div>
-            
+
             {/* Brand */}
             <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
               FactuAI
@@ -95,7 +95,7 @@ export default function ForgotPasswordPage() {
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
                 className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6"
               >
                 <CheckCircle className="w-8 h-8 text-green-500" />
@@ -106,9 +106,11 @@ export default function ForgotPasswordPage() {
               </h2>
 
               <p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
-                We&apos;ve sent a password reset link to{" "}
-                <span className="font-medium text-gray-900 dark:text-white">{getValues("email")}</span>.
-                Click the link in the email to reset your password.
+                We&apos;ve sent a password reset link to{' '}
+                <span className="font-medium text-gray-900 dark:text-white">
+                  {getValues('email')}
+                </span>
+                . Click the link in the email to reset your password.
               </p>
 
               <div className="space-y-4">
@@ -145,7 +147,7 @@ export default function ForgotPasswordPage() {
           <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-xl">
             <span className="text-3xl">🔍</span>
           </div>
-          
+
           {/* Brand */}
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
             FactuAI
@@ -153,7 +155,7 @@ export default function ForgotPasswordPage() {
           <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-md">
             Secure password recovery for your trusted fact-checking companion
           </p>
-          
+
           {/* Abstract Illustration */}
           <div className="relative">
             <svg
@@ -164,8 +166,20 @@ export default function ForgotPasswordPage() {
               <circle cx="50" cy="50" r="20" opacity="0.6" />
               <circle cx="150" cy="80" r="25" opacity="0.4" />
               <circle cx="100" cy="140" r="15" opacity="0.8" />
-              <path d="M50 50 Q100 20 150 80" stroke="currentColor" strokeWidth="2" fill="none" opacity="0.3" />
-              <path d="M150 80 Q120 110 100 140" stroke="currentColor" strokeWidth="2" fill="none" opacity="0.3" />
+              <path
+                d="M50 50 Q100 20 150 80"
+                stroke="currentColor"
+                strokeWidth="2"
+                fill="none"
+                opacity="0.3"
+              />
+              <path
+                d="M150 80 Q120 110 100 140"
+                stroke="currentColor"
+                strokeWidth="2"
+                fill="none"
+                opacity="0.3"
+              />
             </svg>
           </div>
         </motion.div>
@@ -197,14 +211,12 @@ export default function ForgotPasswordPage() {
             {error && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
+                animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
                 className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-start gap-3"
               >
                 <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                <div className="text-sm text-red-700 dark:text-red-300">
-                  {error}
-                </div>
+                <div className="text-sm text-red-700 dark:text-red-300">{error}</div>
               </motion.div>
             )}
 
@@ -212,7 +224,7 @@ export default function ForgotPasswordPage() {
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div>
                 <input
-                  {...register("email")}
+                  {...register('email')}
                   type="email"
                   placeholder="Enter your email address"
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-neutral-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
@@ -224,7 +236,7 @@ export default function ForgotPasswordPage() {
               </div>
 
               <button
-                type="submit" 
+                type="submit"
                 disabled={isSubmitting}
                 className="w-full bg-neutral-900 hover:bg-neutral-800 active:scale-95 transition-all duration-200 py-3 text-white font-medium rounded-lg flex items-center justify-center gap-2"
               >
@@ -243,9 +255,9 @@ export default function ForgotPasswordPage() {
 
               <div className="text-center pt-4">
                 <p className="text-sm text-gray-700 dark:text-gray-300">
-                  Remember your password?{" "}
-                  <Link 
-                    href="/login" 
+                  Remember your password?{' '}
+                  <Link
+                    href="/login"
                     className="text-blue-600 dark:text-blue-400 font-semibold hover:text-blue-700 dark:hover:text-blue-300 hover:underline transition-colors duration-200"
                   >
                     Back to Login

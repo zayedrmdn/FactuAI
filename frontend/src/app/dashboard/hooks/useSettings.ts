@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect } from 'react';
 
 interface Prefs {
-  labelStyle: "badge" | "text";
-  textSize: "sm" | "md" | "lg";
+  labelStyle: 'badge' | 'text';
+  textSize: 'sm' | 'md' | 'lg';
 }
 
-const defaultPrefs: Prefs = { labelStyle: "badge", textSize: "md" };
+const defaultPrefs: Prefs = { labelStyle: 'badge', textSize: 'md' };
 
 export function useSettings() {
   const [prefs, setPrefs] = useState<Prefs>(defaultPrefs);
@@ -17,19 +17,19 @@ export function useSettings() {
   // Load preferences and theme from localStorage after component mounts
   useEffect(() => {
     // Load preferences
-    const rawPrefs = localStorage.getItem("factuai_prefs");
+    const rawPrefs = localStorage.getItem('factuai_prefs');
     if (rawPrefs) {
       try {
         setPrefs({ ...defaultPrefs, ...JSON.parse(rawPrefs) });
       } catch (e) {
-        console.warn("Failed to parse preferences:", e);
+        console.warn('Failed to parse preferences:', e);
       }
     }
 
     // Load theme
-    const stored = localStorage.getItem("theme") === "dark";
+    const stored = localStorage.getItem('theme') === 'dark';
     setIsDark(stored);
-    document.documentElement.classList.toggle("dark", stored);
+    document.documentElement.classList.toggle('dark', stored);
 
     setIsLoaded(true);
   }, []);
@@ -39,15 +39,15 @@ export function useSettings() {
 
     const merged = { ...prefs, ...p };
     setPrefs(merged);
-    localStorage.setItem("factuai_prefs", JSON.stringify(merged));
+    localStorage.setItem('factuai_prefs', JSON.stringify(merged));
   };
 
   const toggleTheme = (v: boolean) => {
     if (!isLoaded) return;
 
     setIsDark(v);
-    document.documentElement.classList.toggle("dark", v);
-    localStorage.setItem("theme", v ? "dark" : "light");
+    document.documentElement.classList.toggle('dark', v);
+    localStorage.setItem('theme', v ? 'dark' : 'light');
   };
 
   return {

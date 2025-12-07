@@ -1,33 +1,30 @@
-"use client"
+'use client';
 
-import * as React from "react"
-import { cn } from "@/lib/utils"
+import * as React from 'react';
+import { cn } from '@/lib/utils';
 
 interface ProgressProps extends React.HTMLAttributes<HTMLDivElement> {
-  value?: number
-  indicatorColor?: string
+  value?: number;
+  indicatorColor?: string;
 }
 
 const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
   ({ className, value, indicatorColor, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn(
-        "relative h-2 w-full overflow-hidden rounded-full bg-secondary",
-        className
-      )}
+      className={cn('relative h-2 w-full overflow-hidden rounded-full bg-secondary', className)}
       {...props}
     >
       <div
-        className={cn("h-full w-full flex-1 bg-primary transition-all")}
-        style={{ 
+        className={cn('h-full w-full flex-1 bg-primary transition-all')}
+        style={{
           transform: `translateX(-${100 - (value || 0)}%)`,
-          backgroundColor: indicatorColor 
+          backgroundColor: indicatorColor,
         }}
       />
     </div>
   )
-)
-Progress.displayName = "Progress"
+);
+Progress.displayName = 'Progress';
 
-export { Progress }
+export { Progress };

@@ -1,29 +1,29 @@
 export default function HowItWorks() {
   const steps = [
     {
-      number: "01",
-      title: "Paste or Upload Content",
-      description: "Add text, screenshot, or article snippet through our flexible input system",
-      icon: "📝"
+      number: '01',
+      title: 'Paste or Upload Content',
+      description: 'Add text, screenshot, or article snippet through our flexible input system',
+      icon: '📝',
     },
     {
-      number: "02", 
-      title: "AI Analysis & Extraction",
-      description: "The system detects main points, extracts claims, and prepares for verification",
-      icon: "🧠"
+      number: '02',
+      title: 'AI Analysis & Extraction',
+      description: 'The system detects main points, extracts claims, and prepares for verification',
+      icon: '🧠',
     },
     {
-      number: "03",
-      title: "Automated Fact-Check",
-      description: "FactuAI searches databases and classifies claims with confidence scores",
-      icon: "🔍"
+      number: '03',
+      title: 'Automated Fact-Check',
+      description: 'FactuAI searches databases and classifies claims with confidence scores',
+      icon: '🔍',
     },
     {
-      number: "04",
-      title: "Get Verified Report",
-      description: "Summary, fact verdicts, and evidence sources—all in one comprehensive report",
-      icon: "📊"
-    }
+      number: '04',
+      title: 'Get Verified Report',
+      description: 'Summary, fact verdicts, and evidence sources—all in one comprehensive report',
+      icon: '📊',
+    },
   ];
 
   return (
@@ -43,7 +43,7 @@ export default function HowItWorks() {
           <div className="relative">
             {/* Connection Line */}
             <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 via-green-500 to-purple-500 transform -translate-y-1/2 z-0"></div>
-            
+
             <div className="grid grid-cols-4 gap-8 relative z-10">
               {steps.map((step) => (
                 <div key={step.number} className="text-center">
@@ -101,11 +101,11 @@ export default function HowItWorks() {
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-300">Raw Article</p>
             </div>
-            
+
             <div className="flex items-center justify-center">
               <div className="text-3xl text-blue-500 animate-pulse">→</div>
             </div>
-            
+
             <div className="space-y-4">
               <div className="bg-green-100 dark:bg-green-900/20 rounded-lg p-4 h-32 flex items-center justify-center">
                 <span className="text-4xl">✅</span>

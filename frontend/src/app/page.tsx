@@ -1,14 +1,14 @@
 // Path: frontend/src/app/page.tsx
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import LandingNav from "@/components/landing/LandingNav";
-import HeroSection from "@/components/landing/HeroSection";
-import Features from "@/components/landing/Features";
-import HowItWorks from "@/components/landing/HowItWorks";
-import CallToAction from "@/components/landing/CallToAction";
-import Footer from "@/components/landing/Footer";
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import LandingNav from '@/components/landing/LandingNav';
+import HeroSection from '@/components/landing/HeroSection';
+import Features from '@/components/landing/Features';
+import HowItWorks from '@/components/landing/HowItWorks';
+import CallToAction from '@/components/landing/CallToAction';
+import Footer from '@/components/landing/Footer';
 
 export default function HomePage() {
   const router = useRouter();

@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { useCallback } from "react";
-import { toast } from "sonner";
-import { useFactCheck } from "./useFactCheck";
-import { useHistory } from "./useHistory";
-import { useInputType } from "./useInputType";
-import { HistoryItem } from "../types/factcheck";
+import { useCallback } from 'react';
+import { toast } from 'sonner';
+import { useFactCheck } from './useFactCheck';
+import { useHistory } from './useHistory';
+import { useInputType } from './useInputType';
+import { HistoryItem } from '../types/factcheck';
 
 export function useAppState() {
   // Compose existing hooks
@@ -50,54 +50,66 @@ export function useAppState() {
   } = useInputType();
 
   // Enhanced input type change with history integration
-  const handleInputTypeChange = useCallback((
-    type: "text" | "image" | "video",
-    data?: {
-      imageData?: {url: string, aiScore: number | null, aiError?: string};
-      videoData?: {filename: string, videoUrl?: string};
-    }
-  ) => {
-    baseHandleInputTypeChange(type, data);
-    
-    // Auto-save to history if input exists
-    if (data?.imageData && input.trim()) {
-      saveImageToHistory(input, data.imageData.url, data.imageData.aiScore);
-    }
-    if (data?.videoData && input.trim()) {
-      saveVideoToHistory(input, data.videoData.filename, data.videoData.videoUrl);
-    }
-  }, [baseHandleInputTypeChange, input, saveImageToHistory, saveVideoToHistory]);
+  const handleInputTypeChange = useCallback(
+    (
+      type: 'text' | 'image' | 'video',
+      data?: {
+        imageData?: { url: string; aiScore: number | null; aiError?: string | undefined };
+        videoData?: { filename: string; videoUrl?: string | undefined };
+      }
+    ) => {
+      baseHandleInputTypeChange(type, data);
+
+      // Auto-save to history if input exists
+      if (data?.imageData && input.trim()) {
+        saveImageToHistory(input, data.imageData.url, data.imageData.aiScore);
+      }
+      if (data?.videoData && input.trim()) {
+        saveVideoToHistory(input, data.videoData.filename, data.videoData.videoUrl);
+      }
+    },
+    [baseHandleInputTypeChange, input, saveImageToHistory, saveVideoToHistory]
+  );
 
   // Enhanced fact-check with history saving
   const handleFactCheck = useCallback(async () => {
     await baseHandleFactCheck();
-    
+
     // Save to history after successful fact-check
     if (factResults.length > 0) {
-      const historyData: Omit<HistoryItem, "id" | "timestamp"> = {
+      const historyData: Omit<HistoryItem, 'id' | 'timestamp'> = {
         input: input,
         summary,
         results: factResults,
         type: currentInputType,
-        metadata: {}
+        metadata: {},
       };
 
-      if (currentInputType === "image" && currentImageData) {
+      if (currentInputType === 'image' && currentImageData) {
         historyData.metadata = {
           imageUrl: currentImageData.url,
-          aiScore: currentImageData.aiScore ?? undefined
+          aiScore: currentImageData.aiScore ?? undefined,
         };
       }
-      if (currentInputType === "video" && currentVideoData) {
+      if (currentInputType === 'video' && currentVideoData) {
         historyData.metadata = {
           filename: currentVideoData.filename,
-          videoUrl: currentVideoData.videoUrl
+          videoUrl: currentVideoData.videoUrl,
         };
       }
 
       pushHistory(historyData);
     }
-  }, [baseHandleFactCheck, factResults, input, summary, currentInputType, currentImageData, currentVideoData, pushHistory]);
+  }, [
+    baseHandleFactCheck,
+    factResults,
+    input,
+    summary,
+    currentInputType,
+    currentImageData,
+    currentVideoData,
+    pushHistory,
+  ]);
 
   // Enhanced clear with input type clearing
   const handleClear = useCallback(() => {
@@ -106,45 +118,51 @@ export function useAppState() {
   }, [baseClear, clearInputTypeData]);
 
   // AI detection with input type integration
-  const handleAIDetection = useCallback((score: number | null, error?: string) => {
-    baseAIDetection(score, error);
-    if (score !== null || error) {
-      baseHandleInputTypeChange("image", {
-        imageData: { url: "", aiScore: score, aiError: error }
-      });
-    }
-  }, [baseAIDetection, baseHandleInputTypeChange]);
+  const handleAIDetection = useCallback(
+    (score: number | null, error?: string) => {
+      baseAIDetection(score, error);
+      if (score !== null || error) {
+        baseHandleInputTypeChange('image', {
+          imageData: { url: '', aiScore: score, aiError: error ?? undefined },
+        });
+      }
+    },
+    [baseAIDetection, baseHandleInputTypeChange]
+  );
 
   // Load history item
-  const loadHistoryItem = useCallback((item: HistoryItem) => {
-    setInput(item.input);
-    
-    // Set input type and data
-    const data: {
-      imageData?: { url: string; aiScore: number | null; aiError?: string };
-      videoData?: { filename: string; videoUrl?: string };
-    } = {};
-    if (item.type === "image" && item.metadata?.imageUrl) {
-      data.imageData = {
-        url: item.metadata.imageUrl,
-        aiScore: item.metadata.aiScore ?? null,
-      };
-    }
-    if (item.type === "video" && item.metadata?.videoUrl) {
-      data.videoData = {
-        filename: item.metadata.filename ?? "",
-        videoUrl: item.metadata.videoUrl,
-      };
-    }
-    baseHandleInputTypeChange(item.type || "text", data);
+  const loadHistoryItem = useCallback(
+    (item: HistoryItem) => {
+      setInput(item.input);
 
-    // Load results if they exist
-    if (item.results && item.results.length > 0) {
-      loadResults(item.results, item.summary, item.timestamp);
-    }
-    
-    toast.info("Loaded from history");
-  }, [setInput, baseHandleInputTypeChange, loadResults]);
+      // Set input type and data
+      const data: {
+        imageData?: { url: string; aiScore: number | null; aiError?: string };
+        videoData?: { filename: string; videoUrl?: string };
+      } = {};
+      if (item.type === 'image' && item.metadata?.imageUrl) {
+        data.imageData = {
+          url: item.metadata.imageUrl,
+          aiScore: item.metadata.aiScore ?? null,
+        };
+      }
+      if (item.type === 'video' && item.metadata?.videoUrl) {
+        data.videoData = {
+          filename: item.metadata.filename ?? '',
+          videoUrl: item.metadata.videoUrl,
+        };
+      }
+      baseHandleInputTypeChange(item.type || 'text', data);
+
+      // Load results if they exist
+      if (item.results && item.results.length > 0) {
+        loadResults(item.results, item.summary, item.timestamp);
+      }
+
+      toast.info('Loaded from history');
+    },
+    [setInput, baseHandleInputTypeChange, loadResults]
+  );
 
   return {
     // Input and results state
@@ -155,26 +173,26 @@ export function useAppState() {
     summary,
     updated,
     avgConfidence,
-    
+
     // Loading state
     loading,
     loadingPhase,
     progress,
     currentClaim,
-    
+
     // Error state
     factCheckError,
-    
+
     // History state
     historyOpen,
     setHistoryOpen,
     history,
-    
+
     // Input type state
     currentInputType,
     currentImageData,
     currentVideoData,
-    
+
     // Handlers
     handleFactCheck,
     handleCancel,

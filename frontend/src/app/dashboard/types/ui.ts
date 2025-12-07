@@ -21,5 +21,5 @@ export interface ComponentProps {
   children?: React.ReactNode;
 }
 
-export type TextSize = "sm" | "md" | "lg";
-export type InputType = "text" | "image" | "video";
+export type TextSize = 'sm' | 'md' | 'lg';
+export type InputType = 'text' | 'image' | 'video';

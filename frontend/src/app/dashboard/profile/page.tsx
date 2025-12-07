@@ -1,31 +1,33 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "sonner";
-import { Loader2, Camera, Trash2 } from "lucide-react";
-import UserAvatar from "@/components/UserAvatar";
-import { useUser } from "../hooks/useUser";
+import { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { toast } from 'sonner';
+import { Loader2, Camera, Trash2 } from 'lucide-react';
+import UserAvatar from '@/components/UserAvatar';
+import { useUser } from '../hooks/useUser';
 
 const profileSchema = z.object({
-  username: z.string().min(2, "Username must be at least 2 characters").optional(),
-  email: z.string().email("Invalid email"),
+  username: z.string().min(2, 'Username must be at least 2 characters').optional(),
+  email: z.string().email('Invalid email'),
 });
 
-const passwordSchema = z.object({
-  currentPassword: z.string().min(1, "Current password is required"),
-  newPassword: z.string().min(6, "New password must be at least 6 characters"),
-  confirmPassword: z.string().min(1, "Please confirm your password"),
-}).refine((data) => data.newPassword === data.confirmPassword, {
-  message: "Passwords do not match",
-  path: ["confirmPassword"],
-});
+const passwordSchema = z
+  .object({
+    currentPassword: z.string().min(1, 'Current password is required'),
+    newPassword: z.string().min(6, 'New password must be at least 6 characters'),
+    confirmPassword: z.string().min(1, 'Please confirm your password'),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
+  });
 
 type ProfileFormData = z.infer<typeof profileSchema>;
 type PasswordFormData = z.infer<typeof passwordSchema>;
@@ -45,7 +47,7 @@ export default function ProfilePage() {
   useEffect(() => {
     if (user) {
       profileForm.reset({
-        username: user.username || "",
+        username: user.username || '',
         email: user.email,
       });
     }
@@ -54,42 +56,42 @@ export default function ProfilePage() {
   const updateProfile = async (data: ProfileFormData) => {
     try {
       if (!user) {
-        toast.error("Not logged in");
+        toast.error('Not logged in');
         return;
       }
       const userId = user.id;
       const response = await fetch(`/api/profile/${userId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
 
       const result = await response.json();
 
       if (response.ok) {
-        toast.success("Profile updated successfully");
+        toast.success('Profile updated successfully');
         // Refetch user data to update the global state
         refetch();
         globalThis.dispatchEvent(new Event('profileUpdated'));
       } else {
-        toast.error(result.error || "Failed to update profile");
+        toast.error(result.error || 'Failed to update profile');
       }
     } catch (err) {
-      console.error("Profile update error:", err);
-      toast.error("Error updating profile");
+      console.error('Profile update error:', err);
+      toast.error('Error updating profile');
     }
   };
 
   const changePassword = async (data: PasswordFormData) => {
     try {
       if (!user) {
-        toast.error("Not logged in");
+        toast.error('Not logged in');
         return;
       }
       const userId = user.id;
       const response = await fetch(`/api/profile/${userId}/password`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           current_password: data.currentPassword,
           new_password: data.newPassword,
@@ -99,14 +101,14 @@ export default function ProfilePage() {
       const result = await response.json();
 
       if (response.ok) {
-        toast.success("Password changed successfully");
+        toast.success('Password changed successfully');
         passwordForm.reset();
       } else {
-        toast.error(result.error || "Failed to change password");
+        toast.error(result.error || 'Failed to change password');
       }
     } catch (err) {
-      console.error("Password change error:", err);
-      toast.error("Error changing password");
+      console.error('Password change error:', err);
+      toast.error('Error changing password');
     }
   };
 
@@ -114,34 +116,34 @@ export default function ProfilePage() {
     const file = event.target.files?.[0];
     if (!file) return;
     if (!user) {
-      toast.error("Not logged in");
+      toast.error('Not logged in');
       return;
     }
 
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append('file', file);
 
     setUploading(true);
     try {
       const userId = user.id;
       const response = await fetch(`/api/profile/${userId}/picture`, {
-        method: "POST",
+        method: 'POST',
         body: formData,
       });
 
       const result = await response.json();
 
       if (response.ok) {
-        toast.success("Profile picture updated successfully");
+        toast.success('Profile picture updated successfully');
         // Refetch user data to update the global state
         refetch();
         globalThis.dispatchEvent(new Event('profileUpdated'));
       } else {
-        toast.error(result.error || "Failed to upload picture");
+        toast.error(result.error || 'Failed to upload picture');
       }
     } catch (err) {
-      console.error("Picture upload error:", err);
-      toast.error("Error uploading picture");
+      console.error('Picture upload error:', err);
+      toast.error('Error uploading picture');
     } finally {
       setUploading(false);
     }
@@ -150,27 +152,27 @@ export default function ProfilePage() {
   const deletePicture = async () => {
     try {
       if (!user) {
-        toast.error("Not logged in");
+        toast.error('Not logged in');
         return;
       }
       const userId = user.id;
       const response = await fetch(`/api/profile/${userId}/picture`, {
-        method: "DELETE",
+        method: 'DELETE',
       });
 
       const result = await response.json();
 
       if (response.ok) {
-        toast.success("Profile picture deleted successfully");
+        toast.success('Profile picture deleted successfully');
         // Refetch user data to update the global state
         refetch();
         globalThis.dispatchEvent(new Event('profileUpdated'));
       } else {
-        toast.error(result.error || "Failed to delete picture");
+        toast.error(result.error || 'Failed to delete picture');
       }
     } catch (err) {
-      console.error("Picture delete error:", err);
-      toast.error("Error deleting picture");
+      console.error('Picture delete error:', err);
+      toast.error('Error deleting picture');
     }
   };
 
@@ -204,7 +206,7 @@ export default function ProfilePage() {
                   <Label htmlFor="picture" className="cursor-pointer">
                     <div className="flex items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm hover:bg-accent hover:text-accent-foreground">
                       <Camera className="h-4 w-4" />
-                      {uploading ? "Uploading..." : "Change Picture"}
+                      {uploading ? 'Uploading...' : 'Change Picture'}
                     </div>
                     <input
                       id="picture"
@@ -216,7 +218,12 @@ export default function ProfilePage() {
                     />
                   </Label>
                   {user?.profile_picture && (
-                    <Button variant="outline" size="sm" onClick={deletePicture} className="text-destructive hover:text-destructive">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={deletePicture}
+                      className="text-destructive hover:text-destructive"
+                    >
                       <Trash2 className="mr-2 h-4 w-4" />
                       Remove
                     </Button>
@@ -227,20 +234,26 @@ export default function ProfilePage() {
               <form onSubmit={profileForm.handleSubmit(updateProfile)} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="username">Username</Label>
-                  <Input id="username" {...profileForm.register("username")} />
+                  <Input id="username" {...profileForm.register('username')} />
                   {profileForm.formState.errors.username && (
-                    <p className="text-sm text-destructive">{profileForm.formState.errors.username.message}</p>
+                    <p className="text-sm text-destructive">
+                      {profileForm.formState.errors.username.message}
+                    </p>
                   )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" {...profileForm.register("email")} />
+                  <Input id="email" {...profileForm.register('email')} />
                   {profileForm.formState.errors.email && (
-                    <p className="text-sm text-destructive">{profileForm.formState.errors.email.message}</p>
+                    <p className="text-sm text-destructive">
+                      {profileForm.formState.errors.email.message}
+                    </p>
                   )}
                 </div>
                 <Button type="submit" disabled={profileForm.formState.isSubmitting}>
-                  {profileForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {profileForm.formState.isSubmitting && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
                   Save Changes
                 </Button>
               </form>
@@ -261,10 +274,12 @@ export default function ProfilePage() {
                   <Input
                     id="currentPassword"
                     type="password"
-                    {...passwordForm.register("currentPassword")}
+                    {...passwordForm.register('currentPassword')}
                   />
                   {passwordForm.formState.errors.currentPassword && (
-                    <p className="text-sm text-destructive">{passwordForm.formState.errors.currentPassword.message}</p>
+                    <p className="text-sm text-destructive">
+                      {passwordForm.formState.errors.currentPassword.message}
+                    </p>
                   )}
                 </div>
                 <div className="space-y-2">
@@ -272,10 +287,12 @@ export default function ProfilePage() {
                   <Input
                     id="newPassword"
                     type="password"
-                    {...passwordForm.register("newPassword")}
+                    {...passwordForm.register('newPassword')}
                   />
                   {passwordForm.formState.errors.newPassword && (
-                    <p className="text-sm text-destructive">{passwordForm.formState.errors.newPassword.message}</p>
+                    <p className="text-sm text-destructive">
+                      {passwordForm.formState.errors.newPassword.message}
+                    </p>
                   )}
                 </div>
                 <div className="space-y-2">
@@ -283,14 +300,18 @@ export default function ProfilePage() {
                   <Input
                     id="confirmPassword"
                     type="password"
-                    {...passwordForm.register("confirmPassword")}
+                    {...passwordForm.register('confirmPassword')}
                   />
                   {passwordForm.formState.errors.confirmPassword && (
-                    <p className="text-sm text-destructive">{passwordForm.formState.errors.confirmPassword.message}</p>
+                    <p className="text-sm text-destructive">
+                      {passwordForm.formState.errors.confirmPassword.message}
+                    </p>
                   )}
                 </div>
                 <Button type="submit" disabled={passwordForm.formState.isSubmitting}>
-                  {passwordForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {passwordForm.formState.isSubmitting && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
                   Update Password
                 </Button>
               </form>

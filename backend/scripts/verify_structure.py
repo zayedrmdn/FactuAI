@@ -3,7 +3,8 @@
 FactuAI Structure Verification Script
 
 Verifies that all key modules can be imported correctly after the refactor.
-Run from the project root: python scripts/verify_structure.py
+Run from backend directory: python scripts/verify_structure.py
+Or from project root: python backend/scripts/verify_structure.py
 
 Exit codes:
     0 - All imports successful (or only missing external dependencies)
@@ -15,7 +16,8 @@ import os
 from pathlib import Path
 
 # Add project root and backend to sys.path
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+# Script is now in backend/scripts/, so parent.parent is project root
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 BACKEND_ROOT = PROJECT_ROOT / "backend"
 
 sys.path.insert(0, str(PROJECT_ROOT))

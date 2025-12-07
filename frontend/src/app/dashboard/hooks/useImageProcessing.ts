@@ -3,7 +3,12 @@ import { apiService } from '../services/api';
 import { ExtractTextResponse } from '../types/api';
 
 interface UseImageProcessingOptions {
-  onImageProcessed: (text: string, aiScore: number | null, imageUrl: string, aiError?: string) => void;
+  onImageProcessed: (
+    text: string,
+    aiScore: number | null,
+    imageUrl: string,
+    aiError?: string
+  ) => void;
 }
 
 export function useImageProcessing({ onImageProcessed }: UseImageProcessingOptions) {
@@ -15,20 +20,15 @@ export function useImageProcessing({ onImageProcessed }: UseImageProcessingOptio
     },
     onSuccess: (file: File, result: ExtractTextResponse) => {
       const imageUrl = URL.createObjectURL(file);
-      onImageProcessed(
-        result.text || '',
-        result.ai_percentage || null,
-        imageUrl,
-        result.ai_error
-      );
+      onImageProcessed(result.text || '', result.ai_percentage || null, imageUrl, result.ai_error);
     },
-    successMessage: "Text extracted from image"
+    successMessage: 'Text extracted from image',
   });
 
   return {
     uploadImage: uploadFile,
     isProcessing,
     error,
-    reset
+    reset,
   };
 }

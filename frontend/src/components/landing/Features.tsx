@@ -1,25 +1,26 @@
 export default function Features() {
   const features = [
     {
-      icon: "🧠",
-      title: "Smart Summarization",
-      description: "Extractive + abstractive AI models for context-rich news briefs and key insights."
+      icon: '🧠',
+      title: 'Smart Summarization',
+      description:
+        'Extractive + abstractive AI models for context-rich news briefs and key insights.',
     },
     {
-      icon: "🔍",
-      title: "Instant Fact-Checking",
-      description: "Get automated True/False/Unverified verdicts on claims with confidence scores."
+      icon: '🔍',
+      title: 'Instant Fact-Checking',
+      description: 'Get automated True/False/Unverified verdicts on claims with confidence scores.',
     },
     {
-      icon: "📂",
-      title: "Flexible Input",
-      description: "Paste text, upload documents, or analyze screenshots with our OCR technology."
+      icon: '📂',
+      title: 'Flexible Input',
+      description: 'Paste text, upload documents, or analyze screenshots with our OCR technology.',
     },
     {
-      icon: "🕘",
-      title: "Session History",
-      description: "Track what you've checked. Export reports to PDF anytime for reference."
-    }
+      icon: '🕘',
+      title: 'Session History',
+      description: "Track what you've checked. Export reports to PDF anytime for reference.",
+    },
   ];
 
   return (
@@ -59,13 +60,15 @@ export default function Features() {
             Built for Truth-Seekers, Researchers, and Everyday Readers
           </h3>
           <p className="text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mb-6">
-            FactuAI combines cutting-edge AI research with practical tools to help you 
-            make informed decisions based on verified information.
+            FactuAI combines cutting-edge AI research with practical tools to help you make informed
+            decisions based on verified information.
           </p>
           <div className="flex flex-wrap justify-center gap-6 text-sm">
             <div className="flex items-center gap-2 bg-white dark:bg-gray-800 px-4 py-2 rounded-full shadow-sm">
               <span className="text-blue-500">⚙️</span>
-              <span className="text-gray-700 dark:text-gray-300">Built with AI (BERT, T5, QLoRA)</span>
+              <span className="text-gray-700 dark:text-gray-300">
+                Built with AI (BERT, T5, QLoRA)
+              </span>
             </div>
             <div className="flex items-center gap-2 bg-white dark:bg-gray-800 px-4 py-2 rounded-full shadow-sm">
               <span className="text-green-500">🎓</span>

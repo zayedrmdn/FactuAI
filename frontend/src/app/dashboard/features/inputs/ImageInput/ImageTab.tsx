@@ -7,47 +7,57 @@ import { ProcessingStatus } from '@/components/ui/ProcessingStatus';
 interface ImagePreviewData {
   imageUrl: string;
   extractedText: string;
-  aiScore?: number;
+  aiScore?: number | undefined;
 }
 
 interface ImageTabProps {
-  onImageProcessed: (text: string, aiScore: number | null, imageUrl: string, aiError?: string) => void;
+  onImageProcessed: (
+    text: string,
+    aiScore: number | null,
+    imageUrl: string,
+    aiError?: string
+  ) => void;
 }
 
 export default function ImageTab({ onImageProcessed }: Readonly<ImageTabProps>) {
   const [imagePreview, setImagePreview] = useState<ImagePreviewData | null>(null);
-  const [imageUrl, setImageUrl] = useState("");
+  const [imageUrl, setImageUrl] = useState('');
   const [imageUrlLoading, setImageUrlLoading] = useState(false);
-  
+
   const { uploadImage, isProcessing } = useImageProcessing({
-    onImageProcessed: (text: string, aiScore: number | null, imageUrl: string, aiError?: string) => {
+    onImageProcessed: (
+      text: string,
+      aiScore: number | null,
+      imageUrl: string,
+      aiError?: string
+    ) => {
       setImagePreview({
         imageUrl,
         extractedText: text,
-        aiScore: aiScore || undefined
+        aiScore: aiScore ?? undefined,
       });
       onImageProcessed(text, aiScore, imageUrl, aiError);
-    }
+    },
   });
 
   const handleImageUrl = async () => {
     if (!imageUrl.trim()) return;
-    
+
     setImageUrlLoading(true);
     try {
       const response = await fetch('/api/extract-text-from-url', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: imageUrl })
+        body: JSON.stringify({ url: imageUrl }),
       });
-      
+
       if (!response.ok) throw new Error('Failed to extract text from URL');
-      
+
       const data = await response.json();
       setImagePreview({
         imageUrl,
         extractedText: data.text || '',
-        aiScore: data.ai_percentage
+        aiScore: data.ai_percentage ?? undefined,
       });
       onImageProcessed(data.text || '', data.ai_percentage || null, imageUrl, data.ai_error);
     } catch (error) {
@@ -62,7 +72,7 @@ export default function ImageTab({ onImageProcessed }: Readonly<ImageTabProps>) 
       URL.revokeObjectURL(imagePreview.imageUrl);
     }
     setImagePreview(null);
-    setImageUrl("");
+    setImageUrl('');
   };
 
   return (
@@ -78,27 +88,27 @@ export default function ImageTab({ onImageProcessed }: Readonly<ImageTabProps>) 
               Clear
             </button>
           </div>
-          
+
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={imagePreview.imageUrl}
             alt="Uploaded content preview"
             className="w-full max-h-40 object-contain rounded"
           />
-          
+
           <div className="space-y-2">
             {imagePreview.aiScore !== undefined && (
               <div className="text-xs">
                 <span className="font-medium">AI Detection: </span>
-                <span className={imagePreview.aiScore > 50 ? "text-red-600" : "text-green-600"}>
+                <span className={imagePreview.aiScore > 50 ? 'text-red-600' : 'text-green-600'}>
                   {imagePreview.aiScore.toFixed(1)}% AI-generated
                 </span>
               </div>
             )}
-            
+
             <div className="text-xs text-muted-foreground">
               <p className="font-medium mb-1">Extracted Text:</p>
-              <p className="line-clamp-3">{imagePreview.extractedText || "No text found"}</p>
+              <p className="line-clamp-3">{imagePreview.extractedText || 'No text found'}</p>
             </div>
           </div>
         </div>
@@ -113,7 +123,7 @@ export default function ImageTab({ onImageProcessed }: Readonly<ImageTabProps>) 
             description="Text will be extracted using OCR technology"
             buttonText="Select Image File"
           />
-          
+
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-gray-300" />
@@ -137,11 +147,11 @@ export default function ImageTab({ onImageProcessed }: Readonly<ImageTabProps>) 
               disabled={!imageUrl.trim() || isProcessing || imageUrlLoading}
               className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 disabled:opacity-50"
             >
-              {imageUrlLoading ? "Loading..." : "Extract"}
+              {imageUrlLoading ? 'Loading...' : 'Extract'}
             </button>
           </div>
-          
-          <ProcessingStatus 
+
+          <ProcessingStatus
             isProcessing={isProcessing || imageUrlLoading}
             message="Extracting text from image..."
           />

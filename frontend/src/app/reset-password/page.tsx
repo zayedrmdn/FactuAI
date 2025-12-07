@@ -1,36 +1,30 @@
-"use client";
+'use client';
 
-import { useState, useEffect, Suspense } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { motion } from "framer-motion";
-import { useSearchParams, useRouter } from "next/navigation";
-import Link from "next/link";
-import { 
-  ArrowLeft, 
-  Lock, 
-  Eye, 
-  EyeOff, 
-  CheckCircle, 
-  AlertCircle, 
-  Shield 
-} from "lucide-react";
+import { useState, useEffect, Suspense } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { motion } from 'framer-motion';
+import { useSearchParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { ArrowLeft, Lock, Eye, EyeOff, CheckCircle, AlertCircle, Shield } from 'lucide-react';
 
 // Form validation schema
-const resetPasswordSchema = z.object({
-  password: z
-    .string()
-    .min(8, "Password must be at least 8 characters")
-    .regex(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-      "Password must contain at least one uppercase letter, one lowercase letter, and one number"
-    ),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
+const resetPasswordSchema = z
+  .object({
+    password: z
+      .string()
+      .min(8, 'Password must be at least 8 characters')
+      .regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+        'Password must contain at least one uppercase letter, one lowercase letter, and one number'
+      ),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ['confirmPassword'],
+  });
 
 type ResetPasswordForm = z.infer<typeof resetPasswordSchema>;
 
@@ -52,9 +46,7 @@ function BrandPanel({ message }: Readonly<{ message: string }>) {
         <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
           FactuAI
         </h1>
-        <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-md">
-          {message}
-        </p>
+        <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-md">{message}</p>
       </motion.div>
     </div>
   );
@@ -78,7 +70,7 @@ function InvalidTokenView() {
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+              transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
               className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6"
             >
               <AlertCircle className="w-8 h-8 text-red-500" />
@@ -129,7 +121,7 @@ function SuccessView() {
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+              transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
               className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6"
             >
               <CheckCircle className="w-8 h-8 text-green-500" />
@@ -168,9 +160,9 @@ function LoadingView() {
  * Password requirement indicator
  */
 function RequirementItem({ met, label }: Readonly<{ met: boolean; label: string }>) {
-  const textClass = met ? "text-green-600 dark:text-green-400" : "text-gray-500 dark:text-gray-400";
-  const dotClass = met ? "bg-green-500" : "bg-gray-300";
-  
+  const textClass = met ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400';
+  const dotClass = met ? 'bg-green-500' : 'bg-gray-300';
+
   return (
     <div className={`flex items-center gap-2 ${textClass}`}>
       <div className={`w-1.5 h-1.5 rounded-full ${dotClass}`} />
@@ -189,7 +181,7 @@ function ResetPasswordContent() {
 
   const searchParams = useSearchParams();
   const router = useRouter();
-  const token = searchParams.get("token");
+  const token = searchParams.get('token');
 
   const {
     register,
@@ -200,7 +192,7 @@ function ResetPasswordContent() {
     resolver: zodResolver(resetPasswordSchema),
   });
 
-  const password = watch("password");
+  const password = watch('password');
 
   // Validate token on component mount
   useEffect(() => {
@@ -209,7 +201,7 @@ function ResetPasswordContent() {
 
   const onSubmit = async (data: ResetPasswordForm) => {
     if (!token) {
-      setError("Invalid reset token");
+      setError('Invalid reset token');
       return;
     }
 
@@ -217,9 +209,9 @@ function ResetPasswordContent() {
     setError(null);
 
     try {
-      const response = await fetch("/api/auth/reset-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, new_password: data.password }),
       });
 
@@ -228,14 +220,14 @@ function ResetPasswordContent() {
       if (response.ok) {
         setIsSuccess(true);
         setTimeout(() => {
-          router.push("/login?message=Password reset successful");
+          router.push('/login?message=Password reset successful');
         }, 3000);
       } else {
-        setError(result.message || "An error occurred. Please try again.");
+        setError(result.message || 'An error occurred. Please try again.');
       }
     } catch (err) {
-      console.error("Password reset request failed:", err);
-      setError("Network error. Please check your connection and try again.");
+      console.error('Password reset request failed:', err);
+      setError('Network error. Please check your connection and try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -260,7 +252,7 @@ function ResetPasswordContent() {
           <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-xl">
             <span className="text-3xl">🔍</span>
           </div>
-          
+
           {/* Brand */}
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
             FactuAI
@@ -268,7 +260,7 @@ function ResetPasswordContent() {
           <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-md">
             Create a new secure password for your account
           </p>
-          
+
           {/* Abstract Illustration */}
           <div className="relative">
             <svg
@@ -279,8 +271,20 @@ function ResetPasswordContent() {
               <circle cx="50" cy="50" r="20" opacity="0.6" />
               <circle cx="150" cy="80" r="25" opacity="0.4" />
               <circle cx="100" cy="140" r="15" opacity="0.8" />
-              <path d="M50 50 Q100 20 150 80" stroke="currentColor" strokeWidth="2" fill="none" opacity="0.3" />
-              <path d="M150 80 Q120 110 100 140" stroke="currentColor" strokeWidth="2" fill="none" opacity="0.3" />
+              <path
+                d="M50 50 Q100 20 150 80"
+                stroke="currentColor"
+                strokeWidth="2"
+                fill="none"
+                opacity="0.3"
+              />
+              <path
+                d="M150 80 Q120 110 100 140"
+                stroke="currentColor"
+                strokeWidth="2"
+                fill="none"
+                opacity="0.3"
+              />
             </svg>
           </div>
         </motion.div>
@@ -312,14 +316,12 @@ function ResetPasswordContent() {
             {error && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
+                animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
                 className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-start gap-3"
               >
                 <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                <div className="text-sm text-red-700 dark:text-red-300">
-                  {error}
-                </div>
+                <div className="text-sm text-red-700 dark:text-red-300">{error}</div>
               </motion.div>
             )}
 
@@ -329,8 +331,8 @@ function ResetPasswordContent() {
               <div>
                 <div className="relative">
                   <input
-                    {...register("password")}
-                    type={showPassword ? "text" : "password"}
+                    {...register('password')}
+                    type={showPassword ? 'text' : 'password'}
                     placeholder="Enter new password"
                     className="w-full px-4 py-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-neutral-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     disabled={isSubmitting}
@@ -352,8 +354,8 @@ function ResetPasswordContent() {
               <div>
                 <div className="relative">
                   <input
-                    {...register("confirmPassword")}
-                    type={showConfirmPassword ? "text" : "password"}
+                    {...register('confirmPassword')}
+                    type={showConfirmPassword ? 'text' : 'password'}
                     placeholder="Confirm new password"
                     className="w-full px-4 py-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-neutral-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     disabled={isSubmitting}
@@ -363,7 +365,11 @@ function ResetPasswordContent() {
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                   >
-                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    {showConfirmPassword ? (
+                      <EyeOff className="w-5 h-5" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
                   </button>
                 </div>
                 {errors.confirmPassword && (
@@ -375,7 +381,7 @@ function ResetPasswordContent() {
               {password && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
+                  animate={{ opacity: 1, height: 'auto' }}
                   className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600"
                 >
                   <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -410,9 +416,9 @@ function ResetPasswordContent() {
 
               <div className="text-center pt-4">
                 <p className="text-sm text-gray-700 dark:text-gray-300">
-                  Remember your password?{" "}
-                  <Link 
-                    href="/login" 
+                  Remember your password?{' '}
+                  <Link
+                    href="/login"
                     className="text-blue-600 dark:text-blue-400 font-semibold hover:text-blue-700 dark:hover:text-blue-300 hover:underline transition-colors duration-200"
                   >
                     Back to Login
@@ -429,11 +435,13 @@ function ResetPasswordContent() {
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex items-center justify-center">
+          <div className="w-8 h-8 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin" />
+        </div>
+      }
+    >
       <ResetPasswordContent />
     </Suspense>
   );

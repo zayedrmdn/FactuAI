@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 export default function HeroSection() {
   return (
@@ -12,15 +12,13 @@ export default function HeroSection() {
           <div className="space-y-8">
             <div className="space-y-4">
               <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white leading-tight">
-                AI-Powered News{" "}
-                <span className="text-blue-600 dark:text-blue-400">
-                  Summarization
-                </span>{" "}
-                & Fact-Checking
+                AI-Powered News{' '}
+                <span className="text-blue-600 dark:text-blue-400">Summarization</span> &
+                Fact-Checking
               </h1>
               <p className="text-xl text-gray-600 dark:text-gray-300 leading-relaxed">
-                FactuAI helps you cut through misinformation by providing concise 
-                summaries and verified facts backed by real evidence.
+                FactuAI helps you cut through misinformation by providing concise summaries and
+                verified facts backed by real evidence.
               </p>
             </div>
 
@@ -32,11 +30,7 @@ export default function HeroSection() {
                 </Button>
               </Link>
               <Link href="#how-it-works">
-                <Button 
-                  variant="outline" 
-                  size="lg" 
-                  className="w-full sm:w-auto text-lg px-8 py-3"
-                >
+                <Button variant="outline" size="lg" className="w-full sm:w-auto text-lg px-8 py-3">
                   Learn How It Works
                 </Button>
               </Link>
@@ -70,7 +64,7 @@ export default function HeroSection() {
                   <div className="w-3 h-3 bg-green-400 rounded-full"></div>
                   <span className="ml-2">FactuAI Analysis</span>
                 </div>
-                
+
                 {/* Mock Article */}
                 <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
                   <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
@@ -87,7 +81,9 @@ export default function HeroSection() {
                 <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-blue-600 dark:text-blue-400">✍️</span>
-                    <span className="font-semibold text-blue-900 dark:text-blue-300">AI Summary</span>
+                    <span className="font-semibold text-blue-900 dark:text-blue-300">
+                      AI Summary
+                    </span>
                   </div>
                   <div className="space-y-1 text-sm">
                     <div className="h-2 bg-blue-200 dark:bg-blue-700 rounded w-full"></div>
@@ -100,7 +96,9 @@ export default function HeroSection() {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <span className="text-green-600 dark:text-green-400">✅</span>
-                      <span className="font-semibold text-green-900 dark:text-green-300">Fact Check</span>
+                      <span className="font-semibold text-green-900 dark:text-green-300">
+                        Fact Check
+                      </span>
                     </div>
                     <span className="text-xs bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-200 px-2 py-1 rounded-full">
                       VERIFIED

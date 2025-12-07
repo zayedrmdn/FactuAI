@@ -1,5 +1,5 @@
-import { jsPDF } from "jspdf";
-import { FactCheckResult, QAResult } from "../../types/factcheck";
+import { jsPDF } from 'jspdf';
+import { FactCheckResult, QAResult } from '../../types/factcheck';
 
 type CombinedResult = FactCheckResult | QAResult;
 
@@ -28,7 +28,7 @@ function addTextWithLinks(
 ): number {
   const urlRegex = /(https?:\/\/[^\s]+)/g;
   const parts = text.split(urlRegex);
-  
+
   for (const part of parts) {
     if (urlRegex.test(part)) {
       // This is a URL - make it blue and clickable
@@ -56,17 +56,17 @@ function renderHeader(doc: jsPDF, pageWidth: number, margin: number): number {
   // Header section with better styling
   doc.setFillColor(240, 248, 255); // Light blue background
   doc.rect(0, 0, pageWidth, 90, 'F');
-  
+
   doc.setFontSize(20);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(30, 64, 175); // Dark blue
-  doc.text("FactuAI Analysis Report", margin, 40);
-  
+  doc.text('FactuAI Analysis Report', margin, 40);
+
   doc.setFontSize(11);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(75, 85, 99); // Gray
   doc.text(`Generated on ${new Date().toLocaleString()}`, margin, 65);
-  
+
   doc.setTextColor(0, 0, 0); // Reset to black
   return 120; // Return starting Y position for content
 }
@@ -83,33 +83,33 @@ function renderSummary(
   startY: number
 ): number {
   let y = startY;
-  
+
   if (!summary) return y;
-  
+
   // Add separator line
   doc.setDrawColor(229, 231, 235);
   doc.setLineWidth(1);
   doc.line(margin, y - 10, pageWidth - margin, y - 10);
-  
+
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(75, 85, 99);
-  doc.text("Executive Summary", margin, y);
+  doc.text('Executive Summary', margin, y);
   y += 25;
-  
+
   doc.setFontSize(11);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(0, 0, 0);
-  
+
   // Add background for summary
   const summaryLines = doc.splitTextToSize(summary, maxWidth - 20);
   const summaryHeight = summaryLines.length * 14 + 20;
   doc.setFillColor(249, 250, 251);
   doc.roundedRect(margin, y - 5, maxWidth, summaryHeight, 3, 3, 'F');
-  
+
   doc.text(summaryLines, margin + 10, y + 10);
   y += summaryHeight + 15;
-  
+
   return y;
 }
 
@@ -125,18 +125,18 @@ function renderMetrics(
   startY: number
 ): number {
   let y = startY;
-  
+
   if (averageConfidence <= 0 && (aiScore === undefined || aiScore === null)) {
     return y;
   }
-  
+
   doc.setDrawColor(229, 231, 235);
   doc.line(margin, y - 5, pageWidth - margin, y - 5);
-  
+
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(75, 85, 99);
-  doc.text("Analysis Metrics", margin, y + 10);
+  doc.text('Analysis Metrics', margin, y + 10);
   y += 35;
 
   if (averageConfidence > 0) {
@@ -154,7 +154,7 @@ function renderMetrics(
     doc.text(`AI Content Detection: ${aiScore.toFixed(1)}%`, margin, y);
     y += 25;
   }
-  
+
   doc.setTextColor(0, 0, 0); // Reset color
   return y;
 }
@@ -172,17 +172,17 @@ function renderQAResult(
 ): number {
   let y = startY;
   const cardStartY = y - 10;
-  
+
   // QA Result styling
   doc.setFillColor(254, 249, 195); // Light yellow
   doc.roundedRect(margin, cardStartY, maxWidth, 20, 3, 3, 'F');
-  
+
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(146, 64, 14); // Orange-brown
   doc.text(`Q${idx + 1}: ${result.question}`, margin + 10, y + 5);
   y += 25;
-  
+
   doc.setFontSize(11);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(0, 0, 0);
@@ -194,9 +194,9 @@ function renderQAResult(
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(75, 85, 99);
-    doc.text("Sources:", margin + 10, y);
+    doc.text('Sources:', margin + 10, y);
     y += 15;
-    
+
     doc.setFont('helvetica', 'normal');
     let qaSourceIdx = 0;
     for (const source of result.sources) {
@@ -206,7 +206,7 @@ function renderQAResult(
     }
     y += 10;
   }
-  
+
   return y;
 }
 
@@ -216,7 +216,10 @@ function renderQAResult(
 /**
  * Gets the background and text colors based on verdict
  */
-function getVerdictColors(label: string | undefined): { bg: [number, number, number]; text: [number, number, number] } {
+function getVerdictColors(label: string | undefined): {
+  bg: [number, number, number];
+  text: [number, number, number];
+} {
   const normalizedLabel = label?.toLowerCase();
   if (normalizedLabel === 'true' || normalizedLabel === 'mostly true') {
     return { bg: [240, 253, 244], text: [22, 163, 74] }; // Green
@@ -238,14 +241,14 @@ function renderEvidenceSection(
   startY: number
 ): number {
   let y = startY;
-  
+
   if (result.source_quotes && result.source_quotes.length > 0) {
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(75, 85, 99);
-    doc.text("Evidence:", margin + 10, y);
+    doc.text('Evidence:', margin + 10, y);
     y += 15;
-    
+
     doc.setFont('helvetica', 'italic');
     doc.setTextColor(55, 65, 81);
     for (const quote of result.source_quotes) {
@@ -257,22 +260,24 @@ function renderEvidenceSection(
     y += 10;
     return y;
   }
-  
+
   if (result.evidence && result.evidence.length > 0) {
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(75, 85, 99);
-    doc.text("Evidence:", margin + 10, y);
+    doc.text('Evidence:', margin + 10, y);
     y += 15;
-    
+
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(55, 65, 81);
-    const evidenceText = Array.isArray(result.evidence) ? result.evidence.join('. ') : result.evidence;
+    const evidenceText = Array.isArray(result.evidence)
+      ? result.evidence.join('. ')
+      : result.evidence;
     const evidenceLines = doc.splitTextToSize(evidenceText, maxWidth - 30);
     doc.text(evidenceLines, margin + 20, y);
     y += evidenceLines.length * 12 + 15;
   }
-  
+
   return y;
 }
 
@@ -286,27 +291,27 @@ function renderFactCheckResult(
 ): number {
   let y = startY;
   const cardStartY = y - 10;
-  
+
   // Get colors based on verdict
   const colors = getVerdictColors(result.label);
-  
+
   doc.setFillColor(colors.bg[0], colors.bg[1], colors.bg[2]);
-  
+
   // Calculate card height dynamically
   const claimLines = doc.splitTextToSize(result.claim, maxWidth - 20);
   let cardHeight = 60 + claimLines.length * 14;
   if (result.source_quotes?.length) cardHeight += result.source_quotes.length * 25;
   if (result.evidence?.length) cardHeight += 40;
   if (result.sources?.length) cardHeight += result.sources.length * 15 + 25;
-  
+
   doc.roundedRect(margin, cardStartY, maxWidth, Math.min(cardHeight, 100), 3, 3, 'F');
-  
+
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
   doc.text(`Claim ${idx + 1}:`, margin + 10, y + 5);
   y += 20;
-  
+
   doc.setFontSize(11);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(0, 0, 0);
@@ -336,9 +341,9 @@ function renderFactCheckResult(
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(75, 85, 99);
-    doc.text("Sources:", margin + 10, y);
+    doc.text('Sources:', margin + 10, y);
     y += 15;
-    
+
     doc.setFont('helvetica', 'normal');
     let fcSourceIdx = 0;
     for (const source of result.sources) {
@@ -348,7 +353,7 @@ function renderFactCheckResult(
     }
     y += 10;
   }
-  
+
   return y;
 }
 
@@ -370,16 +375,16 @@ function renderResults(config: RenderResultsConfig): number {
   const { doc, results, isQAOnly, dimensions, startY } = config;
   const { pageWidth, pageHeight, margin, maxWidth } = dimensions;
   let y = startY;
-  
+
   if (results.length === 0) return y;
-  
+
   doc.setDrawColor(229, 231, 235);
   doc.line(margin, y - 5, pageWidth - margin, y - 5);
-  
+
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(75, 85, 99);
-  const sectionTitle = isQAOnly ? "Questions & Answers" : "Fact-Check Results";
+  const sectionTitle = isQAOnly ? 'Questions & Answers' : 'Fact-Check Results';
   doc.text(sectionTitle, margin, y + 10);
   y += 35;
 
@@ -400,7 +405,7 @@ function renderResults(config: RenderResultsConfig): number {
     y += 25; // Space between results
     resultIdx++;
   }
-  
+
   return y;
 }
 
@@ -424,17 +429,17 @@ function renderFooter(doc: jsPDF, pageHeight: number, margin: number): void {
  */
 export function exportToPdf(options: PdfExportOptions): void {
   const { results, summary, averageConfidence, aiScore, isQAOnly } = options;
-  
+
   if (!results.length && !summary) {
-    throw new Error("Nothing to export");
+    throw new Error('Nothing to export');
   }
-  
-  const doc = new jsPDF({ unit: "pt", format: "a4" });
+
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 50;
   const maxWidth = pageWidth - 2 * margin;
-  
+
   // Render sections
   let y = renderHeader(doc, pageWidth, margin);
   y = renderSummary(doc, summary, pageWidth, margin, maxWidth, y);
@@ -444,12 +449,12 @@ export function exportToPdf(options: PdfExportOptions): void {
     results,
     isQAOnly,
     dimensions: { pageWidth, pageHeight, margin, maxWidth },
-    startY: y
+    startY: y,
   });
-  
+
   // Add footer to all pages
   renderFooter(doc, pageHeight, margin);
-  
+
   // Save the PDF
   const filename = `FactuAI-Report-${new Date().toISOString().split('T')[0]}.pdf`;
   doc.save(filename);

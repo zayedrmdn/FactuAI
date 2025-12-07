@@ -15,7 +15,7 @@ export interface FactCheckResult {
 }
 
 export interface QAResult {
-  type: "person_info" | "general_qa";
+  type: 'person_info' | 'general_qa';
   question: string;
   answer: string;
   sources: string[];
@@ -30,7 +30,7 @@ export interface FactCheckSummary {
 }
 
 export interface LoadingPhase {
-  phase: "summary" | "factcheck" | null;
+  phase: 'summary' | 'factcheck' | null;
   progress?: number;
   currentClaim?: string;
 }
@@ -45,7 +45,7 @@ export interface HistoryItem {
   metadata?: {
     filename?: string;
     imageUrl?: string;
-    videoUrl?: string;
-    aiScore?: number;
+    videoUrl?: string | undefined;
+    aiScore?: number | undefined;
   };
 }

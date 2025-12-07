@@ -1,26 +1,33 @@
-"use client";
+'use client';
 
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "sonner";
-import Link from "next/link";
-import { ShieldCheck } from "lucide-react";
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { toast } from 'sonner';
+import Link from 'next/link';
+import { ShieldCheck } from 'lucide-react';
 
 const schema = z
   .object({
-    username: z.string().min(2, "Username must be at least 2 characters").optional(),
-    email: z.string().email("Invalid email"),
-    password: z.string().min(6, "Password must be at least 6 characters"),
+    username: z.string().min(2, 'Username must be at least 2 characters').optional(),
+    email: z.string().email('Invalid email'),
+    password: z.string().min(6, 'Password must be at least 6 characters'),
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
   });
 
 type FormData = z.infer<typeof schema>;
@@ -38,9 +45,9 @@ export default function RegisterPage() {
   const onSubmit = async (data: FormData) => {
     try {
       // Send a POST request to the backend with the registration data
-      const res = await fetch("http://127.0.0.1:5000/api/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('http://127.0.0.1:5000/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           username: data.username,
           email: data.email,
@@ -53,20 +60,20 @@ export default function RegisterPage() {
 
       if (res.ok) {
         // Display a success message if registration is successful
-        toast.success(result.message || "Registration successful");
+        toast.success(result.message || 'Registration successful');
 
         // Redirect the user to the login page after a short delay
         setTimeout(() => {
-          globalThis.location.href = "/login";
+          globalThis.location.href = '/login';
         }, 1000);
       } else {
         // Display an error message if the server returns a failure response
-        toast.error(result.error || "Registration failed");
+        toast.error(result.error || 'Registration failed');
       }
     } catch (err: unknown) {
       // Handle unexpected runtime errors and notify the user
       console.error(err);
-      toast.error("Something went wrong");
+      toast.error('Something went wrong');
     }
   };
 
@@ -81,7 +88,8 @@ export default function RegisterPage() {
         <div className="relative z-20 mt-auto">
           <blockquote className="space-y-2">
             <p className="text-lg">
-              &ldquo;Start your journey with intelligent fact-checking. Verify news, combat misinformation, and trust what you read.&rdquo;
+              &ldquo;Start your journey with intelligent fact-checking. Verify news, combat
+              misinformation, and trust what you read.&rdquo;
             </p>
             <footer className="text-sm">The FactuAI Team</footer>
           </blockquote>
@@ -92,9 +100,7 @@ export default function RegisterPage() {
           <Card className="border-0 shadow-none sm:border sm:shadow-sm">
             <CardHeader className="space-y-1">
               <CardTitle className="text-2xl tracking-tight">Create an account</CardTitle>
-              <CardDescription>
-                Enter your email below to create your account
-              </CardDescription>
+              <CardDescription>Enter your email below to create your account</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">
               <form onSubmit={handleSubmit(onSubmit)}>
@@ -108,7 +114,7 @@ export default function RegisterPage() {
                       autoCapitalize="none"
                       autoCorrect="off"
                       disabled={isSubmitting}
-                      {...register("username")}
+                      {...register('username')}
                     />
                     {errors.username && (
                       <p className="text-sm text-destructive">{errors.username.message}</p>
@@ -124,7 +130,7 @@ export default function RegisterPage() {
                       autoComplete="email"
                       autoCorrect="off"
                       disabled={isSubmitting}
-                      {...register("email")}
+                      {...register('email')}
                     />
                     {errors.email && (
                       <p className="text-sm text-destructive">{errors.email.message}</p>
@@ -136,7 +142,7 @@ export default function RegisterPage() {
                       id="password"
                       type="password"
                       disabled={isSubmitting}
-                      {...register("password")}
+                      {...register('password')}
                     />
                     {errors.password && (
                       <p className="text-sm text-destructive">{errors.password.message}</p>
@@ -148,7 +154,7 @@ export default function RegisterPage() {
                       id="confirmPassword"
                       type="password"
                       disabled={isSubmitting}
-                      {...register("confirmPassword")}
+                      {...register('confirmPassword')}
                     />
                     {errors.confirmPassword && (
                       <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
@@ -165,11 +171,8 @@ export default function RegisterPage() {
             </CardContent>
             <CardFooter>
               <div className="text-sm text-muted-foreground text-center w-full">
-                Already have an account?{" "}
-                <Link 
-                  href="/login" 
-                  className="text-primary underline-offset-4 hover:underline"
-                >
+                Already have an account?{' '}
+                <Link href="/login" className="text-primary underline-offset-4 hover:underline">
                   Sign in
                 </Link>
               </div>

@@ -15,14 +15,14 @@ export const API_BASE_URL = 'http://localhost:5000/api';
 // UI constants
 export const TEXT_SIZES = {
   sm: 'text-sm',
-  md: 'text-base', 
-  lg: 'text-lg'
+  md: 'text-base',
+  lg: 'text-lg',
 } as const;
 
 // Loading messages
 export const LOADING_MESSAGES = {
-  IMAGE_PROCESSING: "Extracting text from image...",
-  VIDEO_PROCESSING: "Processing video... This may take a few minutes",
-  FACT_CHECKING: "Fact-checking claims...",
-  AI_DETECTION: "Detecting AI-generated content..."
+  IMAGE_PROCESSING: 'Extracting text from image...',
+  VIDEO_PROCESSING: 'Processing video... This may take a few minutes',
+  FACT_CHECKING: 'Fact-checking claims...',
+  AI_DETECTION: 'Detecting AI-generated content...',
 } as const;

@@ -52,3 +52,6 @@ notebooks/
 # Ignore virtual environment folders named 'venv-<something>'
 .venv-cloud/
 .venv-local/
+
+node_modules/
+.husky/

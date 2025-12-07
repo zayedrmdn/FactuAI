@@ -9,6 +9,11 @@ from pipeline.extraction.extractor import extract_claims_llm
 from services.classifier_intent.intent_parser import detect_intent
 from core.logging import logger
 
+# Constants for phase messages
+PHASE_GENERATING_SUMMARY = "Generating summary..."
+PHASE_VERIFYING_CLAIM = "Verifying claim..."
+PHASE_EXTRACTING_CLAIMS = "Extracting claims..."
+
 
 class PipelineOrchestrator:
     def __init__(self):
@@ -49,7 +54,7 @@ class PipelineOrchestrator:
             logger.error(f"[PIPELINE] OCR failed: {e}")
             return ""
 
-    def check_text(self, text: str, max_claims: int = 5) -> dict:
+    def check_text(self, text: str, max_claims: int = 5, model_config: dict = None) -> dict:
         """Synchronous wrapper around the generator for backward compatibility."""
         logger.debug("[PIPELINE] check_text() called (sync wrapper)")
         
@@ -58,7 +63,7 @@ class PipelineOrchestrator:
         validation_error = None
         suggestion = None
 
-        for event in self.check_text_generator(text, max_claims):
+        for event in self.check_text_generator(text, max_claims, model_config):
             if event["type"] == "result":
                 results.append(event["result"])
             elif event["type"] == "summary":
@@ -77,16 +82,38 @@ class PipelineOrchestrator:
             
         return {"summary": summary, "results": results}
 
-    def check_text_generator(self, text: str, max_claims: int = 5):
+    def check_text_generator(self, text: str, max_claims: int = 5, model_config: dict = None):
         """Generator that yields progress events and results."""
         logger.debug("[PIPELINE] check_text_generator() started")
         
+        # Dynamically create LLM client if model_config is provided
+        llm_client = self.llm  # Default to instance LLM
+        if model_config:
+            try:
+                from services.llm.factory import LLMFactory
+                provider = model_config.get("provider", "openrouter")
+                model_id = model_config.get("model_id")
+                
+                logger.info(f"[PIPELINE] Creating dynamic LLM client: provider={provider}, model={model_id}")
+                
+                # Build kwargs for LLM provider
+                llm_kwargs = {}
+                if model_id:
+                    llm_kwargs["model"] = model_id
+                
+                # Create dynamic client
+                llm_client = LLMFactory.create(provider=provider, **llm_kwargs)
+                logger.info("[PIPELINE] Dynamic LLM client created successfully")
+            except Exception as e:
+                logger.error(f"[PIPELINE] Failed to create dynamic LLM client: {e}. Falling back to default.")
+                llm_client = self.llm  # Fallback to default
+        
         try:
-            if hasattr(self.llm, "clear_cache"):
-                self.llm.clear_cache()
+            if hasattr(llm_client, "clear_cache"):
+                llm_client.clear_cache()
 
             yield {"type": "phase", "message": "Detecting intent...", "progress": 5}
-            intent = detect_intent(text, self.llm)
+            intent = detect_intent(text, llm_client)
             logger.debug(f"[PIPELINE] detected intent: {intent}")
 
             if intent in ["opinion", "nonsense", "instructional"]:
@@ -99,11 +126,11 @@ class PipelineOrchestrator:
 
             # Dispatch to appropriate handler generator
             if intent == "fact_question":
-                yield from self._handle_fact_question_gen(text)
+                yield from self._handle_fact_question_gen(text, llm_client)
             elif intent in ["news_paragraph", "multi_claim"]:
-                yield from self._handle_multi_claim_gen(text, max_claims)
+                yield from self._handle_multi_claim_gen(text, max_claims, llm_client)
             else: # fact_claim
-                yield from self._handle_fact_claim_gen(text)
+                yield from self._handle_fact_claim_gen(text, llm_client)
         except Exception as e:
             logger.exception(f"[PIPELINE] Unexpected error in check_text_generator: {e}")
             yield {
@@ -111,36 +138,36 @@ class PipelineOrchestrator:
                 "message": f"Internal server error: {str(e)}"
             }
 
-    def _handle_fact_question_gen(self, text: str):
+    def _handle_fact_question_gen(self, text: str, llm_client):
         logger.info("[PIPELINE] handling fact_question (fallback to claim)")
         # 1. Summary
-        yield {"type": "phase", "message": "Generating summary...", "progress": 10}
-        summary = summarise_input_text(text, self.llm)
+        yield {"type": "phase", "message": PHASE_GENERATING_SUMMARY, "progress": 10}
+        summary = summarise_input_text(text, llm_client)
         yield {"type": "summary", "summary": summary}
         
         # 2. Check
-        yield {"type": "phase", "message": "Verifying claim...", "progress": 30}
-        result = self._run_check(text) # Treating question as claim
+        yield {"type": "phase", "message": PHASE_VERIFYING_CLAIM, "progress": 30}
+        result = self._run_check(text, llm_client) # Treating question as claim
         yield {"type": "result", "result": {"claim": text, **result}}
 
-    def _handle_fact_claim_gen(self, text: str):
+    def _handle_fact_claim_gen(self, text: str, llm_client):
         logger.debug("[PIPELINE] handling fact_claim")
         # 1. Summary
-        yield {"type": "phase", "message": "Generating summary...", "progress": 10}
-        summary = summarise_input_text(text, self.llm)
+        yield {"type": "phase", "message": PHASE_GENERATING_SUMMARY, "progress": 10}
+        summary = summarise_input_text(text, llm_client)
         yield {"type": "summary", "summary": summary}
         
         # 2. Check
-        yield {"type": "phase", "message": "Verifying claim...", "progress": 30}
-        result = self._run_check(text)
+        yield {"type": "phase", "message": PHASE_VERIFYING_CLAIM, "progress": 30}
+        result = self._run_check(text, llm_client)
         yield {"type": "result", "result": {"claim": text, **result}}
 
-    def _handle_multi_claim_gen(self, text: str, max_claims: int):
+    def _handle_multi_claim_gen(self, text: str, max_claims: int, llm_client):
         logger.debug("[PIPELINE] handling multi_claim/news_paragraph")
         
         # 1. Extract claims
-        yield {"type": "phase", "message": "Extracting claims...", "progress": 10}
-        claims = extract_claims_llm(text, max_claims, llm=self.llm)
+        yield {"type": "phase", "message": PHASE_EXTRACTING_CLAIMS, "progress": 10}
+        claims = extract_claims_llm(text, max_claims, llm=llm_client)
         
         if not claims:
              yield {
@@ -151,8 +178,8 @@ class PipelineOrchestrator:
              return
 
         # 2. Summary
-        yield {"type": "phase", "message": "Generating summary...", "progress": 20}
-        summary = summarise_input_text(text, self.llm)
+        yield {"type": "phase", "message": PHASE_GENERATING_SUMMARY, "progress": 20}
+        summary = summarise_input_text(text, llm_client)
         yield {"type": "summary", "summary": summary}
 
         # 3. Process each claim
@@ -168,6 +195,7 @@ class PipelineOrchestrator:
             
             result = self._run_check(
                 claim,
+                llm_client,
                 max_google=2,
                 max_news=1
             )
@@ -204,6 +232,7 @@ class PipelineOrchestrator:
     def _run_check(
         self,
         claim:       str,
+        llm_client,
         max_google:  int = None,
         max_news:    int = None
     ) -> dict:
@@ -230,7 +259,7 @@ class PipelineOrchestrator:
             resp = {"items": normalized}
 
             # 3) Gather evidence, passing along any overrides
-            be_kwargs = {"llm": self.llm}
+            be_kwargs = {"llm": llm_client}
             if max_google is not None:
                 be_kwargs["max_google"] = max_google
             if max_news is not None:
@@ -256,12 +285,12 @@ class PipelineOrchestrator:
 
             # 5) Justify
             try:
-                explanation = self.clf.justify(label, claim, evidence, llm=self.llm)
+                explanation = self.clf.justify(label, claim, evidence, llm=llm_client)
             except Exception:
                 explanation = f"The claim is {label} based on the available evidence."
 
             # 6) Summarize evidence
-            ev_summary = summarise(evidence, llm=self.llm)
+            ev_summary = summarise(evidence, llm=llm_client)
 
             return {
                 "label":         label,

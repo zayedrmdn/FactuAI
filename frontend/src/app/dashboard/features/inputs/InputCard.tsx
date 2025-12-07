@@ -1,15 +1,15 @@
 import React, { useState, useCallback } from 'react';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ShieldCheck, Settings, Loader2, X } from "lucide-react";
-import { validateBasic } from "../../utils/validation";
-import InputTabs from "./InputTabs";
-import { InputType, TextSize } from "../../types/ui";
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { ShieldCheck, Settings, Loader2, X } from 'lucide-react';
+import { validateBasic } from '../../utils/validation';
+import InputTabs from './InputTabs';
+import { InputType, TextSize } from '../../types/ui';
 
 interface InputCardProps {
   input: string;
   setInput: (v: string) => void;
-  loading: null | "summary" | "factcheck";
+  loading: null | 'summary' | 'factcheck';
   onFactCheck: () => void;
   onClear: () => void;
   textSize: TextSize;
@@ -17,9 +17,17 @@ interface InputCardProps {
   onAIDetection?: (score: number | null, error?: string) => void;
   onInputTypeChange?: (
     type: InputType,
-    data?: { imageData?: {url: string, aiScore: number | null, aiError?: string}, videoData?: {filename: string, videoUrl?: string} }
+    data?: {
+      imageData?: { url: string; aiScore: number | null; aiError?: string | undefined };
+      videoData?: { filename: string; videoUrl?: string | undefined };
+    }
   ) => void;
-  saveImageToHistory?: (text: string, imageUrl: string, aiScore: number | null, aiError?: string) => void;
+  saveImageToHistory?: (
+    text: string,
+    imageUrl: string,
+    aiScore: number | null,
+    aiError?: string
+  ) => void;
   saveVideoToHistory?: (text: string, filename: string, videoUrl?: string) => void;
 }
 
@@ -36,69 +44,73 @@ export default function InputCard({
   saveImageToHistory,
   saveVideoToHistory,
 }: InputCardProps) {
-  const [, setCurrentInputType] = useState<InputType>("text");
+  const [, setCurrentInputType] = useState<InputType>('text');
 
   const validationResult = validateBasic(input);
   const showValidationError = input.trim().length > 0 && validationResult.error;
 
-  const handleImageProcessed = useCallback((
-    text: string, 
-    aiScore: number | null, 
-    imageUrl: string,
-    aiError?: string
-  ) => {
-    setInput(text);
-    setCurrentInputType("image");
-    
-    const imageData = { url: imageUrl, aiScore, aiError };
+  const handleImageProcessed = useCallback(
+    (text: string, aiScore: number | null, imageUrl: string, aiError?: string) => {
+      setInput(text);
+      setCurrentInputType('image');
 
-    if (onAIDetection) {
-      onAIDetection(aiScore, aiError);
-    }
+      const imageData = { url: imageUrl, aiScore, aiError: aiError ?? undefined };
 
-    if (onInputTypeChange) {
-      onInputTypeChange("image", { imageData });
-    }
+      if (onAIDetection) {
+        onAIDetection(aiScore, aiError);
+      }
 
-    if (saveImageToHistory) {
-      saveImageToHistory(text, imageUrl, aiScore, aiError);
-    }
-  }, [setInput, onAIDetection, onInputTypeChange, saveImageToHistory]);
+      if (onInputTypeChange) {
+        onInputTypeChange('image', { imageData });
+      }
 
-  const handleVideoProcessed = useCallback((text: string, filename?: string, videoUrl?: string) => {
-    setInput(text);
-    setCurrentInputType("video");
-    
-    const videoData = { 
-      filename: filename || "Unknown video",
-      videoUrl: videoUrl
-    };
+      if (saveImageToHistory) {
+        saveImageToHistory(text, imageUrl, aiScore, aiError);
+      }
+    },
+    [setInput, onAIDetection, onInputTypeChange, saveImageToHistory]
+  );
 
-    if (onInputTypeChange) {
-      onInputTypeChange("video", { videoData });
-    }
+  const handleVideoProcessed = useCallback(
+    (text: string, filename?: string, videoUrl?: string) => {
+      setInput(text);
+      setCurrentInputType('video');
 
-    if (saveVideoToHistory && text.trim() && filename) {
-      saveVideoToHistory(text, filename, videoUrl);
-    }
-  }, [setInput, onInputTypeChange, saveVideoToHistory]);
+      const videoData = {
+        filename: filename || 'Unknown video',
+        videoUrl: videoUrl,
+      };
 
-  const handleTextInput = useCallback((text: string) => {
-    setInput(text);
-    setCurrentInputType("text");
+      if (onInputTypeChange) {
+        onInputTypeChange('video', { videoData });
+      }
 
-    if (onInputTypeChange) {
-      onInputTypeChange("text");
-    }
-  }, [setInput, onInputTypeChange]);
+      if (saveVideoToHistory && text.trim() && filename) {
+        saveVideoToHistory(text, filename, videoUrl);
+      }
+    },
+    [setInput, onInputTypeChange, saveVideoToHistory]
+  );
+
+  const handleTextInput = useCallback(
+    (text: string) => {
+      setInput(text);
+      setCurrentInputType('text');
+
+      if (onInputTypeChange) {
+        onInputTypeChange('text');
+      }
+    },
+    [setInput, onInputTypeChange]
+  );
 
   const handleInputTypeChange = useCallback((type: InputType) => {
     setCurrentInputType(type);
   }, []);
 
   const handleClear = useCallback(() => {
-    setInput("");
-    setCurrentInputType("text");
+    setInput('');
+    setCurrentInputType('text');
     onClear();
   }, [setInput, onClear]);
 
@@ -146,7 +158,7 @@ export default function InputCard({
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  {loading === "summary" ? "Summarizing..." : "Fact-checking..."}
+                  {loading === 'summary' ? 'Summarizing...' : 'Fact-checking...'}
                 </>
               ) : (
                 <>

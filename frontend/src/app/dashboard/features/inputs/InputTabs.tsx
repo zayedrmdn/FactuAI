@@ -5,14 +5,19 @@ import TextTab from './TextInput/TextTab';
 import ImageTab from './ImageInput/ImageTab';
 import VideoTab from './VideoInput/VideoTab';
 import { InputType, TextSize } from '../../types/ui';
-import { cn } from "@/lib/utils";
+import { cn } from '@/lib/utils';
 
 interface InputTabsProps {
   input: string;
   setInput: (value: string) => void;
   textSize: TextSize;
   onClear: () => void;
-  onImageProcessed: (text: string, aiScore: number | null, imageUrl: string, aiError?: string) => void;
+  onImageProcessed: (
+    text: string,
+    aiScore: number | null,
+    imageUrl: string,
+    aiError?: string
+  ) => void;
   onVideoProcessed: (text: string, filename?: string, videoUrl?: string) => void;
   onInputTypeChange: (type: InputType) => void;
 }
@@ -30,7 +35,7 @@ export default function InputTabs({
   onClear,
   onImageProcessed,
   onVideoProcessed,
-  onInputTypeChange
+  onInputTypeChange,
 }: Readonly<InputTabsProps>) {
   const [activeTab, setActiveTab] = useState<InputType>('text');
 
@@ -46,19 +51,21 @@ export default function InputTabs({
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
-          
+
           return (
             <button
               key={tab.id}
               onClick={() => handleTabChange(tab.id)}
               className={cn(
-                "relative flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-all duration-200",
+                'relative flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-all duration-200',
                 isActive
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
               )}
             >
-              <Icon className={cn("w-4 h-4", isActive ? "text-primary" : "text-muted-foreground")} />
+              <Icon
+                className={cn('w-4 h-4', isActive ? 'text-primary' : 'text-muted-foreground')}
+              />
               <span className="relative z-10">{tab.label}</span>
             </button>
           );
@@ -74,21 +81,12 @@ export default function InputTabs({
           transition={{ duration: 0.2 }}
         >
           {activeTab === 'text' && (
-            <TextTab
-              input={input}
-              setInput={setInput}
-              textSize={textSize}
-              onClear={onClear}
-            />
+            <TextTab input={input} setInput={setInput} textSize={textSize} onClear={onClear} />
           )}
-          
-          {activeTab === 'image' && (
-            <ImageTab onImageProcessed={onImageProcessed} />
-          )}
-          
-          {activeTab === 'video' && (
-            <VideoTab onVideoProcessed={onVideoProcessed} />
-          )}
+
+          {activeTab === 'image' && <ImageTab onImageProcessed={onImageProcessed} />}
+
+          {activeTab === 'video' && <VideoTab onVideoProcessed={onVideoProcessed} />}
         </motion.div>
       </div>
     </div>

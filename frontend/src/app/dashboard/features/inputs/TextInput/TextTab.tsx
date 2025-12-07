@@ -1,10 +1,10 @@
 import React from 'react';
-import { ClipboardIcon, ArrowUpTrayIcon, XMarkIcon } from "@heroicons/react/24/outline";
-import { toast } from "sonner";
-import { franc } from "franc";
-import { fileToText } from "../../../utils/fileToText";
-import { validateBasic } from "../../../utils/validation";
-import { TextSize } from "../../../types/ui";
+import { ClipboardIcon, ArrowUpTrayIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { toast } from 'sonner';
+import { franc } from 'franc';
+import { fileToText } from '../../../utils/fileToText';
+import { validateBasic } from '../../../utils/validation';
+import { TextSize } from '../../../types/ui';
 
 interface PasteUploadClearProps {
   onPaste: () => void;
@@ -13,7 +13,12 @@ interface PasteUploadClearProps {
   disabled?: boolean;
 }
 
-function PasteUploadClear({ onPaste, onUpload, onClear, disabled }: Readonly<PasteUploadClearProps>) {
+function PasteUploadClear({
+  onPaste,
+  onUpload,
+  onClear,
+  disabled,
+}: Readonly<PasteUploadClearProps>) {
   return (
     <div className="flex gap-2">
       <button
@@ -60,25 +65,25 @@ export default function TextTab({ input, setInput, textSize, onClear }: Readonly
     try {
       const txt = await fileToText(file);
       if (!txt) return;
-      
+
       const lang = franc(txt.slice(0, 500));
-      if (lang !== "eng" && lang !== "und") {
-        toast.error("Only English text supported right now.");
+      if (lang !== 'eng' && lang !== 'und') {
+        toast.error('Only English text supported right now.');
         return;
       }
-      
+
       setInput(txt);
-      toast.success("File loaded");
+      toast.success('File loaded');
     } catch (error) {
-      console.error("Error processing file:", error);
-      toast.error("Failed to process file");
+      console.error('Error processing file:', error);
+      toast.error('Failed to process file');
     }
   };
 
   const pickFile = () => {
-    const inputEl = document.createElement("input");
-    inputEl.type = "file";
-    inputEl.accept = ".txt,.pdf";
+    const inputEl = document.createElement('input');
+    inputEl.type = 'file';
+    inputEl.accept = '.txt,.pdf';
     inputEl.onchange = (e: Event) => {
       const target = e.target as HTMLInputElement;
       const file = target.files?.[0];
@@ -91,28 +96,28 @@ export default function TextTab({ input, setInput, textSize, onClear }: Readonly
     try {
       const text = await navigator.clipboard.readText();
       if (!text) {
-        toast.error("Clipboard is empty");
+        toast.error('Clipboard is empty');
         return;
       }
-      
+
       const lang = franc(text.slice(0, 500));
-      if (lang !== "eng" && lang !== "und") {
-        toast.error("Only English text supported");
+      if (lang !== 'eng' && lang !== 'und') {
+        toast.error('Only English text supported');
         return;
       }
-      
+
       setInput(text);
-      toast.success("Text pasted from clipboard");
+      toast.success('Text pasted from clipboard');
     } catch (error) {
-      console.error("Error reading clipboard:", error);
-      toast.error("Failed to read clipboard");
+      console.error('Error reading clipboard:', error);
+      toast.error('Failed to read clipboard');
     }
   };
 
   const textSizeClass = {
     sm: 'text-sm',
     md: 'text-base',
-    lg: 'text-lg'
+    lg: 'text-lg',
   }[textSize];
 
   return (
@@ -124,9 +129,7 @@ export default function TextTab({ input, setInput, textSize, onClear }: Readonly
           onClear={onClear}
           disabled={validationResult.isValid === false}
         />
-        <div className="text-xs text-gray-500">
-          {wordCount} words
-        </div>
+        <div className="text-xs text-gray-500">{wordCount} words</div>
       </div>
 
       <textarea

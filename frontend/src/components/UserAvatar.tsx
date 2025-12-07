@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useUser } from "@/app/dashboard/hooks/useUser";
+import { useState } from 'react';
+import { useUser } from '@/app/dashboard/hooks/useUser';
 
 export default function UserAvatar() {
   const { user } = useUser();
@@ -9,7 +9,7 @@ export default function UserAvatar() {
 
   if (!user) return null;
 
-  const displayName = user.username || user.email.split("@")[0];
+  const displayName = user.username || user.email.split('@')[0];
   const initials = (user.username || user.email).slice(0, 2).toUpperCase();
 
   return (

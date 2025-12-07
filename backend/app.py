@@ -16,28 +16,46 @@ except ImportError:
     # Create mock classes for testing
     class Flask:
         def __init__(self, name):
+            # Mock constructor - no initialization needed for testing
             pass
-        def run(self, debug=False, use_reloader=False):
+        def run(self, **kwargs):
+            # Mock run method - prints instead of starting server
             print("Mock Flask app would run here")
     class MockCORS:
         def __init__(self, app, resources=None):
+            # Mock CORS - no configuration needed for testing
             pass
     CORS = MockCORS
     def request():
+        # Mock request object - no implementation needed
         pass
     def jsonify(data):
+        # Mock jsonify - returns data as-is for testing
         return data
 
 from core.config import Config
 from database.connection import db
 
+# Import logger first
+from core.logging import logger
+
+# Log startup configuration
+logger.info("="*60)
+logger.info("FACTUAI BACKEND - STARTING UP")
+logger.info("="*60)
+logger.info(f"[CONFIG] Run Mode: {os.getenv('APP_RUN_MODE', 'cloud')}")
+logger.info(f"[CONFIG] LLM Provider: {os.getenv('LLM_PROVIDER', 'openrouter')}")
+logger.info(f"[CONFIG] OpenRouter Model: {os.getenv('OPENROUTER_MODEL', 'not set')}")
+logger.info(f"[CONFIG] NVIDIA Model: {os.getenv('NVIDIA_MODEL', 'not set')}")
+logger.info(f"[CONFIG] Database: {'Connected' if os.getenv('DB_URI') else 'Not configured'}")
+logger.info("="*60)
+
 # Initialize services
 from services.service_manager import service_manager
 service_manager.initialize_services()
 
-# Import pipeline orchestrator and logger
+# Import pipeline orchestrator
 from services.factcheck_service import PipelineOrchestrator
-from core.logging import logger
 
 if HAS_FLASK:
     # blueprints - only import if Flask is available

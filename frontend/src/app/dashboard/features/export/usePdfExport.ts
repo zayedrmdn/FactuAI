@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useCallback } from "react";
-import { toast } from "sonner";
-import { exportToPdf } from "./pdfExport";
-import { FactCheckResult, QAResult } from "../../types/factcheck";
+import { useCallback } from 'react';
+import { toast } from 'sonner';
+import { exportToPdf } from './pdfExport';
+import { FactCheckResult, QAResult } from '../../types/factcheck';
 
 type CombinedResult = FactCheckResult | QAResult;
 
@@ -11,7 +11,7 @@ interface UsePdfExportProps {
   results: CombinedResult[];
   summary: string;
   averageConfidence: number;
-  aiScore?: number | null;
+  aiScore?: number | null | undefined;
   isQAOnly: boolean;
 }
 
@@ -23,32 +23,31 @@ export function usePdfExport({
   summary,
   averageConfidence,
   aiScore,
-  isQAOnly
+  isQAOnly,
 }: UsePdfExportProps) {
-  
   const handleExportPdf = useCallback(() => {
     try {
       exportToPdf({
         results,
         summary,
         averageConfidence,
-        aiScore,
-        isQAOnly
+        aiScore: aiScore ?? null,
+        isQAOnly,
       });
-      
-      toast.success("PDF exported successfully");
+
+      toast.success('PDF exported successfully');
     } catch (err) {
-      console.error("PDF export error:", err);
-      
+      console.error('PDF export error:', err);
+
       if (err instanceof Error) {
         toast.error(err.message);
       } else {
-        toast.error("Failed to export PDF");
+        toast.error('Failed to export PDF');
       }
     }
   }, [results, summary, averageConfidence, aiScore, isQAOnly]);
-  
+
   return {
-    exportPdf: handleExportPdf
+    exportPdf: handleExportPdf,
   };
 }

@@ -8,11 +8,11 @@ interface ProcessingStatusProps {
   readonly className?: string;
 }
 
-export function ProcessingStatus({ 
-  isProcessing, 
-  message = "Processing...", 
+export function ProcessingStatus({
+  isProcessing,
+  message = 'Processing...',
   progress,
-  className = "" 
+  className = '',
 }: Readonly<ProcessingStatusProps>) {
   if (!isProcessing) return null;
 
@@ -23,8 +23,8 @@ export function ProcessingStatus({
       {progress !== undefined && (
         <div className="flex-1 max-w-32">
           <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+            <div
+              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
               style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
             />
           </div>

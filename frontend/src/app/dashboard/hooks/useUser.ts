@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from 'react';
 
 interface User {
   id: number;
@@ -31,7 +31,7 @@ export function useUser() {
     // Start a new fetch
     userPromise = (async () => {
       try {
-        const userData = localStorage.getItem("user");
+        const userData = localStorage.getItem('user');
         if (!userData) {
           return null;
         }
@@ -42,7 +42,7 @@ export function useUser() {
         if (response.ok) {
           const freshUserData = await response.json();
           // Update localStorage with fresh data
-          localStorage.setItem("user", JSON.stringify(freshUserData));
+          localStorage.setItem('user', JSON.stringify(freshUserData));
           userCache = freshUserData;
           return freshUserData;
         } else {
@@ -50,9 +50,9 @@ export function useUser() {
           return userInfo;
         }
       } catch (error) {
-        console.warn("Failed to fetch user data:", error);
+        console.warn('Failed to fetch user data:', error);
         // Fall back to localStorage data
-        const userData = localStorage.getItem("user");
+        const userData = localStorage.getItem('user');
         return userData ? JSON.parse(userData) : null;
       } finally {
         userPromise = null;
