@@ -4,7 +4,7 @@ import { FileText, Image as ImageIcon, Video } from 'lucide-react';
 import TextTab from './TextInput/TextTab';
 import ImageTab from './ImageInput/ImageTab';
 import VideoTab from './VideoInput/VideoTab';
-import { InputType, TextSize } from '../../types/ui';
+import { InputType, TextSize } from '@/types/dashboard/ui';
 import { cn } from '@/lib/utils';
 
 interface InputTabsProps {

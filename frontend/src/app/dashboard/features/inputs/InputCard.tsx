@@ -2,9 +2,9 @@ import React, { useState, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ShieldCheck, Settings, Loader2, X } from 'lucide-react';
-import { validateBasic } from '../../utils/validation';
+import { validateBasic } from '@/lib/dashboard/validation';
 import InputTabs from './InputTabs';
-import { InputType, TextSize } from '../../types/ui';
+import { InputType, TextSize } from '@/types/dashboard/ui';
 
 interface InputCardProps {
   input: string;

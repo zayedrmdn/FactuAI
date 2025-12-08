@@ -53,5 +53,12 @@ notebooks/
 .venv-cloud/
 .venv-local/
 
+# Ignore AI agent and tool folders
+.agent-memory/
+.trae/
+
+# Ignore context generator output
+scripts/context_output.txt
+
 node_modules/
 .husky/

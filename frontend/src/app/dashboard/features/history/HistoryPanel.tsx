@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { HistoryItem as HistoryItemType } from '../../types/factcheck';
+import { HistoryItem as HistoryItemType } from '@/types/dashboard/factcheck';
 import HistoryItem from './HistoryItem';
 import { TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 

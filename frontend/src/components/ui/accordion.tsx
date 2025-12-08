@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -19,34 +18,32 @@ export function AccordionItem({
   className,
 }: Readonly<AccordionItemProps>) {
   const [isOpen, setIsOpen] = React.useState(defaultOpen);
+  const contentRef = React.useRef<HTMLDivElement>(null);
 
   return (
     <div className={cn('border-b last:border-0', className)}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex w-full items-center justify-between py-4 text-sm font-medium transition-all hover:text-primary text-left"
+        className="flex w-full items-center justify-between py-4 px-4 text-sm font-medium transition-colors hover:bg-slate-50 text-left"
+        aria-expanded={isOpen}
       >
         {title}
         <ChevronDown
           className={cn(
-            'h-4 w-4 shrink-0 transition-transform duration-200',
+            'h-4 w-4 shrink-0 transition-transform duration-300 ease-in-out',
             isOpen && 'rotate-180'
           )}
         />
       </button>
-      <AnimatePresence initial={false}>
-        {isOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
-          >
-            <div className="pb-4 pt-0 text-sm text-muted-foreground">{children}</div>
-          </motion.div>
+      <div
+        ref={contentRef}
+        className={cn(
+          'transition-all duration-300 ease-in-out overflow-hidden',
+          isOpen ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'
         )}
-      </AnimatePresence>
+      >
+        <div className="pb-4 text-sm text-muted-foreground">{children}</div>
+      </div>
     </div>
   );
 }

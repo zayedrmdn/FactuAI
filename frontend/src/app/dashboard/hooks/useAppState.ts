@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { useFactCheck } from './useFactCheck';
 import { useHistory } from './useHistory';
 import { useInputType } from './useInputType';
-import { HistoryItem } from '../types/factcheck';
+import { HistoryItem } from '@/types/dashboard/factcheck';
 
 export function useAppState() {
   // Compose existing hooks

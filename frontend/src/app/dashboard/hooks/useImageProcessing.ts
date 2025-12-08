@@ -1,6 +1,6 @@
 import { useFileUpload } from './useFileUpload';
 import { apiService } from '../services/api';
-import { ExtractTextResponse } from '../types/api';
+import { ExtractTextResponse } from '@/types/dashboard/api';
 
 interface UseImageProcessingOptions {
   onImageProcessed: (

@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import { FactCheckResult, QAResult } from '../../types/factcheck';
+import { FactCheckResult, QAResult } from '@/types/dashboard/factcheck';
 
 type CombinedResult = FactCheckResult | QAResult;
 

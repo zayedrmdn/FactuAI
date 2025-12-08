@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { VideoCameraIcon } from '@heroicons/react/24/outline';
 import { useVideoProcessing } from '../../../hooks/useVideoProcessing';
-import { FileDropZone } from '@/components/ui/FileDropZone';
-import { ProcessingStatus } from '@/components/ui/ProcessingStatus';
+import { FileDropZone } from '@/components/ui/file-input';
+import { ProcessingStatus } from '@/components/ui/feedback-states';
 
 interface VideoPreviewData {
   filename: string;

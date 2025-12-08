@@ -2,9 +2,9 @@ import React from 'react';
 import { ClipboardIcon, ArrowUpTrayIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { toast } from 'sonner';
 import { franc } from 'franc';
-import { fileToText } from '../../../utils/fileToText';
-import { validateBasic } from '../../../utils/validation';
-import { TextSize } from '../../../types/ui';
+import { fileToText } from '@/lib/dashboard/fileToText';
+import { validateBasic } from '@/lib/dashboard/validation';
+import { TextSize } from '@/types/dashboard/ui';
 
 interface PasteUploadClearProps {
   onPaste: () => void;

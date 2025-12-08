@@ -3,7 +3,10 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { validateForFactCheck } from './useInputValidation';
-import { FactCheckResult } from '../types/factcheck';
+import { FactCheckResult } from '@/types/dashboard/factcheck';
+import { usePipelineModelsStore } from '@/stores/pipeline-models-store';
+import type { PipelineTask } from '@/stores/pipeline-models-store';
+import { getModelById } from '@/config/ai-models';
 
 const API_URL = 'http://localhost:5000/api/process';
 
@@ -41,6 +44,31 @@ function processSSEMessage(
       if (data.claim_index !== undefined) {
         setCurrentClaim(data.claim_index + 1);
       }
+
+      // Update active task based on loading phase
+      const phase = (data.message ?? '').toLowerCase();
+      let activeTask: PipelineTask | null = null;
+
+      if (
+        phase.includes('intent') ||
+        phase.includes('classifying') ||
+        phase.includes('detecting')
+      ) {
+        activeTask = 'intent';
+      } else if (phase.includes('extract') || phase.includes('claim')) {
+        activeTask = 'extraction';
+      } else if (
+        phase.includes('verif') ||
+        phase.includes('search') ||
+        phase.includes('evidence') ||
+        phase.includes('ranking')
+      ) {
+        activeTask = 'reasoning';
+      }
+
+      if (activeTask) {
+        usePipelineModelsStore.getState().setActiveTask(activeTask);
+      }
       break;
     case 'result':
       if (data.result) {
@@ -56,8 +84,10 @@ function processSSEMessage(
     case 'complete':
       setProgress(100);
       setLoadingPhase('Complete!');
+      usePipelineModelsStore.getState().setActiveTask(null);
       break;
     case 'error':
+      usePipelineModelsStore.getState().setActiveTask(null);
       throw new Error(data.message ?? 'Server error');
   }
 }
@@ -188,9 +218,14 @@ export function useFactCheck() {
 
     // Get AI model selection from store
     const { useAIStore } = await import('@/stores/ai-store');
-    const { getModelById } = await import('@/config/ai-models');
     const { selection } = useAIStore.getState();
     const baseModel = getModelById(selection.modelId);
+
+    // Get pipeline model configuration
+    const pipelineModels = usePipelineModelsStore.getState();
+    const intentModel = getModelById(pipelineModels.intent.modelId);
+    const extractionModel = getModelById(pipelineModels.extraction.modelId);
+    const reasoningModel = getModelById(pipelineModels.reasoning.modelId);
 
     // Compute effective model config with session overrides
     const temperature =
@@ -204,7 +239,7 @@ export function useFactCheck() {
       text: input,
       include_summary: true,
       progressive: true,
-      // AI Model Parameters
+      // Default AI Model Parameters (for backward compatibility)
       provider: selection.provider,
       model_id: baseModel?.modelId || selection.modelId,
       model_display_name: baseModel?.displayName || 'Unknown',
@@ -213,14 +248,47 @@ export function useFactCheck() {
       max_tokens: maxTokens,
       top_p: topP,
       system_prompt: systemPrompt,
+      // Pipeline-specific model configuration
+      pipeline_models: {
+        intent: {
+          provider: pipelineModels.intent.provider,
+          model_id: intentModel?.modelId,
+          model_display_name: intentModel?.displayName,
+        },
+        extraction: {
+          provider: pipelineModels.extraction.provider,
+          model_id: extractionModel?.modelId,
+          model_display_name: extractionModel?.displayName,
+        },
+        reasoning: {
+          provider: pipelineModels.reasoning.provider,
+          model_id: reasoningModel?.modelId,
+          model_display_name: reasoningModel?.displayName,
+        },
+      },
     };
 
-    console.log('📤 [FRONTEND] Sending fact-check request:', {
-      provider: requestPayload.provider,
-      model: requestPayload.model_display_name,
-      temperature: requestPayload.temperature,
-      max_tokens: requestPayload.max_tokens,
-    });
+    console.log('📤 [FRONTEND] Sending fact-check request:');
+    console.log('   Provider:', requestPayload.provider);
+    console.log('   Model:', requestPayload.model_display_name);
+    console.log('   Temperature:', requestPayload.temperature);
+    console.log('   Max Tokens:', requestPayload.max_tokens);
+    console.log('   Pipeline Models:');
+    console.log(
+      '     ⚡ Intent:',
+      requestPayload.pipeline_models.intent.model_display_name,
+      `(${requestPayload.pipeline_models.intent.provider})`
+    );
+    console.log(
+      '     📝 Extraction:',
+      requestPayload.pipeline_models.extraction.model_display_name,
+      `(${requestPayload.pipeline_models.extraction.provider})`
+    );
+    console.log(
+      '     🧠 Reasoning:',
+      requestPayload.pipeline_models.reasoning.model_display_name,
+      `(${requestPayload.pipeline_models.reasoning.provider})`
+    );
 
     // Process fact-check request
     try {
@@ -287,6 +355,7 @@ export function useFactCheck() {
     setProgress(0);
     setCurrentClaim(0);
     setShowResults(false);
+    usePipelineModelsStore.getState().setActiveTask(null);
     toast.info('Fact-check cancelled');
   }, [abortController]);
 

@@ -28,6 +28,11 @@ class ServiceManager:
     _llm_client = None
     _classifier = None
     _search_client = None
+    _pipeline_orchestrator = None
+    _ocr_service = None
+    _keybert_model = None
+    _sentence_transformer = None
+    _llm_cache = {}  # Cache for dynamic LLM instances
     _initialized: bool = False
     
     def __new__(cls) -> 'ServiceManager':
@@ -68,13 +73,19 @@ class ServiceManager:
     def _init_llm_client(self) -> None:
         """Initialize LLM client using factory."""
         from services.llm.factory import LLMFactory
+        from core.logging import log_model_init
+        
         self._llm_client = LLMFactory.create()
         
         if self._llm_client.is_available():
             info = self._llm_client.get_model_info()
-            logger.info(f"[SERVICE] LLM initialized: {info.get('provider', 'unknown')}")
+            provider = info.get('provider', 'unknown')
+            model_name = info.get('model_name', 'default')
+            log_model_init(logger, provider, model_name, "success")
+            logger.info(f"[SERVICE] LLM initialized: {provider}")
         else:
             logger.warning("[SERVICE] LLM client initialized but not available")
+            log_model_init(logger, "unknown", "unknown", "failed")
     
     def _init_classifier(self) -> None:
         """Initialize classifier based on run mode."""
@@ -141,6 +152,111 @@ class ServiceManager:
             self.get_search_client()
         )
     
+    def get_pipeline_orchestrator(self):
+        """Get the shared pipeline orchestrator instance (singleton)."""
+        if self._pipeline_orchestrator is None:
+            from services.factcheck_service import PipelineOrchestrator
+            logger.debug("[SERVICE] Creating singleton PipelineOrchestrator")
+            self._pipeline_orchestrator = PipelineOrchestrator()
+        return self._pipeline_orchestrator
+    
+    def get_ocr_service(self):
+        """Get the shared OCR service instance (singleton)."""
+        if self._ocr_service is None:
+            from services.ocr import OCRService
+            logger.debug("[SERVICE] Creating singleton OCRService")
+            self._ocr_service = OCRService()
+        return self._ocr_service
+    
+    def get_keybert_model(self):
+        """Get the shared KeyBERT model instance (singleton, expensive to load)."""
+        if self._keybert_model is None:
+            try:
+                from keybert import KeyBERT
+                logger.info("[SERVICE] Loading KeyBERT model (one-time initialization)...")
+                self._keybert_model = KeyBERT()
+                logger.info("[SERVICE] KeyBERT model loaded successfully")
+            except Exception as e:
+                logger.error(f"[SERVICE] Failed to load KeyBERT: {e}")
+                raise
+        return self._keybert_model
+    
+    def get_sentence_transformer(self, model_name: str = "all-MiniLM-L6-v2"):
+        """Get the shared SentenceTransformer instance (singleton, expensive to load)."""
+        if self._sentence_transformer is None:
+            try:
+                from sentence_transformers import SentenceTransformer
+                import torch
+                logger.info(f"[SERVICE] Loading SentenceTransformer ({model_name})...")
+                self._sentence_transformer = SentenceTransformer(model_name)
+                # Move to GPU if available
+                if torch.cuda.is_available():
+                    self._sentence_transformer = self._sentence_transformer.to("cuda")
+                    logger.info("[SERVICE] SentenceTransformer loaded on GPU")
+                else:
+                    logger.info("[SERVICE] SentenceTransformer loaded on CPU")
+            except Exception as e:
+                logger.error(f"[SERVICE] Failed to load SentenceTransformer: {e}")
+                raise
+        return self._sentence_transformer
+    
+    def get_or_create_llm(self, provider: str, model_id: str = None, **kwargs):
+        """
+        Get or create a cached LLM instance.
+        Reduces overhead of creating identical LLM clients repeatedly.
+        
+        Args:
+            provider: LLM provider name
+            model_id: Model identifier
+            **kwargs: Additional model parameters
+            
+        Returns:
+            Cached or new LLM instance
+        """
+        cache_key = f"{provider}:{model_id or 'default'}"
+        
+        if cache_key in self._llm_cache:
+            logger.debug(f"[SERVICE] ♻️  Reusing cached LLM: {cache_key}")
+            return self._llm_cache[cache_key]
+        
+        logger.debug(f"[SERVICE] 🔨 Creating new LLM instance: {cache_key}")
+        from services.llm.factory import LLMFactory
+        
+        llm_kwargs = {}
+        if model_id:
+            llm_kwargs["model"] = model_id
+        llm_kwargs.update(kwargs)
+        
+        try:
+            llm_instance = LLMFactory.create(provider=provider, **llm_kwargs)
+            if llm_instance.is_available():
+                self._llm_cache[cache_key] = llm_instance
+        except Exception as e:
+            logger.error(f"[SERVICE] ❌ Failed to create LLM instance {cache_key}: {e}")
+            raise
+        
+        return llm_instance
+    
+    def get_tiered_llm(self, tier: str):
+        """
+        Get an LLM instance for a specific task tier.
+        Uses model_tiers configuration for optimal model selection.
+        
+        Args:
+            tier: One of "intent", "extraction", "reasoning"
+            
+        Returns:
+            LLM instance configured for the tier
+        """
+        from core.model_tiers import get_model_for_tier
+        
+        tier_config = get_model_for_tier(tier)
+        provider = tier_config["provider"]
+        model_id = tier_config.get("model_id")
+        
+        logger.debug(f"[SERVICE] Getting tiered LLM for {tier}: {provider}/{model_id or 'default'}")
+        return self.get_or_create_llm(provider, model_id)
+    
     def is_initialized(self) -> bool:
         """Check if services are initialized."""
         return self._initialized
@@ -165,9 +281,19 @@ class ServiceManager:
         if self._llm_client and hasattr(self._llm_client, 'clear_cache'):
             self._llm_client.clear_cache()
         
+        # Clear LLM cache
+        for llm in self._llm_cache.values():
+            if hasattr(llm, 'clear_cache'):
+                llm.clear_cache()
+        
         self._llm_client = None
         self._classifier = None
         self._search_client = None
+        self._pipeline_orchestrator = None
+        self._ocr_service = None
+        self._keybert_model = None
+        self._sentence_transformer = None
+        self._llm_cache.clear()
         self._initialized = False
         
         logger.info("[SERVICE] Services shutdown complete")

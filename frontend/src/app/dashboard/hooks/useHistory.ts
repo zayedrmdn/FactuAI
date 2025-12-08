@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
-import { HistoryItem } from '../types/factcheck';
+import { HistoryItem } from '@/types/dashboard/factcheck';
 
 const MAX_HISTORY = 20;
 

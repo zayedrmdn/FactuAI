@@ -8,7 +8,7 @@ import {
   ChevronDownIcon,
   ChevronRightIcon,
 } from '@heroicons/react/24/outline';
-import { HistoryItem as HistoryItemType } from '../../types/factcheck';
+import { HistoryItem as HistoryItemType } from '@/types/dashboard/factcheck';
 
 interface HistoryItemProps {
   item: HistoryItemType;

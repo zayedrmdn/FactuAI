@@ -49,14 +49,17 @@ class OpenRouterLLM(BaseLLM):
         
         try:
             from openai import OpenAI
+            from core.logging import log_model_init
             self._client = OpenAI(
                 base_url=self.base_url,
                 api_key=self.api_key,
             )
             self._available = True
-            logger.info(f"[OPENROUTER] Initialized with model: {self.model}")
+            log_model_init(logger, "openrouter", self.model, "success")
         except Exception as e:
+            from core.logging import log_model_init
             logger.error(f"[OPENROUTER] Failed to initialize: {e}")
+            log_model_init(logger, "openrouter", self.model, "failed")
             self._available = False
     
     def generate_response(
@@ -81,10 +84,32 @@ class OpenRouterLLM(BaseLLM):
                 **kwargs
             )
             
+            # Robust null checks
+            if not response:
+                logger.error("[OPENROUTER] API returned None response")
+                raise LLMClientError("OpenRouter returned empty response")
+            
+            if not hasattr(response, 'choices') or not response.choices:
+                logger.error("[OPENROUTER] API response missing 'choices' field")
+                raise LLMClientError("OpenRouter response malformed: no choices")
+            
+            if not response.choices[0] or not hasattr(response.choices[0], 'message'):
+                logger.error("[OPENROUTER] First choice missing or has no message")
+                raise LLMClientError("OpenRouter response malformed: no message")
+            
             result = response.choices[0].message.content
+            if result is None:
+                logger.error("[OPENROUTER] Message content is None")
+                raise LLMClientError("OpenRouter returned None content")
+            
+            if not result.strip():
+                logger.warning("[OPENROUTER] Generated empty string")
+            
             logger.debug(f"[OPENROUTER] Generated {len(result)} chars")
             return result
             
+        except LLMClientError:
+            raise
         except Exception as e:
             logger.error(f"[OPENROUTER] Generation failed: {e}")
             raise LLMClientError(f"OpenRouter generation failed: {e}")
@@ -113,10 +138,25 @@ class OpenRouterLLM(BaseLLM):
                 **kwargs
             )
             
+            # Robust null checks
+            if not response or not hasattr(response, 'choices') or not response.choices:
+                logger.error("[OPENROUTER] Chat API returned malformed response")
+                raise LLMClientError("OpenRouter chat response malformed")
+            
+            if not response.choices[0] or not hasattr(response.choices[0], 'message'):
+                logger.error("[OPENROUTER] Chat response missing message")
+                raise LLMClientError("OpenRouter chat response has no message")
+            
             result = response.choices[0].message.content
+            if result is None:
+                logger.error("[OPENROUTER] Chat message content is None")
+                raise LLMClientError("OpenRouter chat returned None content")
+            
             logger.debug(f"[OPENROUTER] Chat generated {len(result)} chars")
             return result
             
+        except LLMClientError:
+            raise
         except Exception as e:
             logger.error(f"[OPENROUTER] Chat failed: {e}")
             raise LLMClientError(f"OpenRouter chat failed: {e}")

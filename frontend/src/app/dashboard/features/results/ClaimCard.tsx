@@ -1,10 +1,9 @@
 'use client';
 
-import { TextSize } from '../../types/ui';
-import { FactCheckResult } from '../../types/factcheck';
+import { TextSize } from '@/types/dashboard/ui';
+import { FactCheckResult } from '@/types/dashboard/factcheck';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
+import { Badge, Progress } from '@/components/ui/primitives';
 import { Accordion, AccordionItem } from '@/components/ui/accordion';
 import {
   CheckCircle2,
@@ -178,46 +177,46 @@ export default function ClaimCard({
         )}
       </CardHeader>
 
-      <CardContent className="p-6 pt-0 space-y-4 mt-4">
-        {/* Explanation Box */}
+      <CardContent className="p-6 pt-0 space-y-4">
+        {/* Explanation */}
         {result.explanation && (
           <div className="rounded-lg bg-slate-50 border border-slate-200 p-4 text-sm text-slate-700 leading-relaxed">
             {result.explanation}
           </div>
         )}
 
-        {/* Evidence Accordion */}
-        <div className="border border-slate-200 rounded-lg divide-y divide-slate-200">
+        {/* Evidence & Sources Accordion */}
+        <div className="border border-slate-200 rounded-lg">
           <Accordion>
+            {/* Evidence Section */}
             <AccordionItem
               title={
-                <div className="flex items-center gap-2 px-4 pr-4">
+                <div className="flex items-center gap-2">
                   <Quote className="h-4 w-4 text-slate-500" />
-                  <span className="text-slate-700">Evidence & Analysis</span>
+                  <span className="text-slate-700 font-medium">Evidence & Analysis</span>
                 </div>
               }
-              className="border-b-0"
             >
-              <div className="px-4 pb-4 pt-2 space-y-4">
+              <div className="px-4 space-y-3">
                 {result.source_quotes && result.source_quotes.length > 0 ? (
-                  <div className="grid gap-4">
-                    {result.source_quotes.map((quote) => (
+                  <div className="space-y-3">
+                    {result.source_quotes.map((quote, idx) => (
                       <div
-                        key={`quote-${quote.source}-${quote.url.slice(0, 30)}`}
-                        className="relative pl-4 border-l-2 border-slate-200 hover:border-primary/50 transition-colors"
+                        key={`quote-${idx}`}
+                        className="pl-3 border-l-2 border-slate-200 hover:border-primary/50 transition-colors"
                       >
-                        <blockquote className="text-sm text-slate-600 italic mb-2">
+                        <blockquote className="text-sm text-slate-600 italic mb-1.5">
                           &quot;{quote.quote}&quot;
                         </blockquote>
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
-                          <span className="font-medium text-slate-900">{quote.source}</span>
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                          <span className="font-medium">{quote.source}</span>
                           <a
                             href={quote.url}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center gap-1 text-blue-600 hover:underline"
                           >
-                            Source <ExternalLink className="h-3 w-3" />
+                            View Source <ExternalLink className="h-3 w-3" />
                           </a>
                         </div>
                       </div>
@@ -225,37 +224,34 @@ export default function ClaimCard({
                   </div>
                 ) : (
                   <p className="text-sm text-slate-500">
-                    {result.evidence || 'No specific evidence quotes available.'}
+                    {result.evidence || 'No detailed evidence available.'}
                   </p>
                 )}
               </div>
             </AccordionItem>
 
+            {/* Sources Section */}
             {result.sources?.length > 0 && (
               <AccordionItem
                 title={
-                  <div className="flex items-center gap-2 px-4 pr-4">
+                  <div className="flex items-center gap-2">
                     <ExternalLink className="h-4 w-4 text-slate-500" />
-                    <span className="text-slate-700">Sources ({result.sources.length})</span>
+                    <span className="text-slate-700 font-medium">
+                      All Sources ({result.sources.length})
+                    </span>
                   </div>
                 }
-                className="border-t"
               >
-                <div className="px-4 pb-4 pt-2">
+                <div className="px-4">
                   <ul className="space-y-2">
-                    {result.sources.map((url, sourceIndex) => (
-                      <li
-                        key={`source-${url.slice(0, 50)}`}
-                        className="flex items-start gap-2 text-sm"
-                      >
-                        <span className="mt-0.5 text-xs text-slate-400 w-4">
-                          {sourceIndex + 1}.
-                        </span>
+                    {result.sources.map((url, idx) => (
+                      <li key={`source-${idx}`} className="flex items-start gap-2 text-sm">
+                        <span className="text-xs text-slate-400 w-5 shrink-0">{idx + 1}.</span>
                         <a
                           href={url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline break-all flex-1"
+                          className="text-blue-600 hover:underline break-all"
                         >
                           {url}
                         </a>

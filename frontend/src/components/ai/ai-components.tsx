@@ -1,15 +1,13 @@
 /**
- * Model Selector Component
- *
- * Provides UI for switching between AI providers and models.
- * Includes a settings popover for adjusting model parameters.
+ * AI Components - Consolidated AI-related components
+ * Includes: ActiveModelDisplay, ModelSelector
  */
 
 'use client';
 
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Settings, ChevronDown, Check, Sparkles } from 'lucide-react';
+import { Settings, ChevronDown, Check, Sparkles, Zap, FileText, Brain, Cpu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -21,14 +19,62 @@ import {
   DropdownMenuGroup,
 } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Slider } from '@/components/ui/slider';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
+import { Label, Input, Slider, Textarea } from '@/components/ui/form-controls';
+import { Badge } from '@/components/ui/primitives';
 import { cn } from '@/lib/utils';
 import { useAIStore, useCurrentModelConfig } from '@/stores/ai-store';
-import { modelRegistry } from '@/config/ai-models';
+import { usePipelineModelsStore } from '@/stores/pipeline-models-store';
+import { modelRegistry, getModelById } from '@/config/ai-models';
+import type { PipelineTask } from '@/stores/pipeline-models-store';
+
+// ========================================================================================
+// ACTIVE MODEL DISPLAY COMPONENT
+// ========================================================================================
+
+const taskIcons: Record<PipelineTask, React.ElementType> = {
+  intent: Zap,
+  extraction: FileText,
+  reasoning: Brain,
+};
+
+const taskLabels: Record<PipelineTask, string> = {
+  intent: 'Intent Detection',
+  extraction: 'Claim Extraction',
+  reasoning: 'Reasoning',
+};
+
+export function ActiveModelDisplay() {
+  const { activeTask, intent, extraction, reasoning } = usePipelineModelsStore();
+
+  if (!activeTask) return null;
+
+  const taskSelections = { intent, extraction, reasoning };
+  const selection = taskSelections[activeTask];
+  const model = getModelById(selection.modelId);
+
+  if (!model) return null;
+
+  const TaskIcon = taskIcons[activeTask];
+
+  return (
+    <div className="flex items-center gap-2 rounded-lg border bg-card p-3 text-sm">
+      <Cpu className="h-4 w-4 text-muted-foreground" />
+      <div className="flex items-center gap-2">
+        <TaskIcon className="h-4 w-4" />
+        <span className="font-medium">{taskLabels[activeTask]}</span>
+        <span className="text-muted-foreground">•</span>
+        <span className="text-muted-foreground">{model.displayName}</span>
+        <Badge variant="outline" className="text-xs">
+          {selection.provider}
+        </Badge>
+      </div>
+    </div>
+  );
+}
+
+// ========================================================================================
+// MODEL SELECTOR COMPONENT
+// ========================================================================================
 
 export function ModelSelector() {
   const { selection, setModel, updateOverrides, resetOverrides } = useAIStore();

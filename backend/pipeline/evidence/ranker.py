@@ -6,22 +6,15 @@ Semantic similarity ranking for candidate sentences.
 from typing import List, Tuple
 from core.logging import logger
 
-# Lazy load embedding model to avoid imports in cloud mode
-_EMBED_MODEL = None
-
 
 def _get_embed_model():
-    """Lazy load the embedding model."""
-    global _EMBED_MODEL
-    if _EMBED_MODEL is None:
-        try:
-            from sentence_transformers import SentenceTransformer
-            _EMBED_MODEL = SentenceTransformer("all-MiniLM-L6-v2", device="cpu")
-            logger.debug("SentenceTransformer loaded on CPU for ranking")
-        except Exception as e:
-            logger.warning(f"Failed to load SentenceTransformer: {e}")
-            _EMBED_MODEL = False  # Mark as failed
-    return _EMBED_MODEL if _EMBED_MODEL is not False else None
+    """Get the singleton SentenceTransformer from service_manager."""
+    try:
+        from services.service_manager import service_manager
+        return service_manager.get_sentence_transformer()
+    except Exception as e:
+        logger.warning(f"Failed to load SentenceTransformer: {e}")
+        return None
 
 
 def rank_sentences(claim: str, sentences: List[str]) -> List[Tuple[str, float]]:

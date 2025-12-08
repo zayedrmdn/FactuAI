@@ -16,13 +16,11 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import LoadingAnimation from '@/components/ui/LoadingAnimation';
-import ErrorState from '@/components/ui/ErrorState';
-import AIDetectionScore from '@/components/ui/AIDetectionScore';
-import OverallScore from '@/components/ui/OverallScore';
+import { LoadingAnimation, ErrorState } from '@/components/ui/feedback-states';
+import { AIDetectionScore, OverallScore } from '@/components/ui/score-display';
 import ClaimCard from './ClaimCard';
-import { FactCheckResult, QAResult } from '../../types/factcheck';
-import { TextSize } from '../../types/ui';
+import { FactCheckResult, QAResult } from '@/types/dashboard/factcheck';
+import { TextSize } from '@/types/dashboard/ui';
 import { QAResultCard } from './QAResultCard';
 import { usePdfExport } from '../export';
 import { cn } from '@/lib/utils';

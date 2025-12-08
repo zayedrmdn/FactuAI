@@ -1,6 +1,6 @@
 import { useFileUpload } from './useFileUpload';
 import { apiService } from '../services/api';
-import { VideoTextResponse } from '../types/api';
+import { VideoTextResponse } from '@/types/dashboard/api';
 import { toast } from 'sonner';
 
 interface UseVideoProcessingOptions {

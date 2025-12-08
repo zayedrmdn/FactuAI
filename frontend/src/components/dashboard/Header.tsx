@@ -13,7 +13,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { X, Menu } from 'lucide-react';
 import { useUser } from '@/app/dashboard/hooks/useUser';
-import { ModelSelector } from '@/components/ai/ModelSelector';
 
 interface HeaderProps {
   readonly collapsed?: boolean;
@@ -29,7 +28,7 @@ export function Header({ onMobileMenuToggle, mobileMenuOpen = false }: Readonly<
   const initials = displayName.slice(0, 2).toUpperCase();
 
   return (
-    <div className="flex h-16 shrink-0 items-center border-b bg-white px-3 sm:px-4 gap-2 sm:gap-4">
+    <div className="flex h-16 shrink-0 items-center justify-between border-b bg-white px-3 sm:px-4 gap-2 sm:gap-4">
       {/* Mobile: Hamburger Menu Button */}
       <Button
         variant="ghost"
@@ -41,9 +40,9 @@ export function Header({ onMobileMenuToggle, mobileMenuOpen = false }: Readonly<
         {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
       </Button>
 
-      {/* Center: Model Selector */}
-      <div className="flex-1 min-w-0">
-        <ModelSelector />
+      {/* Left: Logo/Title (desktop only) */}
+      <div className="hidden md:flex items-center gap-2 flex-1">
+        <h1 className="text-lg font-semibold text-slate-900">FactuAI</h1>
       </div>
 
       {/* Right: User Profile */}

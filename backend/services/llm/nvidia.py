@@ -49,14 +49,17 @@ class NvidiaLLM(BaseLLM):
         
         try:
             from openai import OpenAI
+            from core.logging import log_model_init
             self._client = OpenAI(
                 base_url=self.base_url,
                 api_key=self.api_key,
             )
             self._available = True
-            logger.info(f"[NVIDIA] Initialized with model: {self.model}")
+            log_model_init(logger, "nvidia", self.model, "success")
         except Exception as e:
+            from core.logging import log_model_init
             logger.error(f"[NVIDIA] Failed to initialize: {e}")
+            log_model_init(logger, "nvidia", self.model, "failed")
             self._available = False
     
     def generate_response(

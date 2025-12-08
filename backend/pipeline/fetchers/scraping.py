@@ -16,23 +16,26 @@ from pipeline.config import SCRAPING_LOG_PATH, ARTICLE_CACHE_PATH
 _EMBED_MODEL = None
 _ARTICLE_CACHE = None
 
-# Simple headers
+# Headers to avoid 403 blocks from websites
 HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+    'Accept-Language': 'en-US,en;q=0.5',
+    'Accept-Encoding': 'gzip, deflate',
+    'DNT': '1',
+    'Connection': 'keep-alive',
+    'Upgrade-Insecure-Requests': '1'
 }
 
 
 def _get_embed_model():
-    """Lazy load embedding model."""
-    global _EMBED_MODEL
-    if _EMBED_MODEL is None:
-        try:
-            from sentence_transformers import SentenceTransformer
-            _EMBED_MODEL = SentenceTransformer("all-MiniLM-L6-v2", device="cpu")
-        except Exception as e:
-            logger.warning(f"Failed to load SentenceTransformer: {e}")
-            _EMBED_MODEL = False
-    return _EMBED_MODEL if _EMBED_MODEL is not False else None
+    """Get singleton SentenceTransformer from service_manager."""
+    try:
+        from services.service_manager import service_manager
+        return service_manager.get_sentence_transformer()
+    except Exception as e:
+        logger.warning(f"Failed to load SentenceTransformer: {e}")
+        return None
 
 
 def _get_article_cache() -> dict:
@@ -77,27 +80,33 @@ def fetch_article_text(url: str) -> str:
     try:
         from bs4 import BeautifulSoup
         
-        response = requests.get(url, timeout=10, headers=HEADERS)
+        response = requests.get(url, timeout=10, headers=HEADERS, allow_redirects=True)
         logger.debug(f"[SCRAPING] Response status: {response.status_code}")
         
-        if response.status_code == 200:
-            soup = BeautifulSoup(response.content, 'html.parser')
-            paragraphs = soup.find_all('p')
-            text = ' '.join([p.get_text() for p in paragraphs])
-            word_count = len(text.split())
-            
-            logger.debug(f"[SCRAPING] Extracted {word_count} words")
-            
-            if word_count >= 50:
-                logger.debug(f"[SCRAPING] Success: Used BeautifulSoup for {url}")
-                cache[url] = text.strip()
-                _save_article_cache()
-                return text.strip()
-            else:
-                logger.debug(f"[SCRAPING] Content too short: {word_count} words")
-                return ""
+        if response.status_code == 403:
+            logger.warning(f"[SCRAPING] 403 Forbidden (blocked): {url}")
+            return ""
+        elif response.status_code == 404:
+            logger.warning(f"[SCRAPING] 404 Not Found: {url}")
+            return ""
+        elif response.status_code != 200:
+            logger.warning(f"[SCRAPING] HTTP {response.status_code}: {url}")
+            return ""
+        
+        soup = BeautifulSoup(response.content, 'html.parser')
+        paragraphs = soup.find_all('p')
+        text = ' '.join([p.get_text() for p in paragraphs])
+        word_count = len(text.split())
+        
+        logger.debug(f"[SCRAPING] Extracted {word_count} words")
+        
+        if word_count >= 50:
+            logger.debug(f"[SCRAPING] Success: Used BeautifulSoup for {url}")
+            cache[url] = text.strip()
+            _save_article_cache()
+            return text.strip()
         else:
-            logger.debug(f"[SCRAPING] Failed: HTTP {response.status_code}")
+            logger.debug(f"[SCRAPING] Content too short: {word_count} words")
             return ""
         
     except Exception as e:

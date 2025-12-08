@@ -1,11 +1,10 @@
 'use client';
 
-import { QAResult } from '../../types/factcheck';
-import { TextSize } from '../../types/ui';
+import { QAResult } from '@/types/dashboard/factcheck';
+import { TextSize } from '@/types/dashboard/ui';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+import { Progress, Badge } from '@/components/ui/primitives';
 import { Accordion, AccordionItem } from '@/components/ui/accordion';
-import { Badge } from '@/components/ui/badge';
 import { ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -67,35 +66,41 @@ export function QAResultCard({
       </CardHeader>
 
       <CardContent className="space-y-4">
+        {/* Answer */}
         <div className={cn('text-foreground leading-relaxed', textSizeClass)}>{answer}</div>
 
+        {/* Sources */}
         {sources.length > 0 && (
-          <Accordion>
-            <AccordionItem
-              title={
-                <div className="flex items-center gap-2">
-                  <ExternalLink className="h-4 w-4" />
-                  <span>Sources ({sources.length})</span>
+          <div className="border border-slate-200 rounded-lg">
+            <Accordion>
+              <AccordionItem
+                title={
+                  <div className="flex items-center gap-2">
+                    <ExternalLink className="h-4 w-4 text-slate-500" />
+                    <span className="font-medium">Sources ({sources.length})</span>
+                  </div>
+                }
+              >
+                <div className="px-4">
+                  <ul className="space-y-2">
+                    {sources.map((url, i) => (
+                      <li key={`source-${i}`} className="flex items-start gap-2 text-sm">
+                        <span className="text-xs text-slate-400 w-5 shrink-0">{i + 1}.</span>
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline break-all"
+                        >
+                          {url}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-              }
-            >
-              <ul className="space-y-2 pt-2">
-                {sources.map((url, i) => (
-                  <li key={`source-${url.slice(0, 50)}`} className="flex items-start gap-2 text-sm">
-                    <span className="mt-1 text-xs text-muted-foreground">{i + 1}.</span>
-                    <a
-                      href={url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline break-all"
-                    >
-                      {url}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </AccordionItem>
-          </Accordion>
+              </AccordionItem>
+            </Accordion>
+          </div>
         )}
       </CardContent>
     </Card>

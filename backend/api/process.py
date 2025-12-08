@@ -1,11 +1,10 @@
 from flask import Blueprint, request, jsonify, Response
-from services.factcheck_service import PipelineOrchestrator
+from services.service_manager import service_manager
 import json
 import time
 from core.logging import logger
 
 bp = Blueprint("process", __name__, url_prefix="/api")
-orchestrator = PipelineOrchestrator()
 
 @bp.post("/process")
 def process():
@@ -22,21 +21,37 @@ def process():
     max_tokens = data.get("max_tokens")
     top_p = data.get("top_p")
     system_prompt = data.get("system_prompt")
+    
+    # Extract pipeline-specific model configuration
+    pipeline_models = data.get("pipeline_models", {})
 
     # Log incoming request with model info
-    logger.info("[API] Received fact-check request:")
-    if provider:
-        logger.info("[API] MODEL SWITCH DETECTED:")
-        logger.info(f"  Provider: {provider}")
-        logger.info(f"  Model ID: {model_id}")
-        logger.info(f"  Display Name: {model_display_name}")
-        logger.info(f"  Temperature: {temperature}")
-        logger.info(f"  Max Tokens: {max_tokens}")
-        logger.info(f"  Top-P: {top_p}")
+    from core.logging import log_api_request
+    
+    logger.info("=" * 60)
+    logger.info("\ud83d\udce5 [API] FACT-CHECK REQUEST RECEIVED")
+    logger.info("=" * 60)
+    
+    if pipeline_models:
+        logger.info("\ud83d\udd27 PIPELINE MODEL CONFIGURATION:")
+        intent_cfg = pipeline_models.get('intent', {})
+        extraction_cfg = pipeline_models.get('extraction', {})
+        reasoning_cfg = pipeline_models.get('reasoning', {})
+        logger.info(f"  \u26a1 Intent:     {intent_cfg.get('model_display_name', 'N/A')} ({intent_cfg.get('provider', 'N/A')})")
+        logger.info(f"  \ud83d\udcdd Extraction: {extraction_cfg.get('model_display_name', 'N/A')} ({extraction_cfg.get('provider', 'N/A')})")
+        logger.info(f"  \ud83e\udde0 Reasoning:  {reasoning_cfg.get('model_display_name', 'N/A')} ({reasoning_cfg.get('provider', 'N/A')})")
     else:
-        logger.info("[API] Using default model configuration")
-    logger.info(f"  Progressive Mode: {progressive}")
-    logger.debug(f"[API] Processing request: include_summary={include_summary}, progressive={progressive}")
+        logger.info("\u26a0\ufe0f  No pipeline models configured, using tier defaults")
+    
+    if provider and model_id:
+        logger.info(f"\ud83c\udfaf Base Model: {model_display_name} ({provider})")
+        logger.info(f"\ud83c\udf21\ufe0f  Temperature: {temperature}, Max Tokens: {max_tokens}, Top-P: {top_p}")
+    
+    logger.info("=" * 60)
+    
+    log_api_request(logger, "/api/process", "POST", 
+                    provider=provider, model=model_id, progressive=progressive, 
+                    include_summary=include_summary)
 
     if not text:
         return jsonify({"error": "text field required"}), 400
@@ -49,6 +64,7 @@ def process():
         "max_tokens": max_tokens,
         "top_p": top_p,
         "system_prompt": system_prompt,
+        "pipeline_models": pipeline_models,
     } if provider else None
 
     if progressive:
@@ -63,6 +79,9 @@ def process():
             },
         )
 
+    # Get singleton orchestrator
+    orchestrator = service_manager.get_pipeline_orchestrator()
+    
     # Single‑shot pipeline run (summary + claims)
     results_bundle = orchestrator.check_text(text, max_claims=5, model_config=model_config)
 
@@ -89,6 +108,9 @@ def process_progressive(text: str, include_summary: bool, model_config: dict = N
         return f"data: {json.dumps({'type': event_type, **data})}\n\n"
 
     try:
+        # Get singleton orchestrator
+        orchestrator = service_manager.get_pipeline_orchestrator()
+        
         # Log model being used
         if model_config:
             logger.info(f"[API] Initializing fact-check with model: {model_config.get('model_id', 'default')}")

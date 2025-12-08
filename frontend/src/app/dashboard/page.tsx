@@ -6,6 +6,7 @@ import SettingsDialog from './features/settings/SettingsDialog';
 import InputCard from './features/inputs/InputCard';
 import ResultsView from './features/results/ResultsView';
 import HistoryPanel from './features/history/HistoryPanel';
+import { PipelineModelConfig } from '@/components/ai/PipelineModelConfig';
 import { useSettings } from './hooks/useSettings';
 import { useAppState } from './hooks/useAppState';
 import { RotateCcw, FileText } from 'lucide-react'; // Added icons for better UI
@@ -96,6 +97,11 @@ export default function DashboardPage() {
           <p className="text-sm text-muted-foreground mt-1">
             Analyze text, images, or videos to verify claims against real-time evidence.
           </p>
+        </div>
+
+        {/* Pipeline Model Configuration */}
+        <div className="mb-4 sm:mb-6">
+          <PipelineModelConfig />
         </div>
 
         {/* Main Content - Mobile First Grid */}

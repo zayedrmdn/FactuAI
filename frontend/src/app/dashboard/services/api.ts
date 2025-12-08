@@ -1,4 +1,4 @@
-import { ExtractTextResponse, VideoTextResponse, FactCheckResponse } from '../types/api';
+import { ExtractTextResponse, VideoTextResponse, FactCheckResponse } from '@/types/dashboard/api';
 
 class APIService {
   private readonly baseURL = 'http://localhost:5000/api';

@@ -67,11 +67,13 @@ class LLMFactory:
         # Create the appropriate provider
         if provider == "openrouter":
             from services.llm.openrouter import OpenRouterLLM
-            return OpenRouterLLM(**kwargs)
+            instance = OpenRouterLLM(**kwargs)
+            return instance
         
         elif provider == "nvidia":
             from services.llm.nvidia import NvidiaLLM
-            return NvidiaLLM(**kwargs)
+            instance = NvidiaLLM(**kwargs)
+            return instance
         
         elif provider == "local":
             from services.llm.local import LocalLLM
