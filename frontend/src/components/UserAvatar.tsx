@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useUser } from '@/app/dashboard/hooks/useUser';
+import { useUser } from '@/lib/hooks/useUser';
 
 export default function UserAvatar() {
   const { user } = useUser();

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FileText, Image as ImageIcon, Video } from 'lucide-react';
-import TextTab from './TextInput/TextTab';
-import ImageTab from './ImageInput/ImageTab';
-import VideoTab from './VideoInput/VideoTab';
+import TextTab from './TextInput';
+import ImageTab from './ImageInput';
+import VideoTab from './VideoInput';
 import { InputType, TextSize } from '@/types/dashboard/ui';
 import { cn } from '@/lib/utils';
 

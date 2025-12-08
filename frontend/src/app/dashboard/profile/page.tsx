@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { toast } from 'sonner';
 import { Loader2, Camera, Trash2 } from 'lucide-react';
 import UserAvatar from '@/components/UserAvatar';
-import { useUser } from '../hooks/useUser';
+import { useUser } from '@/lib/hooks/useUser';
 
 const profileSchema = z.object({
   username: z.string().min(2, 'Username must be at least 2 characters').optional(),

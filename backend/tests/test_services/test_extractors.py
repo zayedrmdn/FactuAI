@@ -5,7 +5,7 @@ import os
 # Add the backend directory to Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from pipeline.factcheck.claims.fetchers.scraping import fetch_article_text
+from factcheck.evidence import scrape_article
 
 class TestExtractors:
     """Test all article extractors with real URLs."""
@@ -13,7 +13,7 @@ class TestExtractors:
     def test_newspaper_extractor(self):
         """Test newspaper4k extractor with CNN article."""
         url = "https://edition.cnn.com/2023/10/29/sport/nfl-week-8-how-to-watch-spt-intl/index.html"
-        text = fetch_article_text(url)
+        text = scrape_article(url)
         
         assert text is not None
         assert len(text) > 100
@@ -23,7 +23,7 @@ class TestExtractors:
     def test_wikipedia_extractor(self):
         """Test with Wikipedia article."""
         url = "https://en.wikipedia.org/wiki/SpaceX"
-        text = fetch_article_text(url)
+        text = scrape_article(url)
         
         assert text is not None
         assert len(text) > 100
@@ -33,7 +33,7 @@ class TestExtractors:
     def test_beautifulsoup_fallback(self):
         """Test BeautifulSoup fallback with BBC article."""
         url = "https://www.bbc.com/news/technology"
-        text = fetch_article_text(url)
+        text = scrape_article(url)
         
         # BBC might work or fail, just check it doesn't crash
         assert text is not None  # Empty string is fine for blocked sites
@@ -42,7 +42,7 @@ class TestExtractors:
     def test_blocked_site_handling(self):
         """Test handling of sites that block scrapers."""
         url = "https://www.theverge.com/ai-artificial-intelligence/708536/elon-musk-grok-xai-ai-boyfriend"
-        text = fetch_article_text(url)
+        text = scrape_article(url)
         
         # Should return empty string for blocked sites without crashing
         assert text is not None
@@ -53,10 +53,10 @@ class TestExtractors:
         url = "https://en.wikipedia.org/wiki/Python_(programming_language)"
         
         # First request
-        text1 = fetch_article_text(url)
+        text1 = scrape_article(url)
         
         # Second request (should use cache)
-        text2 = fetch_article_text(url)
+        text2 = scrape_article(url)
         
         assert text1 == text2
         assert len(text1) > 100
@@ -71,7 +71,7 @@ class TestExtractors:
         ]
         
         for url in invalid_urls:
-            text = fetch_article_text(url)
+            text = scrape_article(url)
             assert text == ""  # Should return empty string, not crash
         
         print("✓ Invalid URL handling: No crashes on bad URLs")

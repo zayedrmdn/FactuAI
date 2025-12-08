@@ -2,13 +2,13 @@
 'use client';
 
 import { useState } from 'react';
-import SettingsDialog from './features/settings/SettingsDialog';
-import InputCard from './features/inputs/InputCard';
-import ResultsView from './features/results/ResultsView';
-import HistoryPanel from './features/history/HistoryPanel';
+import SettingsDialog from '@/components/dashboard/SettingsDialog';
+import InputCard from '@/components/dashboard/InputCard';
+import ResultsView from '@/components/dashboard/ResultsView';
+import HistoryPanel from '@/components/dashboard/HistoryPanel';
 import { PipelineModelConfig } from '@/components/ai/PipelineModelConfig';
-import { useSettings } from './hooks/useSettings';
-import { useAppState } from './hooks/useAppState';
+import { useSettings } from '@/lib/hooks/useSettings';
+import { useAppState } from '@/lib/hooks/useAppState';
 import { RotateCcw, FileText } from 'lucide-react'; // Added icons for better UI
 
 export default function DashboardPage() {

@@ -1,0 +1,13 @@
+{
+  "tests/test_services/test_intent_classifier.py::test_detect_intent[Tesla launched the Model S Plaid in 2021 and reported 50% revenue growth last year.-multi_claim]": true,
+  "tests/test_services/test_intent_classifier.py::test_detect_intent[Blue banana sunlight galaxy banana.-nonsense]": true,
+  "tests/test_services/test_intent_classifier.py::test_detect_intent[To reset your iPhone, press and hold the power and volume buttons until the Apple logo appears.-instructional]": true,
+  "tests/test_services/test_intent_classifier.py::test_detect_intent[\\U0001f92f\\U0001f525\\U0001f680\\U0001f921\\U0001f4a9-nonsense]": true,
+  "tests/test_services/test_intent_classifier.py::test_detect_intent[Because Musk said in 2023-nonsense]": true,
+  "tests/test_services/test_intent_classifier.py::test_detect_intent[OpenAI released GPT-5 in 2025, and I think it's the best model ever built.-multi_claim]": true,
+  "tests/test_services/test_intent_classifier.py::test_detect_intent[In 2025, global emissions dropped by 3%, attributed to widespread adoption of EVs, renewable grid upgrades in the EU, and severe industrial slowdowns in China.-news_paragraph]": true,
+  "tests/test_services/test_intent_classifier.py::test_detect_intent[Apple launched Vision Pro in 2023, acquired a health startup, and hit a $3 trillion market cap all in one year.-multi_claim]": true,
+  "tests/test_services/test_intent_classifier.py::test_detect_intent[What in the fucking world is this?-nonsense]": true,
+  "tests/test_services/test_intent_classifier.py::test_detect_intent[Nigga balls itch, is it correct?-nonsense]": true,
+  "tests/test_unit/test_evidence_pipeline.py::test_rank_sentences_returns_top_k": true
+}

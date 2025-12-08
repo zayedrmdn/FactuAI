@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { PhotoIcon } from '@heroicons/react/24/outline';
-import { useImageProcessing } from '../../../hooks/useImageProcessing';
+import { useImageProcessing } from '@/lib/hooks/useImageProcessing';
 import { FileDropZone } from '@/components/ui/file-input';
 import { ProcessingStatus } from '@/components/ui/feedback-states';
 

@@ -11,11 +11,11 @@ import tempfile
 from unittest.mock import Mock, patch
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from services.llm.llm_client import QwenClient
+from factcheck import llm_client
 
 # Import your app and db
 from app import app
-from database.connection import db
+from database import db
 
 
 @pytest.fixture
@@ -94,4 +94,6 @@ def sample_auth_request():
 
 @pytest.fixture(scope="session")
 def shared_llm():
-    return QwenClient()
+    """Shared LLM client for tests."""
+    llm_client.initialize()
+    return Mock()  # Return mock for testing

@@ -1,5 +1,5 @@
 import pytest
-from services.intent_classifier import detect_intent
+from factcheck.pipeline import detect_intent
 
 # Test cases: (input_text, expected_intent)
 test_cases = [

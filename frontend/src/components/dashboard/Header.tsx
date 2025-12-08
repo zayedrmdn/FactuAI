@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { X, Menu } from 'lucide-react';
-import { useUser } from '@/app/dashboard/hooks/useUser';
+import { useUser } from '@/lib/hooks/useUser';
 
 interface HeaderProps {
   readonly collapsed?: boolean;

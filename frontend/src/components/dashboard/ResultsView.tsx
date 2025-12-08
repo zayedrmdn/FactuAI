@@ -22,7 +22,7 @@ import ClaimCard from './ClaimCard';
 import { FactCheckResult, QAResult } from '@/types/dashboard/factcheck';
 import { TextSize } from '@/types/dashboard/ui';
 import { QAResultCard } from './QAResultCard';
-import { usePdfExport } from '../export';
+import { usePdfExport } from '@/lib/hooks/usePdfExport';
 import { cn } from '@/lib/utils';
 
 type CombinedResult = FactCheckResult | QAResult;

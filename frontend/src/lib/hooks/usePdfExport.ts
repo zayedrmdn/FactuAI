@@ -2,7 +2,7 @@
 
 import { useCallback } from 'react';
 import { toast } from 'sonner';
-import { exportToPdf } from './pdfExport';
+import { exportToPdf } from '../pdfExport';
 import { FactCheckResult, QAResult } from '@/types/dashboard/factcheck';
 
 type CombinedResult = FactCheckResult | QAResult;

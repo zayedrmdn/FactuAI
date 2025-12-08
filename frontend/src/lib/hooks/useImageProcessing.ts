@@ -1,5 +1,5 @@
 import { useFileUpload } from './useFileUpload';
-import { apiService } from '../services/api';
+import { apiService } from '../api';
 import { ExtractTextResponse } from '@/types/dashboard/api';
 
 interface UseImageProcessingOptions {

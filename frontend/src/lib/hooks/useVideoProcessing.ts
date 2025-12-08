@@ -1,5 +1,5 @@
 import { useFileUpload } from './useFileUpload';
-import { apiService } from '../services/api';
+import { apiService } from '../api';
 import { VideoTextResponse } from '@/types/dashboard/api';
 import { toast } from 'sonner';
 

@@ -1,232 +1,147 @@
+"""
+Unit tests for the evidence collection module.
+"""
 import pytest
-from pipeline.factcheck import evidence as ev_mod
-
-# -----------------------------
-# Fixtures
-# -----------------------------
-
-class DummyLLM:
-    def __init__(self, response_map=None, default="No relevant evidence found."):
-        self.response_map = response_map or {}
-        self.default = default
-        self.calls = []
-
-    def generate_response(self, prompt, max_tokens=128):
-        self.calls.append(prompt)
-        for key, value in self.response_map.items():
-            if key in prompt:
-                return value
-        return self.default
-
-    def clear_cache(self):
-        pass
+from unittest.mock import Mock, patch, MagicMock
+from factcheck import evidence
 
 
-@pytest.fixture
-def dummy_llm_exact():
-    return DummyLLM(response_map={"Select up to 2 sentences": "First sentence evidence"})
+def test_build_search_query():
+    """Test search query building extracts key entities."""
+    claim = "OpenAI released GPT-5 in January 2025"
+    query = evidence.build_search_query(claim)
+    
+    assert isinstance(query, str)
+    assert len(query) > 0
+    # Should extract key entities
+    assert "OpenAI" in query or "GPT" in query or "2025" in query
 
 
-@pytest.fixture
-def dummy_llm_hallucinating():
-    return DummyLLM(response_map={"Select up to 2 sentences": "Totally made up sentence"})
+def test_build_search_query_empty():
+    """Test handling of empty claim."""
+    query = evidence.build_search_query("")
+    assert query == ""
 
 
-@pytest.fixture
-def dummy_llm_none():
-    return DummyLLM(default="No relevant evidence found.")
+def test_scrape_article_returns_text():
+    """Test that article scraping returns text content."""
+    with patch('factcheck.evidence.requests.get') as mock_get:
+        # Mock successful response
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.content = b'<html><body><p>Test article content with substantial text.</p></body></html>'
+        mock_get.return_value = mock_response
+        
+        url = "https://example.com/test"
+        text = evidence.scrape_article(url)
+        
+        assert isinstance(text, str)
+        assert len(text) > 0
+        assert "Test article content" in text
 
 
-# Common minimal search response helper
-def make_search_resp(urls_with_titles):
-    items = []
-    for title, url in urls_with_titles:
-        items.append({"title": title, "link": url, "snippet": f"Snippet for {title}"})
-    return {"items": items}
+def test_scrape_article_handles_errors():
+    """Test that scraping handles errors gracefully."""
+    with patch('factcheck.evidence.requests.get') as mock_get:
+        mock_get.side_effect = Exception("Network error")
+        
+        url = "https://example.com/test"
+        text = evidence.scrape_article(url)
+        
+        # Should return empty string on error
+        assert text == ""
 
 
-# -----------------------------
-# Monkeypatch helpers
-# -----------------------------
-
-@pytest.fixture
-def patch_fetch_article_text(monkeypatch):
-    def _apply(mapping):
-        def fake_fetch(url):
-            return mapping.get(url, "")
-        monkeypatch.setattr(ev_mod, "fetch_article_text", fake_fetch)
-    return _apply
-
-@pytest.fixture
-def patch_best_sentences(monkeypatch):
-    def _apply(return_map):
-        def fake_best(text, claim, k):
-            return return_map.get(text, [])[:k]
-        monkeypatch.setattr(ev_mod, "best_sentences", fake_best)
-    return _apply
-
-@pytest.fixture
-def patch_news_api(monkeypatch):
-    def _apply(items):
-        def fake_news(claim, max_results=2):
-            return items[:max_results]
-        monkeypatch.setattr(ev_mod, "fetch_newsapi_articles", fake_news)
-    return _apply
-
-@pytest.fixture
-def patch_attribution(monkeypatch):
-    def _apply(value):
-        monkeypatch.setattr(ev_mod, "attribution_tail", lambda claim: value)
-    return _apply
+def test_extract_sentences():
+    """Test sentence extraction from text."""
+    text = "This is a first sentence with many words. This is a second sentence with many words. This is a third sentence with many words."
+    sentences = evidence.extract_sentences(text)
+    
+    assert isinstance(sentences, list)
+    assert len(sentences) >= 2  # Some sentences might be filtered out
+    assert any("first sentence" in s for s in sentences)
 
 
-# -----------------------------
-# Tests
-# -----------------------------
-
-def test_collect_search_items_merges(monkeypatch, patch_news_api):
-    patch_news_api([{"title": "NewsA", "link": "http://n1", "snippet": "n1"}])
-    sr = make_search_resp([("G1", "http://g1"), ("G2", "http://g2"), ("G3", "http://g3")])
-    items = ev_mod.collect_search_items(sr, "Some claim", max_google=2, max_news=1)
-    assert len(items) == 3
-    assert items[0]["source"] == "Google"
-    assert items[-1]["source"] == "NewsAPI"
+def test_extract_sentences_empty():
+    """Test sentence extraction from empty text."""
+    sentences = evidence.extract_sentences("")
+    assert sentences == []
 
 
-def test_fetch_article_candidates_literal_hit(patch_fetch_article_text, patch_best_sentences, patch_attribution):
-    patch_attribution("Mars landing")
-    fake_text = "A long article about a Mars landing milestone. Another Mars landing test sentence."
-    patch_fetch_article_text({"http://g1": fake_text})
-    patch_best_sentences({fake_text: [
-        "A long article about a Mars landing milestone.",
-        "Another Mars landing test sentence.",
-        "Irrelevant filler."
-    ]})
-
-    items = [{
-        "title": "G1",
-        "url": "http://g1",
-        "snippet": "s",
-        "source": "Google"
-    }]
-    cands, urls = ev_mod.fetch_article_candidates(items, "NASA landed humans on Mars in 2023", sents_per_article=2, literal_phrase="Mars landing")
-    assert urls == ["http://g1"]
-    # Ensure literal flagged
-    assert any(c.get("literal") for c in cands)
-
-
-def test_rank_source_quotes_selects_top(patch_fetch_article_text, patch_best_sentences):
-    fake_text = "One. Two. Three."
-    patch_fetch_article_text({"http://a": fake_text})
-    patch_best_sentences({fake_text: [
-        "Sentence about GPT-5 release rumor.",
-        "Second sentence with less relevance.",
-        "Another unrelated line."
-    ]})
-
-    items = [{
-        "title": "T1",
-        "url": "http://a",
-        "snippet": "s",
-        "source": "Google"
-    }]
-    cands, _ = ev_mod.fetch_article_candidates(items, "GPT-5 release date", sents_per_article=3, literal_phrase=None)
-    quotes = ev_mod.rank_source_quotes("GPT-5 release date", cands, top_k=2)
-    assert len(quotes) == 2
-    assert all("quote" in q for q in quotes)
-
-
-def test_select_evidence_llm_exact(dummy_llm_exact):
-    candidate_sents = [
-        {"text": "First sentence evidence", "source": "S1", "url": "u1", "literal": False},
-        {"text": "Second sentence filler", "source": "S2", "url": "u2", "literal": False},
+def test_rank_sentences_returns_scored_tuples():
+    """Test that rank_sentences returns sentences with similarity scores."""
+    sentences = [
+        "OpenAI released GPT-5 in January 2025 with advanced capabilities.",
+        "The weather is nice today and sunny all around.",
+        "GPT-5 features advanced reasoning capabilities and improved performance.",
+        "I like pizza and other Italian foods very much."
     ]
-    ev = ev_mod.select_evidence("Some claim", candidate_sents, dummy_llm_exact, 40)
-    assert ev == "First sentence evidence"
+    claim = "OpenAI released GPT-5"
+    
+    with patch('factcheck.evidence._get_embed_model') as mock_get_model:
+        # Mock the model to return None (triggers fallback)
+        mock_get_model.return_value = None
+        
+        ranked = evidence.rank_sentences(claim, sentences)
+        
+        assert isinstance(ranked, list)
+        assert len(ranked) == 4
+        # Check it returns (sentence, score) tuples  
+        assert all(isinstance(item, tuple) and len(item) == 2 for item in ranked)
+        assert all(isinstance(item[0], str) and isinstance(item[1], float) for item in ranked)
+        # Fallback returns 0.0 scores
+        assert all(item[1] == 0.0 for item in ranked)
 
 
-def test_select_evidence_llm_hallucination_fallback(dummy_llm_hallucinating):
-    candidate_sents = [
-        {"text": "Legitimate sentence A", "source": "S1", "url": "u1", "literal": False},
-        {"text": "Legitimate sentence B", "source": "S2", "url": "u2", "literal": False},
+@patch('factcheck.evidence.search_google')
+@patch('factcheck.evidence.search_newsapi')
+@patch('factcheck.evidence.scrape_article')
+@patch('factcheck.evidence.extract_sentences')
+@patch('factcheck.evidence.rank_sentences')
+def test_collect_evidence_integration(mock_rank, mock_extract, mock_scrape, mock_news, mock_google):
+    """Test the full collect_evidence pipeline."""
+    # Setup mocks
+    mock_google.return_value = [
+        {"title": "Article 1", "url": "http://example.com/1", "snippet": "Snippet 1", "source": "Google"}
     ]
-    ev = ev_mod.select_evidence("Some claim", candidate_sents, dummy_llm_hallucinating, 40)
-    assert ev in ["Legitimate sentence A", "Legitimate sentence B"]
-
-
-def test_select_evidence_literal_priority(dummy_llm_none):
-    candidate_sents = [
-        {"text": "Literal match exact phrase here", "source": "S1", "url": "u1", "literal": True},
-        {"text": "Some other sentence", "source": "S2", "url": "u2", "literal": False},
+    mock_news.return_value = [
+        {"title": "News 1", "url": "http://news.com/1", "snippet": "News snippet", "source": "NewsAPI"}
     ]
-    ev = ev_mod.select_evidence("Claim", candidate_sents, dummy_llm_none, 40)
-    assert ev.startswith("Literal match")
+    mock_scrape.return_value = "Full article text content here with many words to meet minimum requirements"
+    mock_extract.return_value = ["Sentence 1 with enough words", "Sentence 2 with enough words", "Sentence 3 with enough words"]
+    # rank_sentences returns list of (sentence, score) tuples
+    mock_rank.return_value = [("Sentence 1 with enough words", 0.9), ("Sentence 2 with enough words", 0.8), ("Sentence 3 with enough words", 0.7)]
+    
+    claim = "Test claim for evidence"
+    result = evidence.collect_evidence(claim, num_google=5, num_news=5, top_k=10)
+    
+    # Verify structure - collect_evidence returns a list, not a dict
+    assert isinstance(result, list)
+    
+    # Verify API calls were made
+    mock_google.assert_called_once()
+    mock_news.assert_called_once()
 
 
-def test_select_evidence_no_llm_fallback():
-    candidate_sents = [
-        {"text": "Alpha relevance", "source": "S1", "url": "u1", "literal": False},
-        {"text": "Beta something else", "source": "S2", "url": "u2", "literal": False},
-    ]
-    ev = ev_mod.select_evidence("Alpha thing", candidate_sents, llm=None, max_words=8)
-    assert isinstance(ev, str)
-    assert len(ev.split()) <= 8
+def test_search_google_requires_api_key():
+    """Test that Google search requires API key."""
+    with patch('factcheck.evidence.GOOGLE_API_KEY', None):
+        with patch('factcheck.evidence.GOOGLE_CX_ID', 'test-id'):
+            try:
+                results = evidence.search_google("test query")
+                # Should either return empty list or raise SearchError
+                assert results == []
+            except Exception as e:
+                # SearchError is expected when credentials are missing
+                assert "credentials" in str(e).lower() or "api" in str(e).lower()
 
 
-def test_build_evidence_end_to_end_minimal(monkeypatch, patch_news_api, patch_fetch_article_text, patch_best_sentences, patch_attribution, dummy_llm_exact):
-    # Fake search
-    search_resp = {"items": [
-        {"title": "Doc1", "link": "http://doc1", "snippet": "snip1"},
-    ]}
-    # Fake NewsAPI
-    patch_news_api([
-        {"title": "News1", "link": "http://n1", "snippet": "nsnip"}
-    ])
-    # Fake article texts
-    patch_fetch_article_text({
-        "http://doc1": "GPT-5 speculation grows. OpenAI executives deny release.",
-        "http://n1": "Analysts discuss GPT-5 timeline uncertainty."
-    })
-    # Each text returns sentences
-    patch_best_sentences({
-        "GPT-5 speculation grows. OpenAI executives deny release.": [
-            "OpenAI executives deny release.",
-            "GPT-5 speculation grows."
-        ],
-        "Analysts discuss GPT-5 timeline uncertainty.": [
-            "Analysts discuss GPT-5 timeline uncertainty."
-        ]
-    })
-    patch_attribution(None)
-
-    evidence, urls, quotes = ev_mod.build_evidence(
-        search_resp=search_resp,
-        claim="OpenAI released GPT-5 in January 2025",
-        llm=dummy_llm_exact,
-        sents_per_article=2
-    )
-
-    assert evidence
-    assert len(urls) == 2
-    assert 0 < len(quotes) <= 3
+def test_search_newsapi_requires_api_key():
+    """Test that NewsAPI search requires API key."""
+    with patch('factcheck.evidence.NEWS_API_KEY', None):
+        results = evidence.search_newsapi("test query")
+        assert results == []
 
 
-def test_build_evidence_no_candidates(monkeypatch, patch_news_api, patch_fetch_article_text, patch_best_sentences, patch_attribution):
-    search_resp = {"items": [
-        {"title": "Doc1", "link": "http://doc1", "snippet": "snip1"},
-    ]}
-    patch_news_api([])
-    patch_fetch_article_text({"http://doc1": ""})  # no content
-    patch_best_sentences({})
-    patch_attribution(None)
-
-    evidence, urls, quotes = ev_mod.build_evidence(
-        search_resp=search_resp,
-        claim="Some claim",
-        llm=None,
-        sents_per_article=2
-    )
-
-    assert evidence == ""
-    assert urls == []
-    assert quotes == []
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

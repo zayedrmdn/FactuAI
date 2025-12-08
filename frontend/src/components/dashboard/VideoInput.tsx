@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { VideoCameraIcon } from '@heroicons/react/24/outline';
-import { useVideoProcessing } from '../../../hooks/useVideoProcessing';
+import { useVideoProcessing } from '@/lib/hooks/useVideoProcessing';
 import { FileDropZone } from '@/components/ui/file-input';
 import { ProcessingStatus } from '@/components/ui/feedback-states';
 
