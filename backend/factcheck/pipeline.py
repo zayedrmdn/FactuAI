@@ -178,6 +178,17 @@ Do not include opinions or subjective statements."""
             if not line or len(line) < 10:
                 continue
             
+            # Skip lines that are just metadata/attribution without substance
+            line_lower = line.lower()
+            if (line_lower.startswith(('claim', 'source:', 'note:', '-', '*', '1.', '2.', '3.', '4.', '5.')) or
+                ('conducted' in line_lower and 'published' in line_lower and len(line) < 100)):
+                # Check if this is JUST attribution without the actual claim
+                has_substance = any(word in line_lower for word in 
+                    ['cure', 'cause', 'prevent', 'increase', 'decrease', 'contain', 'track', 'reduce', 'improve', 'effective'])
+                if not has_substance:
+                    logger.debug(f"[EXTRACTION] Skipping low-quality claim: {line[:50]}...")
+                    continue
+            
             # Remove numbering (1., 2., etc.)
             if line[0].isdigit() and '. ' in line:
                 line = line.split('. ', 1)[1]
@@ -281,7 +292,7 @@ Keep it factual, neutral, and concise. Avoid repetition."""
             f"Evidence:\n{evidence_text}",
             provider=llm,
             model_id=model_id,
-            max_tokens=target_words + 30,
+            max_tokens=max(200, target_words * 3),  # Generous buffer for reasoning models
         )
         
         # Clean up
@@ -313,13 +324,15 @@ def verify_claim(
     model_id: str = None,
     num_google: int = 5,
     num_news: int = 5,
-    top_k: int = 10
+    top_k: int = 10,
+    original_context: str = None
 ) -> Dict[str, Any]:
     """
     Verify a single claim by collecting evidence and generating verdict.
     
     Args:
-        claim: The claim to verify
+        claim: The specific claim to verify
+        original_context: Optional original text for better search context
         llm: Optional LLM provider
         num_google: Number of Google results
         num_news: Number of NewsAPI results
@@ -331,9 +344,12 @@ def verify_claim(
     logger.info(f"[VERIFY] Checking claim: {claim[:100]}...")
     
     try:
+        # Use original context for search if available (better keywords)
+        search_text = original_context if original_context and len(original_context) > len(claim) else claim
+        
         # Collect evidence
         evidence_items = evidence.collect_evidence(
-            claim,
+            search_text,
             num_google=num_google,
             num_news=num_news,
             top_k=top_k
@@ -527,6 +543,7 @@ def check_text(
                     num_google=3,
                     num_news=2,
                     top_k=5,
+                    original_context=text  # Pass original text for better search
                 )
                 results.append({"claim": claim, **result})
             

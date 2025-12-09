@@ -11,7 +11,11 @@ Simplified from 15 files to 1 module with clear functions.
 
 # Set HF_HOME before ANY imports to suppress deprecation warning
 import os
-os.environ.setdefault("HF_HOME", str(__file__).replace("evidence.py", "").replace("factcheck", ".cache") + "/huggingface")
+from pathlib import Path
+if "HF_HOME" not in os.environ and "TRANSFORMERS_CACHE" not in os.environ:
+    cache_dir = Path(__file__).parent.parent.parent / ".cache" / "huggingface"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    os.environ["HF_HOME"] = str(cache_dir)
 
 import json
 import re
@@ -239,19 +243,31 @@ def build_search_query(claim: str) -> str:
         
         doc = nlp(claim)
         
-        # Extract named entities
-        terms = [ent.text for ent in doc.ents if ent.label_ in {
+        # Extract named entities (organizations, people, products, etc.)
+        entities = [ent.text for ent in doc.ents if ent.label_ in {
             "PERSON", "ORG", "PRODUCT", "EVENT", "GPE", "DATE"
         }]
         
-        # Add important nouns
-        terms.extend([
+        # Extract important nouns and verbs (for actions like "cure", "prevent")
+        important_tokens = [
             tok.text for tok in doc
-            if tok.pos_ in ("NOUN", "PROPN") and not tok.is_stop and len(tok.text) >= 3
-        ])
+            if (tok.pos_ in ("NOUN", "PROPN", "VERB") and 
+                not tok.is_stop and 
+                len(tok.text) >= 3 and
+                tok.text.lower() not in {"study", "conducted", "published", "research", "found", "showed"})
+        ]
+        
+        # Combine and deduplicate (preserve order, case-insensitive)
+        seen = set()
+        terms = []
+        for term in entities + important_tokens:
+            term_lower = term.lower()
+            if term_lower not in seen:
+                seen.add(term_lower)
+                terms.append(term)
         
         if terms:
-            return " ".join(terms[:5])  # Limit to 5 terms
+            return " ".join(terms[:5])  # Limit to 5 unique terms
             
     except (ImportError, OSError):
         # Fallback to regex-based extraction
@@ -260,13 +276,27 @@ def build_search_query(claim: str) -> str:
         # Extract proper nouns (capitalized words)
         proper_nouns = re.findall(r"\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b", claim)
         
+        # Extract important keywords (medical, scientific terms)
+        important_words = re.findall(
+            r"\b(cancer|vaccine|covid|water|cure|treatment|disease|drug|therapy|study|glasses|microchip|track)\w*\b",
+            claim,
+            re.IGNORECASE
+        )
+        
         # Extract years
         years = re.findall(r"\b\d{4}\b", claim)
         
-        # Extract percentages and numbers
-        numbers = re.findall(r"\b\d+(?:\.\d+)?%?\b", claim)
+        # Extract numbers with context (like "8 glasses")
+        number_phrases = re.findall(r"\b\d+\s+\w+", claim)
         
-        terms = proper_nouns[:3] + years[:2] + numbers[:2]
+        # Combine and deduplicate
+        seen = set()
+        terms = []
+        for term in important_words + proper_nouns[:3] + number_phrases[:2] + years[:1]:
+            term_lower = term.lower().strip()
+            if term_lower and term_lower not in seen:
+                seen.add(term_lower)
+                terms.append(term)
         
         if terms:
             return " ".join(terms[:5])
