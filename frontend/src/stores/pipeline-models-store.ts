@@ -14,7 +14,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { getModelById } from '@/config/ai-models';
 import type { AIProvider } from '@/types/ai';
 
-export type PipelineTask = 'intent' | 'extraction' | 'reasoning';
+export type PipelineTask = 'intent' | 'extraction' | 'reasoning' | 'summary';
 
 export interface TaskModelSelection {
   provider: AIProvider;
@@ -26,6 +26,7 @@ export interface PipelineModelsState {
   intent: TaskModelSelection;
   extraction: TaskModelSelection;
   reasoning: TaskModelSelection;
+  summary: TaskModelSelection;
 
   // Currently active task (for UI display)
   activeTask: PipelineTask | null;
@@ -49,6 +50,10 @@ const getDefaultTaskModels = (): Record<PipelineTask, TaskModelSelection> => ({
   reasoning: {
     provider: 'openrouter',
     modelId: 'openrouter-tongyi-deepresearch-30b',
+  },
+  summary: {
+    provider: 'nvidia',
+    modelId: 'nvidia-qwen2.5-7b',
   },
 });
 

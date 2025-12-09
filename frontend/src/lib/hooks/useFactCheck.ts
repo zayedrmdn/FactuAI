@@ -59,6 +59,7 @@ function processSSEMessage(
         activeTask = 'extraction';
       } else if (
         phase.includes('verif') ||
+        phase.includes('verifying') ||
         phase.includes('search') ||
         phase.includes('evidence') ||
         phase.includes('ranking')
@@ -115,10 +116,13 @@ export function useFactCheck() {
   const [aiError, setAIError] = useState<string | undefined>(undefined);
   const [abortController, setAbortController] = useState<AbortController | null>(null);
 
-  // Compute average confidence
+  // Compute average confidence (convert 0-1 scale to 0-100%)
   const avgConfidence =
     factResults.length > 0
-      ? (factResults.reduce((sum, r) => sum + (r.confidence ?? 0), 0) / factResults.length) * 100
+      ? (factResults.reduce((sum, r) => {
+          const conf = typeof r.confidence === 'number' ? r.confidence : 0;
+          return sum + conf;
+        }, 0) / factResults.length) * 100
       : 0;
 
   /** Reset all state to initial values */
@@ -225,6 +229,7 @@ export function useFactCheck() {
     const pipelineModels = usePipelineModelsStore.getState();
     const intentModel = getModelById(pipelineModels.intent.modelId);
     const extractionModel = getModelById(pipelineModels.extraction.modelId);
+    const summaryModel = getModelById(pipelineModels.summary.modelId);
     const reasoningModel = getModelById(pipelineModels.reasoning.modelId);
 
     // Compute effective model config with session overrides
@@ -260,6 +265,11 @@ export function useFactCheck() {
           model_id: extractionModel?.modelId,
           model_display_name: extractionModel?.displayName,
         },
+        summary: {
+          provider: pipelineModels.summary.provider,
+          model_id: summaryModel?.modelId,
+          model_display_name: summaryModel?.displayName,
+        },
         reasoning: {
           provider: pipelineModels.reasoning.provider,
           model_id: reasoningModel?.modelId,
@@ -285,13 +295,18 @@ export function useFactCheck() {
       `(${requestPayload.pipeline_models.extraction.provider})`
     );
     console.log(
+      '     📋 Summary:',
+      requestPayload.pipeline_models.summary.model_display_name,
+      `(${requestPayload.pipeline_models.summary.provider})`
+    );
+    console.log(
       '     🧠 Reasoning:',
       requestPayload.pipeline_models.reasoning.model_display_name,
       `(${requestPayload.pipeline_models.reasoning.provider})`
     );
 
     toast.message('Using models', {
-      description: `Intent: ${requestPayload.pipeline_models.intent.model_display_name} | Extraction: ${requestPayload.pipeline_models.extraction.model_display_name} | Reasoning: ${requestPayload.pipeline_models.reasoning.model_display_name}`,
+      description: `Intent: ${requestPayload.pipeline_models.intent.model_display_name} | Extraction: ${requestPayload.pipeline_models.extraction.model_display_name} | Summary: ${requestPayload.pipeline_models.summary.model_display_name} | Reasoning: ${requestPayload.pipeline_models.reasoning.model_display_name}`,
     });
 
     // Process fact-check request

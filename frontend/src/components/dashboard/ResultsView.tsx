@@ -100,15 +100,96 @@ export default function ResultsView({
     isQAOnly,
   });
 
-  const copySummary = async () => {
-    if (!summary) {
-      toast.error('No summary to copy');
+  const copyFullResults = async () => {
+    if (!results.length && !summary) {
+      toast.error('No results to copy');
       return;
     }
 
+    // Build comprehensive text report
+    const sections: string[] = [];
+
+    // Header
+    sections.push('FACTUAI ANALYSIS REPORT');
+    sections.push('=' + '='.repeat(50));
+    sections.push(`Generated: ${updated ? new Date(updated).toLocaleString() : new Date().toLocaleString()}`);
+    sections.push('');
+
+    // Executive Summary
+    if (summary) {
+      sections.push('EXECUTIVE SUMMARY');
+      sections.push('-'.repeat(50));
+      sections.push(summary);
+      sections.push('');
+    }
+
+    // Overall Scores
+    sections.push('OVERALL ASSESSMENT');
+    sections.push('-'.repeat(50));
+    sections.push(`Trust Score: ${averageConfidence.toFixed(0)}%`);
+    if (aiScore !== null && aiScore !== undefined) {
+      sections.push(`AI Detection: ${aiScore.toFixed(1)}% (${aiScore >= 60 ? 'Likely AI' : 'Likely Human'})`);
+    }
+    sections.push(`Total Claims Analyzed: ${stats.total}`);
+    sections.push(`Verified: ${stats.trueCount} | False: ${stats.falseCount} | Unclear: ${stats.mixedCount}`);
+    sections.push('');
+
+    // Detailed Findings
+    sections.push('DETAILED FINDINGS');
+    sections.push('='.repeat(50));
+    sections.push('');
+
+    results.forEach((r, idx) => {
+      if (isQAResult(r)) {
+        sections.push(`Q${idx + 1}: ${r.question}`);
+        sections.push(`Answer: ${r.answer}`);
+        sections.push(`Confidence: ${(r.confidence * 100).toFixed(1)}%`);
+        sections.push(`Sources: ${toSourceStrings(r.sources).join(', ')}`);
+      } else {
+        sections.push(`Claim ${idx + 1}`);
+        sections.push('-'.repeat(50));
+        sections.push(`Statement: ${r.claim}`);
+        sections.push(`Verdict: ${r.label?.toUpperCase() || 'UNKNOWN'}`);
+        sections.push(`Confidence: ${(r.confidence * 100).toFixed(0)}%`);
+        sections.push('');
+        
+        if (r.reasoning) {
+          sections.push(`Analysis:`);
+          sections.push(r.reasoning);
+          sections.push('');
+        }
+
+        if (r.source_quotes && r.source_quotes.length > 0) {
+          sections.push('Evidence & Analysis');
+          r.source_quotes.forEach((sq, i) => {
+            sections.push(`${i + 1}. "${sq.quote}"`);
+            sections.push(`   Source: ${sq.source}`);
+            if (sq.url) sections.push(`   URL: ${sq.url}`);
+          });
+        }
+
+        const sourceUrls = toSourceStrings(r.sources);
+        if (sourceUrls.length > 0) {
+          sections.push('');
+          sections.push('All Sources');
+          sourceUrls.forEach((url, i) => {
+            sections.push(`${i + 1}. ${url}`);
+          });
+        }
+      }
+      sections.push('');
+      sections.push('');
+    });
+
+    // Footer
+    sections.push('='.repeat(50));
+    sections.push('Powered by FactuAI');
+
+    const fullText = sections.join('\n');
+
     try {
-      await navigator.clipboard.writeText(summary);
-      toast.success('Summary copied to clipboard');
+      await navigator.clipboard.writeText(fullText);
+      toast.success('Full analysis copied to clipboard');
     } catch (err) {
       console.error('Copy failed:', err);
       toast.error('Failed to copy to clipboard');
@@ -265,7 +346,13 @@ export default function ResultsView({
               <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">
                 Trust Score
               </h3>
-              <OverallScore score={averageConfidence} />
+              {averageConfidence !== undefined && averageConfidence !== null && !isNaN(averageConfidence) ? (
+                <OverallScore score={averageConfidence} />
+              ) : (
+                <div className="w-24 h-24 flex items-center justify-center text-slate-400">
+                  <span className="text-sm">N/A</span>
+                </div>
+              )}
               {aiScore !== null && aiScore !== undefined && (
                 <div className="pt-4 w-full border-t border-slate-200 mt-4">
                   <AIDetectionScore score={aiScore} error={aiError} />
@@ -321,8 +408,9 @@ export default function ResultsView({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={copySummary}
+                  onClick={copyFullResults}
                   className="w-full justify-start"
+                  title="Copy complete analysis to clipboard"
                 >
                   <Copy className="mr-2 h-3.5 w-3.5" /> Copy
                 </Button>

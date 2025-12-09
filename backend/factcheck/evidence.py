@@ -11,11 +11,13 @@ Simplified from 15 files to 1 module with clear functions.
 
 # Set HF_HOME before ANY imports to suppress deprecation warning
 import os
+import sys
 from pathlib import Path
-if "HF_HOME" not in os.environ and "TRANSFORMERS_CACHE" not in os.environ:
-    cache_dir = Path(__file__).parent.parent.parent / ".cache" / "huggingface"
-    cache_dir.mkdir(parents=True, exist_ok=True)
-    os.environ["HF_HOME"] = str(cache_dir)
+
+_cache_dir = Path(__file__).resolve().parent.parent.parent / ".cache" / "huggingface"
+_cache_dir.mkdir(parents=True, exist_ok=True)
+os.environ["HF_HOME"] = str(_cache_dir)
+# os.environ["TRANSFORMERS_CACHE"] = str(_cache_dir)  # Removed to fix deprecation warning
 
 import json
 import re
@@ -243,63 +245,72 @@ def build_search_query(claim: str) -> str:
         
         doc = nlp(claim)
         
-        # Extract named entities (organizations, people, products, etc.)
-        entities = [ent.text for ent in doc.ents if ent.label_ in {
-            "PERSON", "ORG", "PRODUCT", "EVENT", "GPE", "DATE"
-        }]
-        
-        # Extract important nouns and verbs (for actions like "cure", "prevent")
-        important_tokens = [
+        # Priority 1: Extract key action verbs (cure, cause, contain, track, prevent, etc.)
+        action_verbs = [
             tok.text for tok in doc
-            if (tok.pos_ in ("NOUN", "PROPN", "VERB") and 
-                not tok.is_stop and 
-                len(tok.text) >= 3 and
-                tok.text.lower() not in {"study", "conducted", "published", "research", "found", "showed"})
+            if (tok.pos_ == "VERB" and 
+                tok.text.lower() in {"cure", "cures", "cause", "causes", "contain", "contains", 
+                                     "track", "tracks", "prevent", "prevents", "treat", "treats",
+                                     "reduce", "reduces", "increase", "increases"})
         ]
         
-        # Combine and deduplicate (preserve order, case-insensitive)
+        # Priority 2: Extract important nouns (cancer, vaccine, water, microchip, etc.)
+        important_nouns = [
+            tok.text for tok in doc
+            if (tok.pos_ in ("NOUN", "PROPN") and 
+                not tok.is_stop and 
+                len(tok.text) >= 3 and
+                tok.text.lower() not in {"study", "conducted", "published", "research", "found", "showed", "text", "statement", "theory"})
+        ]
+        
+        # Priority 3: Extract named entities (organizations, locations)
+        entities = [ent.text for ent in doc.ents if ent.label_ in {
+            "PERSON", "ORG", "PRODUCT", "EVENT", "GPE"
+        }]
+        
+        # Combine with priority order: action verbs first, then nouns, then entities
         seen = set()
         terms = []
-        for term in entities + important_tokens:
+        for term in action_verbs + important_nouns + entities:
             term_lower = term.lower()
-            if term_lower not in seen:
+            if term_lower not in seen and len(term_lower) > 2:
                 seen.add(term_lower)
                 terms.append(term)
         
         if terms:
-            return " ".join(terms[:5])  # Limit to 5 unique terms
+            return " ".join(terms[:6])  # Limit to 6 unique terms
             
     except (ImportError, OSError):
         # Fallback to regex-based extraction
         logger.info("[SEARCH] spaCy not available, using regex fallback for query building")
         
-        # Extract proper nouns (capitalized words)
-        proper_nouns = re.findall(r"\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b", claim)
-        
-        # Extract important keywords (medical, scientific terms)
-        important_words = re.findall(
-            r"\b(cancer|vaccine|covid|water|cure|treatment|disease|drug|therapy|study|glasses|microchip|track)\w*\b",
+        # Priority 1: Extract critical medical/scientific keywords
+        critical_terms = re.findall(
+            r"\b(cancer|vaccine|vaccines|covid|coronavirus|water|cure|cures|curing|treatment|disease|" +
+            r"drug|therapy|microchip|microchips|track|tracking|location|thoughts|glasses|contain|contains|" +
+            r"cause|causes|prevent|prevents|5g|radiation|autism|dna|mrna|pfizer|moderna|" +
+            r"hydroxychloroquine|ivermectin|bleach|disinfectant)\w*\b",
             claim,
             re.IGNORECASE
         )
         
-        # Extract years
-        years = re.findall(r"\b\d{4}\b", claim)
+        # Priority 2: Extract proper nouns (organizations, places)
+        proper_nouns = re.findall(r"\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b", claim)
         
-        # Extract numbers with context (like "8 glasses")
-        number_phrases = re.findall(r"\b\d+\s+\w+", claim)
+        # Priority 3: Extract quantitative phrases ("8 glasses", "5G")
+        quant_phrases = re.findall(r"\b\d+[A-Za-z]*\s+\w+|\b[0-9]+G\b", claim)
         
-        # Combine and deduplicate
+        # Combine with priority order
         seen = set()
         terms = []
-        for term in important_words + proper_nouns[:3] + number_phrases[:2] + years[:1]:
+        for term in critical_terms + proper_nouns[:2] + quant_phrases[:1]:
             term_lower = term.lower().strip()
-            if term_lower and term_lower not in seen:
+            if term_lower and term_lower not in seen and len(term_lower) > 1:
                 seen.add(term_lower)
                 terms.append(term)
         
         if terms:
-            return " ".join(terms[:5])
+            return " ".join(terms[:6])
     
     # Fallback: return original claim
     return claim

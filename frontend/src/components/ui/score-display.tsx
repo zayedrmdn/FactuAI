@@ -14,23 +14,23 @@ interface ScoreColor {
 
 /** Get color and label for AI detection scores (inverted scale: high score = AI) */
 function getAIDetectionColorAndLabel(score: number): ScoreColor {
-  if (score >= 80) return { color: 'oklch(var(--score-very-low))', label: 'Very Likely AI' };
-  if (score >= 60) return { color: 'oklch(var(--score-low))', label: 'Likely AI' };
-  if (score >= 40) return { color: 'oklch(var(--score-medium))', label: 'Possibly AI' };
-  if (score >= 20) return { color: 'oklch(var(--score-high))', label: 'Probably Human' };
-  return { color: 'oklch(var(--score-very-high))', label: 'Very Likely Human' };
+  if (score >= 80) return { color: '#dc2626', label: 'Very Likely AI' }; // Red 600
+  if (score >= 60) return { color: '#ea580c', label: 'Likely AI' }; // Orange 600
+  if (score >= 40) return { color: '#d97706', label: 'Possibly AI' }; // Amber 600
+  if (score >= 20) return { color: '#65a30d', label: 'Probably Human' }; // Lime 600
+  return { color: '#16a34a', label: 'Very Likely Human' }; // Green 600
 }
 
 /** Get color and label for confidence scores (normal scale: high score = confident) */
 function getConfidenceColorAndLabel(score: number): ScoreColor {
-  if (score >= 80) return { color: 'oklch(var(--score-very-high))', label: 'Very High' };
-  if (score >= 60) return { color: 'oklch(var(--score-high))', label: 'High' };
-  if (score >= 40) return { color: 'oklch(var(--score-medium))', label: 'Medium' };
-  if (score >= 20) return { color: 'oklch(var(--score-low))', label: 'Low' };
-  return { color: 'oklch(var(--score-very-low))', label: 'Very Low' };
+  if (score >= 80) return { color: '#16a34a', label: 'Very High' }; // Green 600
+  if (score >= 60) return { color: '#65a30d', label: 'High' }; // Lime 600
+  if (score >= 40) return { color: '#d97706', label: 'Medium' }; // Amber 600
+  if (score >= 20) return { color: '#ea580c', label: 'Low' }; // Orange 600
+  return { color: '#dc2626', label: 'Very Low' }; // Red 600
 }
 
-const TRAIL_COLOR = 'oklch(var(--score-trail))';
+const TRAIL_COLOR = '#e5e7eb'; // Gray 200
 
 // ========================================================================================
 // AI DETECTION SCORE COMPONENT
@@ -85,35 +85,35 @@ export function AIDetectionScore({ score, error, className = '' }: AIDetectionSc
           <div className="flex items-center justify-center gap-1">
             <div
               className="w-2 h-2 rounded-full shrink-0"
-              style={{ backgroundColor: 'oklch(var(--score-very-low))' }}
+              style={{ backgroundColor: '#dc2626' }}
             />
             <span>Very Likely AI (≥80%)</span>
           </div>
           <div className="flex items-center justify-center gap-1">
             <div
               className="w-2 h-2 rounded-full shrink-0"
-              style={{ backgroundColor: 'oklch(var(--score-low))' }}
+              style={{ backgroundColor: '#ea580c' }}
             />
             <span>Likely AI (60-79%)</span>
           </div>
           <div className="flex items-center justify-center gap-1">
             <div
               className="w-2 h-2 rounded-full shrink-0"
-              style={{ backgroundColor: 'oklch(var(--score-medium))' }}
+              style={{ backgroundColor: '#d97706' }}
             />
             <span>Possibly AI (40-59%)</span>
           </div>
           <div className="flex items-center justify-center gap-1">
             <div
               className="w-2 h-2 rounded-full shrink-0"
-              style={{ backgroundColor: 'oklch(var(--score-high))' }}
+              style={{ backgroundColor: '#65a30d' }}
             />
             <span>Probably Human (20-39%)</span>
           </div>
           <div className="flex items-center justify-center gap-1">
             <div
               className="w-2 h-2 rounded-full shrink-0"
-              style={{ backgroundColor: 'oklch(var(--score-very-high))' }}
+              style={{ backgroundColor: '#16a34a' }}
             />
             <span>Very Likely Human (&lt;20%)</span>
           </div>
@@ -189,35 +189,35 @@ export function OverallScore({
           <div className="flex items-center justify-center gap-1">
             <div
               className="w-2 h-2 rounded-full shrink-0"
-              style={{ backgroundColor: 'oklch(var(--score-very-high))' }}
+              style={{ backgroundColor: '#16a34a' }}
             />
             <span>Very High (≥80%)</span>
           </div>
           <div className="flex items-center justify-center gap-1">
             <div
               className="w-2 h-2 rounded-full shrink-0"
-              style={{ backgroundColor: 'oklch(var(--score-high))' }}
+              style={{ backgroundColor: '#65a30d' }}
             />
             <span>High (60-79%)</span>
           </div>
           <div className="flex items-center justify-center gap-1">
             <div
               className="w-2 h-2 rounded-full shrink-0"
-              style={{ backgroundColor: 'oklch(var(--score-medium))' }}
+              style={{ backgroundColor: '#d97706' }}
             />
             <span>Medium (40-59%)</span>
           </div>
           <div className="flex items-center justify-center gap-1">
             <div
               className="w-2 h-2 rounded-full shrink-0"
-              style={{ backgroundColor: 'oklch(var(--score-low))' }}
+              style={{ backgroundColor: '#ea580c' }}
             />
             <span>Low (20-39%)</span>
           </div>
           <div className="flex items-center justify-center gap-1">
             <div
               className="w-2 h-2 rounded-full shrink-0"
-              style={{ backgroundColor: 'oklch(var(--score-very-low))' }}
+              style={{ backgroundColor: '#dc2626' }}
             />
             <span>Very Low (&lt;20%)</span>
           </div>

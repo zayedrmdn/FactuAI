@@ -21,6 +21,44 @@ logger = get_logger(__name__)
 bp = Blueprint("factcheck", __name__, url_prefix="/api")
 
 
+def _normalize_verdict_to_label(verdict: str) -> str:
+    """
+    Map backend verdict (UPPERCASE) to frontend label (lowercase).
+    
+    Backend returns: TRUE, FALSE, MOSTLY_TRUE, MOSTLY_FALSE, MIXED, UNVERIFIABLE
+    Frontend expects: true, false, mostly_true, mostly_false, half_true, unknown
+    """
+    verdict_upper = (verdict or "").upper().strip()
+    
+    mapping = {
+        "TRUE": "true",
+        "MOSTLY_TRUE": "mostly_true",
+        "MIXED": "half_true",  # Map MIXED to half_true
+        "MOSTLY_FALSE": "mostly_false",
+        "FALSE": "false",
+        "UNVERIFIABLE": "unknown",
+        "UNKNOWN": "unknown",
+    }
+    
+    return mapping.get(verdict_upper, "unknown")
+
+
+def _normalize_results(results: list) -> list:
+    """
+    Normalize fact-check results to include 'label' field for frontend.
+    """
+    normalized = []
+    for result in results:
+        result_copy = dict(result)
+        # Add 'label' field from 'verdict'
+        if 'verdict' in result_copy:
+            result_copy['label'] = _normalize_verdict_to_label(result_copy['verdict'])
+        else:
+            result_copy['label'] = 'unknown'
+        normalized.append(result_copy)
+    return normalized
+
+
 def _build_stage_models(payload: dict, fallback_provider: str, fallback_model_id: str) -> dict:
     """Normalize pipeline model selections with sensible fallbacks."""
     payload = payload or {}
@@ -34,6 +72,7 @@ def _build_stage_models(payload: dict, fallback_provider: str, fallback_model_id
         "intent": stage_cfg("intent"),
         "extraction": stage_cfg("extraction"),
         "reasoning": stage_cfg("reasoning"),
+        "summary": stage_cfg("summary"),
     }
 
 
@@ -109,6 +148,13 @@ def process_factcheck():
                 ):
                     if not include_summary and event.get("type") == "summary":
                         continue
+                    
+                    # Normalize result events to include 'label' field
+                    if event.get("type") == "result" and "result" in event:
+                        result = event["result"]
+                        if "verdict" in result:
+                            result["label"] = _normalize_verdict_to_label(result["verdict"])
+                    
                     yield f"data: {json.dumps(event)}\n\n"
             except Exception as e:
                 logger.error(f"[API] Progressive processing failed: {e}", exc_info=True)
@@ -132,6 +178,11 @@ def process_factcheck():
             llm=provider,
             pipeline_models=pipeline_models,
         )
+        
+        # Normalize results to include 'label' field
+        if "results" in result:
+            result["results"] = _normalize_results(result["results"])
+        
         if not include_summary:
             result.pop("summary", None)
         return jsonify(result)

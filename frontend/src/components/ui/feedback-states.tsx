@@ -93,7 +93,7 @@ export function LoadingAnimation({
         </div>
 
         {/* Current Claim Info */}
-        {currentClaim && currentClaim > 0 && (
+        {currentClaim !== undefined && currentClaim > 0 && (
           <p className="text-sm text-muted-foreground animate-in fade-in duration-300">
             Processing claim {currentClaim}
           </p>

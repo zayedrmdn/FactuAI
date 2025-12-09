@@ -10,7 +10,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Settings, Zap, FileText, Brain, RotateCcw, ChevronDown } from 'lucide-react';
+import { Settings, Zap, FileText, Brain, RotateCcw, ChevronDown, AlignLeft } from 'lucide-react';
 import { usePipelineModelsStore } from '@/stores/pipeline-models-store';
 import { getModelById, getModelsByProvider, modelRegistry } from '@/config/ai-models';
 import type { PipelineTask } from '@/stores/pipeline-models-store';
@@ -47,9 +47,15 @@ const taskConfig: Record<
     icon: FileText,
     color: 'text-blue-500',
   },
+  summary: {
+    label: 'Summarization',
+    description: 'Generate executive summary',
+    icon: AlignLeft,
+    color: 'text-green-500',
+  },
   reasoning: {
     label: 'Reasoning & Verification',
-    description: 'Complex fact-checking and summarization',
+    description: 'Complex fact-checking and verification',
     icon: Brain,
     color: 'text-purple-500',
   },
@@ -57,9 +63,9 @@ const taskConfig: Record<
 
 export function PipelineModelConfig() {
   const [isExpanded, setIsExpanded] = useState(false);
-  const { intent, extraction, reasoning, setTaskModel, resetToDefaults } = usePipelineModelsStore();
+  const { intent, extraction, reasoning, summary, setTaskModel, resetToDefaults } = usePipelineModelsStore();
 
-  const taskSelections = { intent, extraction, reasoning };
+  const taskSelections = { intent, extraction, reasoning, summary };
 
   const activeTask = usePipelineModelsStore((state) => state.activeTask);
 

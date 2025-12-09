@@ -1,7 +1,7 @@
 ---
 title: FactuAI System Documentation
-version: 3.0.0
-last_updated: 2025-12-08
+version: 3.0.1
+last_updated: 2025-12-09
 authors: [Zayed Ramadan Rahmat]
 audience: AI Agents, Developers
 status: Production Ready
@@ -641,13 +641,40 @@ MIT License - Free for academic, research, and learning purposes.
 
 ## METADATA
 
-**Version:** 2.1.0  
-**Last Updated:** 2025-12-07T21:35:00Z  
+**Version:** 3.0.1  
+**Last Updated:** 2025-12-09T12:00:00Z  
 **Author:** Zayed Ramadan Rahmat  
 **Institution:** Asia Pacific University, Malaysia  
 **Project Type:** Final Year Project (Computer Science - AI)  
 **Repository:** https://github.com/zayedrmdn/FactuAI  
 **Documentation Format:** AI Agent-Optimized Structured Markdown
+
+---
+
+## RECENT FIXES (v3.0.1 - 2025-12-09)
+
+### Backend Fixes
+1. **Verdict Normalization**: Added mapping function to convert backend verdicts (TRUE, FALSE, UNVERIFIABLE, etc.) to frontend-compatible labels (true, false, unknown, etc.)
+2. **Executive Summary**: Improved summarization prompt to generate proper executive summaries with key findings, context, and stakes
+3. **Dynamic Token Limits**: Token allocation now scales based on input/evidence size for efficiency
+4. **HF_HOME Warning**: Fixed TRANSFORMERS_CACHE deprecation by setting HF_HOME in config.py
+5. **Reasoning Model Support**: Enhanced empty response handling to extract from `reasoning` and `reasoning_details` fields
+6. **Finish Reason Logging**: Added verbose logging for `finish_reason=length` warnings
+
+### Frontend Fixes
+1. **Confidence Display**: Fixed circular progress bar display (was multiplying by 100 twice)
+2. **Copy Function**: Implemented full structured plain text export with:
+   - Executive summary
+   - Overall scores (trust score, AI detection)
+   - Detailed findings with evidence and sources
+   - Proper formatting for clipboard
+3. **Label Mapping**: Frontend now correctly displays verdict labels (Unknown → proper verdict)
+
+### Code Quality
+- Followed KISS and DRY principles throughout
+- Maintained backward compatibility
+- All fixes are dynamic and model-agnostic
+- Centralized logging for debugging
 
 ---
 
@@ -659,8 +686,7 @@ MIT License - Free for academic, research, and learning purposes.
 - [NVIDIA NIM API](https://docs.api.nvidia.com/)
 - [Tailwind CSS 4](https://tailwindcss.com/docs)
 - [shadcn/ui](https://ui.shadcn.com/)
-- [CONSTITUTIONS.md](./CONSTITUTIONS.md) - Coding Standards
-- [UNICODE_FIX_REPORT.md](./UNICODE_FIX_REPORT.md) - Recent Fixes
+- [CONSTITUTION.md](./CONSTITUTION.md) - Coding Standards
 
 ---
 

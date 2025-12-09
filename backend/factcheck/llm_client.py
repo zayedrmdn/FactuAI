@@ -280,34 +280,35 @@ def _generate_cloud(
         elapsed = time.time() - start_time
         
         if not response or not response.choices:
+            logger.error(f"[{provider.upper()}] No response or choices from {selected_model}")
             raise LLMClientError(f"{provider} returned empty response")
         
-        message = response.choices[0].message
+        choice = response.choices[0]
+        message = choice.message
+        finish_reason = choice.finish_reason
         
         # Handle reasoning models that output to reasoning field instead of content
         result = message.content or ""
+        
         if not result and hasattr(message, 'reasoning') and message.reasoning:
             result = message.reasoning.strip()
-            logger.debug(f"[{provider.upper()}] Extracted from reasoning field ({len(result)} chars): {result[:100]}...")
+            logger.debug(f"[{provider.upper()}] Extracted from reasoning field ({len(result)} chars)")
         elif not result and hasattr(message, 'reasoning_details') and message.reasoning_details:
             # Fallback: try to extract from reasoning_details
             for detail in message.reasoning_details:
-                if 'text' in detail and detail['text']:
+                if isinstance(detail, dict) and 'text' in detail and detail['text']:
                     result = detail['text'].strip()
-                    logger.debug(f"[{provider.upper()}] Extracted from reasoning_details ({len(result)} chars): {result[:100]}...")
-                    break
-        elif not result and hasattr(message, 'reasoning_details') and message.reasoning_details:
-            # Fallback: try to extract from reasoning_details
-            for detail in message.reasoning_details:
-                if 'text' in detail and detail['text']:
-                    result = detail['text'].strip()
-                    logger.debug(f"[{provider.upper()}] Extracted from reasoning_details ({len(result)} chars): {result[:100]}...")
+                    logger.debug(f"[{provider.upper()}] Extracted from reasoning_details ({len(result)} chars)")
                     break
         
-        logger.info(f"[{provider.upper()}] Generated {len(result)} chars using {selected_model} in {elapsed:.2f}s")
+        # Log finish reason issues
+        if finish_reason == 'length':
+            logger.warning(f"[{provider.upper()}] Response truncated (finish_reason=length). Consider increasing max_tokens (current: {max_tokens})")
+        
+        logger.info(f"[{provider.upper()}] Generated {len(result)} chars using {selected_model} in {elapsed:.2f}s (finish_reason={finish_reason})")
         
         if len(result) == 0:
-            logger.warning(f"[{provider.upper()}] Empty response from {selected_model}. Response object: {response}")
+            logger.warning(f"[{provider.upper()}] Empty response from {selected_model}. Full response: {response}")
         
         return result
         
@@ -353,13 +354,35 @@ def _chat_cloud(
         elapsed = time.time() - start_time
         
         if not response or not response.choices:
+            logger.error(f"[{provider.upper()}] No response or choices from {selected_model}")
             raise LLMClientError(f"{provider} returned empty response")
         
-        result = response.choices[0].message.content or ""
-        logger.info(f"[{provider.upper()}] Generated {len(result)} chars using {selected_model} in {elapsed:.2f}s")
+        choice = response.choices[0]
+        message = choice.message
+        finish_reason = choice.finish_reason
+        
+        # Handle reasoning models that output to reasoning field instead of content
+        result = message.content or ""
+        
+        if not result and hasattr(message, 'reasoning') and message.reasoning:
+            result = message.reasoning.strip()
+            logger.debug(f"[{provider.upper()}] Extracted from reasoning field ({len(result)} chars)")
+        elif not result and hasattr(message, 'reasoning_details') and message.reasoning_details:
+            # Fallback: try to extract from reasoning_details
+            for detail in message.reasoning_details:
+                if isinstance(detail, dict) and 'text' in detail and detail['text']:
+                    result = detail['text'].strip()
+                    logger.debug(f"[{provider.upper()}] Extracted from reasoning_details ({len(result)} chars)")
+                    break
+        
+        # Log finish reason issues
+        if finish_reason == 'length':
+            logger.warning(f"[{provider.upper()}] Response truncated (finish_reason=length). Consider increasing max_tokens (current: {max_tokens})")
+        
+        logger.info(f"[{provider.upper()}] Generated {len(result)} chars using {selected_model} in {elapsed:.2f}s (finish_reason={finish_reason})")
         
         if len(result) == 0:
-            logger.warning(f"[{provider.upper()}] Empty response from {selected_model}. Response object: {response}")
+            logger.warning(f"[{provider.upper()}] Empty response from {selected_model}. Full response: {response}")
         
         return result
         

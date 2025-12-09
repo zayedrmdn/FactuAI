@@ -39,6 +39,7 @@ def _resolve_models(pipeline_models: Optional[Dict[str, Dict[str, str]]], fallba
         "intent": stage("intent"),
         "extraction": stage("extraction"),
         "reasoning": stage("reasoning"),
+        "summary": stage("summary"),
     }
 
 # Pipeline phase messages
@@ -84,16 +85,14 @@ def detect_intent(text: str, llm: str = None, model_id: str = None) -> str:
     if text_stripped.endswith("?"):
         return "fact_question"
     
-    # Check word count for multi-claim detection
+    text_lower = text_stripped.lower()
     word_count = len(text_stripped.split())
-    if word_count > 100:
-        return "news_paragraph"
+    sentence_count = len([s for s in text_stripped.split('.') if s.strip()])
     
     # Opinion markers
     opinion_markers = [
         "i think", "i believe", "in my opinion", "i feel", "should", "ought to"
     ]
-    text_lower = text_stripped.lower()
     if any(marker in text_lower for marker in opinion_markers):
         return "opinion"
     
@@ -101,6 +100,21 @@ def detect_intent(text: str, llm: str = None, model_id: str = None) -> str:
     instructional_markers = ["how to", "step 1", "first,", "next,", "finally,"]
     if any(marker in text_lower for marker in instructional_markers):
         return "instructional"
+    
+    # Multi-claim detection: check for multiple sentences or very long text
+    # Single claim: 1-3 sentences, under 200 words
+    # News paragraph: 4+ sentences or 200+ words
+    if sentence_count >= 4 or word_count > 200:
+        return "news_paragraph"
+    
+    # If 2-3 sentences and contains explicit listing markers, might be multi_claim
+    # "and" is too common, so we remove it from the heuristic to avoid unnecessary LLM calls
+    if sentence_count >= 2 and any(marker in text_lower for marker in ['; ', 'also', 'additionally', 'furthermore', 'firstly', 'secondly']):
+        # Use LLM to decide between fact_claim and multi_claim
+        pass  # Fall through to LLM
+    elif sentence_count <= 3 and word_count < 100:
+        # Short text with few sentences = single claim
+        return "fact_claim"
     
     # Use LLM for complex cases
     try:
@@ -113,12 +127,15 @@ def detect_intent(text: str, llm: str = None, model_id: str = None) -> str:
 
 Respond with ONLY the category name."""
         
+        # Dynamic token limit: base 200 + 300 buffer for reasoning models
+        dynamic_max_tokens = min(800, max(200, len(text_stripped) // 2 + 300))
+        
         response = llm_client.chat(
             system,
             f"Text: {text_stripped}",
             provider=llm,
             model_id=model_id,
-            max_tokens=500,  # Increased for reasoning models that generate extensive reasoning
+            max_tokens=dynamic_max_tokens,
         )
         response_clean = response.strip().lower()
         
@@ -158,17 +175,30 @@ def extract_claims(text: str, max_claims: int = 5, llm: str = None, model_id: st
     dynamic_max = min(max_claims, max(1, word_count // 50))
     
     system = f"""Extract {dynamic_max} factual claims from the following text.
-List them one per line.
-Only include verifiable factual statements.
-Do not include opinions or subjective statements."""
+List them one per line, starting each with a dash (-).
+
+IMPORTANT RULES:
+- Extract EXACTLY what the text claims, even if false or conspiracy theories
+- Do NOT add commentary like "this is false" or "debunked"
+- Do NOT say "there are no claims" - extract what's stated
+- Keep the core substance of each claim
+
+Example:
+Input: "COVID vaccines contain microchips."
+Output: - COVID-19 vaccines contain microchips
+
+Now extract from:"""
     
     try:
+        # Dynamic: base on number of claims and text length
+        dynamic_max_tokens = min(1024, max(256, dynamic_max * 80 + 400))
+        
         response = llm_client.chat(
             system,
             text,
             provider=llm,
             model_id=model_id,
-            max_tokens=512,
+            max_tokens=dynamic_max_tokens,
         )
         
         # Parse response into claims
@@ -213,22 +243,27 @@ Do not include opinions or subjective statements."""
 # Summarization
 # ==========================================================================
 
-def summarize_input(text: str, llm: str = None, model_id: str = None, max_tokens: int = 120) -> str:
+def summarize_input(text: str, llm: str = None, model_id: str = None, max_tokens: int = 500) -> str:
     """
-    Summarize input text.
+    Generate an executive summary of the input text.
     
     Args:
         text: Text to summarize
         llm: Optional LLM provider
-        max_tokens: Maximum tokens for summary
+        max_tokens: Maximum tokens for summary (default 300 for reasoning models)
         
     Returns:
-        Summary string
+        Executive summary string
     """
     if not text or not text.strip():
         return ""
     
-    system = "Summarize the following text into a concise neutral overview. Do NOT classify; just summarize factual content."
+    system = """Generate a brief executive summary (2-3 sentences) that captures:
+1. The main claim(s) or topic
+2. Key context (source, date, entities if mentioned)
+3. Why this matters or what's at stake
+
+Be objective and neutral. Focus on WHAT is being claimed, not whether it's true."""
     
     try:
         response = llm_client.chat(
@@ -239,6 +274,16 @@ def summarize_input(text: str, llm: str = None, model_id: str = None, max_tokens
             max_tokens=max_tokens,
         )
         
+        # Handle empty responses gracefully
+        if not response or not response.strip():
+            logger.warning("[SUMMARY] Empty response, using fallback")
+            # Return first sentence as fallback
+            for end in ['. ', '! ', '? ']:
+                idx = text.find(end)
+                if idx > 0:
+                    return text[:idx + 1].strip()
+            return text[:100].strip() + ('...' if len(text) > 100 else '')
+        
         # Clean up response
         if response.startswith("Summary:"):
             response = response[8:].strip()
@@ -247,6 +292,7 @@ def summarize_input(text: str, llm: str = None, model_id: str = None, max_tokens
         
         # Fallback if response looks bad
         if len(response) < 10:
+            logger.warning(f"[SUMMARY] Response too short ({len(response)} chars), using fallback")
             # Return first sentence
             for end in ['. ', '! ', '? ']:
                 idx = text.find(end)
@@ -289,10 +335,10 @@ Keep it factual, neutral, and concise. Avoid repetition."""
     try:
         response = llm_client.chat(
             system,
-            f"Evidence:\n{evidence_text}",
+            f"Evidence:\n{evidence_text[:2000]}",  # Truncate to prevent token overflow
             provider=llm,
             model_id=model_id,
-            max_tokens=max(200, target_words * 3),  # Generous buffer for reasoning models
+            max_tokens=max(600, target_words * 6),  # Very generous buffer for reasoning models
         )
         
         # Clean up
@@ -374,6 +420,11 @@ def verify_claim(
 2. CONFIDENCE: 0.0 to 1.0
 3. REASONING: Brief explanation (2-3 sentences)
 
+IMPORTANT:
+- If the claim is a known conspiracy theory, myth, or explicitly debunked by the evidence, the verdict MUST be FALSE.
+- Do NOT use "UNKNOWN" or "DEBUNKED" as verdict. Use FALSE.
+- If evidence is insufficient, use UNVERIFIABLE.
+
 Format:
 VERDICT: <verdict>
 CONFIDENCE: <score>
@@ -384,13 +435,30 @@ REASONING: <explanation>"""
 Evidence:
 {evidence_text}"""
         
+        # Dynamic token limit based on evidence size
+        evidence_token_estimate = len(evidence_text) // 3
+        dynamic_max_tokens = min(1500, max(600, evidence_token_estimate + 500))
+        
         response = llm_client.chat(
             system,
             user_msg,
             provider=llm,
             model_id=model_id,
-            max_tokens=600,  # Increased for reasoning models with evidence analysis
+            max_tokens=dynamic_max_tokens,
         )
+        
+        # Handle empty responses gracefully
+        if not response or not response.strip():
+            logger.warning("[VERIFY] Empty LLM response, returning unverifiable")
+            return {
+                "verdict": "UNVERIFIABLE",
+                "label": "unverifiable",
+                "confidence": 0.3,
+                "reasoning": "Unable to analyze evidence - no model response received.",
+                "evidence": evidence_items,
+                "sources": [],
+                "source_quotes": []
+            }
         
         # Parse response
         verdict = "UNVERIFIABLE"
@@ -398,13 +466,20 @@ Evidence:
         reasoning = "Unable to determine verdict."
         
         for line in response.split('\n'):
+            line = line.strip()
             if line.startswith('VERDICT:'):
                 verdict = line.split(':', 1)[1].strip().upper()
+                # Map common hallucinations to valid verdicts
+                if verdict in ['UNKNOWN', 'DEBUNKED', 'MYTH']:
+                    verdict = 'FALSE' if verdict != 'UNKNOWN' else 'UNVERIFIABLE'
             elif line.startswith('CONFIDENCE:'):
                 try:
-                    confidence = float(line.split(':', 1)[1].strip())
-                except ValueError:
-                    pass
+                    conf_str = line.split(':', 1)[1].strip()
+                    confidence = float(conf_str)
+                    # Clamp to valid range
+                    confidence = max(0.0, min(1.0, confidence))
+                except (ValueError, IndexError) as e:
+                    logger.warning(f"[VERIFY] Failed to parse confidence: {e}")
             elif line.startswith('REASONING:'):
                 reasoning = line.split(':', 1)[1].strip()
         
@@ -434,6 +509,7 @@ Evidence:
         
         return {
             "verdict": verdict,
+            "label": verdict.lower(),
             "confidence": confidence,
             "reasoning": reasoning,
             "evidence": evidence_items,
@@ -474,6 +550,7 @@ def check_text(
         intent_cfg = models["intent"]
         extraction_cfg = models["extraction"]
         reasoning_cfg = models["reasoning"]
+        summary_cfg = models["summary"]
 
         # Detect intent
         _log_model_usage("intent_detection", intent_cfg.get("provider", llm), intent_cfg.get("model_id"))
@@ -494,11 +571,11 @@ def check_text(
             }
         
         # Generate summary
-        _log_model_usage("summary", reasoning_cfg.get("provider", llm), reasoning_cfg.get("model_id"))
+        _log_model_usage("summary", summary_cfg.get("provider", llm), summary_cfg.get("model_id"))
         summary = summarize_input(
             text,
-            llm=reasoning_cfg.get("provider", llm),
-            model_id=reasoning_cfg.get("model_id"),
+            llm=summary_cfg.get("provider", llm),
+            model_id=summary_cfg.get("model_id"),
         )
         
         # Handle different intent types
@@ -598,6 +675,7 @@ def check_text_stream(
         intent_cfg = models["intent"]
         extraction_cfg = models["extraction"]
         reasoning_cfg = models["reasoning"]
+        summary_cfg = models["summary"]
 
         # Intent detection
         yield {"type": "phase", "message": PHASE_DETECTING_INTENT, "progress": 5}
@@ -619,11 +697,11 @@ def check_text_stream(
         
         # Summary generation
         yield {"type": "phase", "message": PHASE_GENERATING_SUMMARY, "progress": 10}
-        _log_model_usage("summary", reasoning_cfg.get("provider", llm), reasoning_cfg.get("model_id"))
+        _log_model_usage("summary", summary_cfg.get("provider", llm), summary_cfg.get("model_id"))
         summary = summarize_input(
             text,
-            llm=reasoning_cfg.get("provider", llm),
-            model_id=reasoning_cfg.get("model_id"),
+            llm=summary_cfg.get("provider", llm),
+            model_id=summary_cfg.get("model_id"),
         )
         yield {"type": "summary", "summary": summary}
         
@@ -663,7 +741,9 @@ def check_text_stream(
                 yield {
                     "type": "phase",
                     "message": f"Verifying claim {i+1}/{total}...",
-                    "progress": progress
+                    "progress": progress,
+                    "claim_index": i + 1,
+                    "total_claims": total
                 }
                 
                 _log_model_usage("verify_claim", reasoning_cfg.get("provider", llm), reasoning_cfg.get("model_id"))
@@ -674,8 +754,9 @@ def check_text_stream(
                     num_google=3,
                     num_news=2,
                     top_k=5,
+                    original_context=text
                 )
-                yield {"type": "result", "result": {"claim": claim, **result}}
+                yield {"type": "result", "result": {"claim": claim, **result}, "claim_index": i + 1}
         
         else:  # fact_claim
             yield {"type": "phase", "message": PHASE_VERIFYING_CLAIM, "progress": 30}

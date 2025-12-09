@@ -16,7 +16,13 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Set HF_HOME to suppress TRANSFORMERS_CACHE deprecation warning
-if "HF_HOME" not in os.environ and "TRANSFORMERS_CACHE" not in os.environ:
+# If TRANSFORMERS_CACHE is set, we unset it and move the value to HF_HOME if HF_HOME isn't set
+if "TRANSFORMERS_CACHE" in os.environ:
+    if "HF_HOME" not in os.environ:
+        os.environ["HF_HOME"] = os.environ["TRANSFORMERS_CACHE"]
+    del os.environ["TRANSFORMERS_CACHE"]
+
+if "HF_HOME" not in os.environ:
     # Default to .cache directory in project root
     os.environ["HF_HOME"] = str(Path(__file__).parent.parent / ".cache" / "huggingface")
 

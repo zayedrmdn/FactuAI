@@ -51,8 +51,9 @@ export function ActiveModelDisplay() {
   const taskSelections = { intent, extraction, reasoning };
   const selection = taskSelections[activeTask];
   const model = getModelById(selection.modelId);
-
-  if (!model) return null;
+  
+  // Fallback if model not found (shouldn't happen but prevents crash)
+  const modelName = model?.displayName || selection.modelId || 'Unknown Model';
 
   const TaskIcon = taskIcons[activeTask];
 
@@ -63,7 +64,7 @@ export function ActiveModelDisplay() {
         <TaskIcon className="h-4 w-4" />
         <span className="font-medium">{taskLabels[activeTask]}</span>
         <span className="text-muted-foreground">•</span>
-        <span className="text-muted-foreground">{model.displayName}</span>
+        <span className="text-muted-foreground">{modelName}</span>
         <Badge variant="outline" className="text-xs">
           {selection.provider}
         </Badge>
