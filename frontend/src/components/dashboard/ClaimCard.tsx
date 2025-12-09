@@ -93,7 +93,10 @@ export default function ClaimCard({
     ? result.sources
         .map((s) => {
           if (typeof s === 'string') return s;
-          if (s && typeof s === 'object') return s.url || s.text || s.title || '';
+          if (s && typeof s === 'object') {
+            const obj = s as Record<string, unknown>;
+            return String(obj.url || obj.text || obj.title || '');
+          }
           return '';
         })
         .filter((s) => !!s)
@@ -234,7 +237,9 @@ export default function ClaimCard({
                   </div>
                 ) : (
                   <p className="text-sm text-slate-500">
-                    {result.evidence || 'No detailed evidence available.'}
+                    {Array.isArray(result.evidence) 
+                      ? result.evidence.map(item => item.text || item).join('. ') 
+                      : (result.evidence || 'No detailed evidence available.')}
                   </p>
                 )}
               </div>

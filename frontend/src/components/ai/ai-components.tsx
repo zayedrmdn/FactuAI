@@ -35,20 +35,22 @@ const taskIcons: Record<PipelineTask, React.ElementType> = {
   intent: Zap,
   extraction: FileText,
   reasoning: Brain,
+  summary: FileText,
 };
 
 const taskLabels: Record<PipelineTask, string> = {
   intent: 'Intent Detection',
   extraction: 'Claim Extraction',
   reasoning: 'Reasoning',
+  summary: 'Summary Generation',
 };
 
 export function ActiveModelDisplay() {
-  const { activeTask, intent, extraction, reasoning } = usePipelineModelsStore();
+  const { activeTask, intent, extraction, reasoning, summary } = usePipelineModelsStore();
 
   if (!activeTask) return null;
 
-  const taskSelections = { intent, extraction, reasoning };
+  const taskSelections = { intent, extraction, reasoning, summary };
   const selection = taskSelections[activeTask];
   const model = getModelById(selection.modelId);
   

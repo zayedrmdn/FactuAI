@@ -1,6 +1,6 @@
 ---
 title: FactuAI System Documentation
-version: 3.0.1
+version: 3.1.0
 last_updated: 2025-12-09
 authors: [Zayed Ramadan Rahmat]
 audience: AI Agents, Developers
@@ -23,8 +23,10 @@ FactuAI is a production-grade full-stack monorepo for AI-powered fact-checking a
 **Core Capabilities**:
 - Text/Image/Video claim extraction and verification
 - Multi-provider LLM orchestration (OpenRouter free tier, NVIDIA NIM paid tier)
+- **Configurable search providers** (Google Custom Search, NewsAPI) with intuitive toggles
 - Evidence-based fact-checking pipeline with semantic ranking
 - Real-time progressive response streaming (SSE)
+- Per-stage model selection for optimal performance
 
 **Deployment Modes**:
 - **Cloud Mode** (Default): API-based, ~50MB dependencies
@@ -651,9 +653,50 @@ MIT License - Free for academic, research, and learning purposes.
 
 ---
 
-## RECENT FIXES (v3.0.1 - 2025-12-09)
+## RECENT UPDATES
 
-### Backend Fixes
+### Search Provider Toggle Feature (v3.1.0 - 2025-12-09)
+1. **User-Configurable Search Providers**:
+   - Toggle Google Custom Search and NewsAPI independently
+   - Intuitive UI with clear visual feedback
+   - Automatic validation (at least one must be enabled)
+   - State persisted to localStorage
+2. **Backend Implementation**:
+   - Scalable provider filtering in `evidence.py`
+   - Validation ensures at least one provider is active
+   - Full error handling and logging
+   - Easy to extend with new providers
+3. **Frontend Implementation**:
+   - New Zustand store for provider state management
+   - SearchProvidersConfig component with toggle switches
+   - Integration with useFactCheck hook
+   - Console logging for debugging
+4. **Benefits**:
+   - Cost savings (disable expensive APIs)
+   - Flexibility for different use cases
+   - Better quota management
+   - Extensible architecture
+
+### Critical LLM Response Handling (v3.0.2 - 2025-12-09)
+1. **Enhanced Response Validation**: 
+   - Added strict validation for empty/minimal responses (< 10 chars)
+   - Implemented detailed logging with `repr()` to detect special characters
+   - Raises `LLMClientError` for truly empty responses
+   - Warning for suspiciously short responses that may indicate prompt issues
+2. **Retry Logic with Adaptive Parameters**:
+   - Verification: 2 retries with increasing `max_tokens` (800 → 2500)
+   - Summarization: 2 retries with quality validation (>30 chars)
+   - Temperature optimization: 0.3 for fact-checking, 0.5 for summaries
+3. **Response Quality Checks**:
+   - Minimum 50 chars for verification responses
+   - Minimum 30 chars for summary responses
+   - Graceful fallback to UNVERIFIABLE when LLM fails
+4. **Model-Specific Fixes**:
+   - Documented Mistral-7b-instruct issues in MODELS.md
+   - Recommended parameters: `max_tokens=800-2000`, `temperature=0.3-0.5`
+   - Better model alternatives suggested for fact-checking tasks
+   
+### Backend Fixes (v3.0.1)
 1. **Verdict Normalization**: Added mapping function to convert backend verdicts (TRUE, FALSE, UNVERIFIABLE, etc.) to frontend-compatible labels (true, false, unknown, etc.)
 2. **Executive Summary**: Improved summarization prompt to generate proper executive summaries with key findings, context, and stakes
 3. **Dynamic Token Limits**: Token allocation now scales based on input/evidence size for efficiency
@@ -661,7 +704,7 @@ MIT License - Free for academic, research, and learning purposes.
 5. **Reasoning Model Support**: Enhanced empty response handling to extract from `reasoning` and `reasoning_details` fields
 6. **Finish Reason Logging**: Added verbose logging for `finish_reason=length` warnings
 
-### Frontend Fixes
+### Frontend Fixes (v3.0.1)
 1. **Confidence Display**: Fixed circular progress bar display (was multiplying by 100 twice)
 2. **Copy Function**: Implemented full structured plain text export with:
    - Executive summary
@@ -675,6 +718,7 @@ MIT License - Free for academic, research, and learning purposes.
 - Maintained backward compatibility
 - All fixes are dynamic and model-agnostic
 - Centralized logging for debugging
+- Production-ready error handling with no temporary workarounds
 
 ---
 

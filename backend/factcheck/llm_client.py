@@ -301,14 +301,24 @@ def _generate_cloud(
                     logger.debug(f"[{provider.upper()}] Extracted from reasoning_details ({len(result)} chars)")
                     break
         
+        # Properly clean the result - strip whitespace and special chars
+        result = result.strip() if result else ""
+        
         # Log finish reason issues
         if finish_reason == 'length':
             logger.warning(f"[{provider.upper()}] Response truncated (finish_reason=length). Consider increasing max_tokens (current: {max_tokens})")
         
         logger.info(f"[{provider.upper()}] Generated {len(result)} chars using {selected_model} in {elapsed:.2f}s (finish_reason={finish_reason})")
         
+        # Enhanced validation - check for minimal/invalid responses
         if len(result) == 0:
-            logger.warning(f"[{provider.upper()}] Empty response from {selected_model}. Full response: {response}")
+            logger.error(f"[{provider.upper()}] Empty response from {selected_model}. Message content: {repr(message.content)}, finish_reason: {finish_reason}")
+            raise LLMClientError(f"{provider} returned empty response from {selected_model}")
+        
+        # Check for suspiciously short responses (likely errors)
+        if len(result) < 10 and finish_reason == 'stop':
+            logger.warning(f"[{provider.upper()}] Suspiciously short response ({len(result)} chars): {repr(result)}. This may indicate a prompt formatting issue.")
+            # Don't fail, but warn - the pipeline will handle it
         
         return result
         
@@ -375,14 +385,24 @@ def _chat_cloud(
                     logger.debug(f"[{provider.upper()}] Extracted from reasoning_details ({len(result)} chars)")
                     break
         
+        # Properly clean the result - strip whitespace and special chars
+        result = result.strip() if result else ""
+        
         # Log finish reason issues
         if finish_reason == 'length':
             logger.warning(f"[{provider.upper()}] Response truncated (finish_reason=length). Consider increasing max_tokens (current: {max_tokens})")
         
         logger.info(f"[{provider.upper()}] Generated {len(result)} chars using {selected_model} in {elapsed:.2f}s (finish_reason={finish_reason})")
         
+        # Enhanced validation - check for minimal/invalid responses
         if len(result) == 0:
-            logger.warning(f"[{provider.upper()}] Empty response from {selected_model}. Full response: {response}")
+            logger.error(f"[{provider.upper()}] Empty response from {selected_model}. Message content: {repr(message.content)}, finish_reason: {finish_reason}")
+            raise LLMClientError(f"{provider} returned empty response from {selected_model}")
+        
+        # Check for suspiciously short responses (likely errors)
+        if len(result) < 10 and finish_reason == 'stop':
+            logger.warning(f"[{provider.upper()}] Suspiciously short response ({len(result)} chars): {repr(result)}. This may indicate a prompt formatting issue.")
+            # Don't fail, but warn - the pipeline will handle it
         
         return result
         

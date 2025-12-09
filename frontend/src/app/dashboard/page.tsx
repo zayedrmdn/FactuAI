@@ -7,6 +7,8 @@ import InputCard from '@/components/dashboard/InputCard';
 import ResultsView from '@/components/dashboard/ResultsView';
 import HistoryPanel from '@/components/dashboard/HistoryPanel';
 import { PipelineModelConfig } from '@/components/ai/PipelineModelConfig';
+import { SearchProvidersConfig } from '@/components/dashboard/SearchProvidersConfig';
+import { SearchLimitsConfig } from '@/components/dashboard/SearchLimitsConfig';
 import { useSettings } from '@/lib/hooks/useSettings';
 import { useAppState } from '@/lib/hooks/useAppState';
 import { RotateCcw, FileText } from 'lucide-react'; // Added icons for better UI
@@ -100,8 +102,14 @@ export default function DashboardPage() {
         </div>
 
         {/* Pipeline Model Configuration */}
-        <div className="mb-4 sm:mb-6">
+        <div className="mb-4 sm:mb-6 space-y-4">
           <PipelineModelConfig />
+          
+          {/* Search Configuration - Responsive Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <SearchProvidersConfig />
+            <SearchLimitsConfig />
+          </div>
         </div>
 
         {/* Main Content - Mobile First Grid */}

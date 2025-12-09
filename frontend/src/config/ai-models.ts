@@ -207,6 +207,25 @@ const openRouterModels: ModelConfig[] = [
     tier: 'free',
     isRecommended: false,
   },
+  {
+    id: 'openrouter-mistral-7b-instruct',
+    displayName: 'Mistral: Mistral 7B Instruct',
+    provider: 'openrouter',
+    modelId: 'mistralai/mistral-7b-instruct:free',
+    description: 'High-performing, industry-standard 7.3B parameter model optimized for speed and context (Free tier)',
+    defaultTemperature: 0.1,
+    defaultMaxTokens: 1024,
+    defaultTopP: 0.9,
+    defaultSystemPrompt: FACTCHECK_SYSTEM_PROMPT,
+    capabilities: {
+      contextWindow: 32768,
+      supportsStreaming: true,
+      supportsFunctionCalling: false,
+      supportsVision: false,
+    },
+    tier: 'free',
+    isRecommended: false,
+  },
 ];
 
 // ============================================================================

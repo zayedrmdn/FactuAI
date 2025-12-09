@@ -17,7 +17,8 @@
 6. [Z.AI GLM 4.5 Air](#zai-glm-45-air)
 7. [NVIDIA Nemotron Nano 9B v2](#nvidia-nemotron-nano-9b-v2)
 8. [Meituan LongCat Flash Chat](#meituan-longcat-flash-chat)
-9. [Google Gemma 3 27B IT](#google-gemma-3-27b-it)
+9. [Mistral Mistral 7B Instruct](#mistral-mistral-7b-instruct)
+10. [Google Gemma 3 27B IT](#google-gemma-3-27b-it)
 
 ### NVIDIA NIM Provider (Paid Tier)
 10. [Meta Llama 3.1 405B Instruct](#meta-llama-31-405b-instruct)
@@ -313,6 +314,53 @@ result = completion.choices[0].message.content
 - Good all-purpose reliability
 - Balanced speed/context (32K)
 - Suitable for creative and analytical work
+
+---
+
+## Mistral Mistral 7B Instruct
+
+**Model ID**: `mistralai/mistral-7b-instruct:free`
+
+**Specifications**:
+- Context: 32,768 tokens
+- Modality: Text → Text
+- Cost: Free tier
+- Use Case: General-purpose tasks, conversational AI, balanced performance
+
+**Request Schema**:
+```python
+completion = client.chat.completions.create(
+    model="mistralai/mistral-7b-instruct:free",
+    messages=[{"role": "user", "content": "What is the meaning of life?"}],
+    extra_headers={
+        "HTTP-Referer": "YOUR_SITE_URL", # Optional. Site URL for rankings on openrouter.ai.
+        "X-Title": "YOUR_SITE_NAME", # Optional. Site title for rankings on openrouter.ai.
+    },
+    max_tokens=2000,  # Recommended: 800-2000 for structured outputs
+    temperature=0.3   # Recommended: 0.3-0.5 for factual tasks
+)
+
+result = completion.choices[0].message.content
+```
+
+**Agent Notes**:
+- High-performing, industry-standard 7.3B parameter model
+- Optimized for speed and context length
+- Latest version of Mistral 7B Instruct variants
+- Good balance of performance and efficiency
+
+**⚠️ Known Issues & Best Practices**:
+- **Empty/Short Responses**: This model occasionally returns very short (1-5 char) responses with `finish_reason=stop`
+  - **Root Cause**: Likely prompt formatting incompatibility or rate limiting on free tier
+  - **Solution**: Use `max_tokens >= 800` and `temperature <= 0.5` for structured tasks
+  - **Workaround**: Implement retry logic with parameter adjustments (see pipeline.py)
+- **Structured Output**: Requires clear formatting instructions in system prompt
+- **Free Tier Limitations**: May have reduced context window or rate limits during peak hours
+- **Recommended For**: Simple classification, short responses, quick tests
+- **Not Recommended For**: Complex reasoning, long-form generation, fact-checking verification
+- **Better Alternatives**: 
+  - For fact-checking: `tngtech/deepseek-r1t2-chimera:free` or `alibaba/tongyi-deepresearch-30b-a3b:free`
+  - For structured output: `z-ai/glm-4.5-air:free` or `google/gemma-3-27b-it:free`
 
 ---
 

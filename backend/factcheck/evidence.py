@@ -222,98 +222,7 @@ def search_newsapi(query: str, num_results: int = 5, timeframe: str = "RECENT") 
         return []
 
 
-def build_search_query(claim: str) -> str:
-    """
-    Extract key terms from claim for better search.
-    
-    Uses spaCy if available for entity extraction, otherwise uses regex.
-    
-    Args:
-        claim: The claim text
-        
-    Returns:
-        Optimized search query string
-    """
-    try:
-        import spacy
-        try:
-            nlp = spacy.load("en_core_web_sm")
-        except OSError:
-            # Model not downloaded, use regex fallback
-            logger.warning("[SEARCH] spaCy model 'en_core_web_sm' not found. Run: python -m spacy download en_core_web_sm")
-            raise ImportError("spaCy model not found")
-        
-        doc = nlp(claim)
-        
-        # Priority 1: Extract key action verbs (cure, cause, contain, track, prevent, etc.)
-        action_verbs = [
-            tok.text for tok in doc
-            if (tok.pos_ == "VERB" and 
-                tok.text.lower() in {"cure", "cures", "cause", "causes", "contain", "contains", 
-                                     "track", "tracks", "prevent", "prevents", "treat", "treats",
-                                     "reduce", "reduces", "increase", "increases"})
-        ]
-        
-        # Priority 2: Extract important nouns (cancer, vaccine, water, microchip, etc.)
-        important_nouns = [
-            tok.text for tok in doc
-            if (tok.pos_ in ("NOUN", "PROPN") and 
-                not tok.is_stop and 
-                len(tok.text) >= 3 and
-                tok.text.lower() not in {"study", "conducted", "published", "research", "found", "showed", "text", "statement", "theory"})
-        ]
-        
-        # Priority 3: Extract named entities (organizations, locations)
-        entities = [ent.text for ent in doc.ents if ent.label_ in {
-            "PERSON", "ORG", "PRODUCT", "EVENT", "GPE"
-        }]
-        
-        # Combine with priority order: action verbs first, then nouns, then entities
-        seen = set()
-        terms = []
-        for term in action_verbs + important_nouns + entities:
-            term_lower = term.lower()
-            if term_lower not in seen and len(term_lower) > 2:
-                seen.add(term_lower)
-                terms.append(term)
-        
-        if terms:
-            return " ".join(terms[:6])  # Limit to 6 unique terms
-            
-    except (ImportError, OSError):
-        # Fallback to regex-based extraction
-        logger.info("[SEARCH] spaCy not available, using regex fallback for query building")
-        
-        # Priority 1: Extract critical medical/scientific keywords
-        critical_terms = re.findall(
-            r"\b(cancer|vaccine|vaccines|covid|coronavirus|water|cure|cures|curing|treatment|disease|" +
-            r"drug|therapy|microchip|microchips|track|tracking|location|thoughts|glasses|contain|contains|" +
-            r"cause|causes|prevent|prevents|5g|radiation|autism|dna|mrna|pfizer|moderna|" +
-            r"hydroxychloroquine|ivermectin|bleach|disinfectant)\w*\b",
-            claim,
-            re.IGNORECASE
-        )
-        
-        # Priority 2: Extract proper nouns (organizations, places)
-        proper_nouns = re.findall(r"\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b", claim)
-        
-        # Priority 3: Extract quantitative phrases ("8 glasses", "5G")
-        quant_phrases = re.findall(r"\b\d+[A-Za-z]*\s+\w+|\b[0-9]+G\b", claim)
-        
-        # Combine with priority order
-        seen = set()
-        terms = []
-        for term in critical_terms + proper_nouns[:2] + quant_phrases[:1]:
-            term_lower = term.lower().strip()
-            if term_lower and term_lower not in seen and len(term_lower) > 1:
-                seen.add(term_lower)
-                terms.append(term)
-        
-        if terms:
-            return " ".join(terms[:6])
-    
-    # Fallback: return original claim
-    return claim
+# build_search_query function removed - now handled by LLM in detect_intent()
 
 
 # ==========================================================================
@@ -500,45 +409,94 @@ def rank_sentences(claim: str, sentences: List[str]) -> List[Tuple[str, float]]:
 
 def collect_evidence(
     claim: str,
+    google_query: str,
+    newsapi_query: str,
     num_google: int = 5,
     num_news: int = 5,
-    top_k: int = 10
+    top_k: int = 10,
+    enabled_providers: Optional[List[str]] = None
 ) -> List[Dict[str, Any]]:
     """
     Complete evidence collection pipeline.
     
-    1. Build search query from claim
-    2. Search Google + NewsAPI
-    3. Scrape articles
-    4. Extract and rank sentences
-    5. Return top-k evidence items
+    1. Search enabled providers (Google, NewsAPI) using provider-specific queries
+    2. Scrape articles
+    3. Extract and rank sentences
+    4. Return top-k evidence items
     
     Args:
-        claim: The claim to fact-check
+        claim: The claim to fact-check (for ranking)
+        google_query: Optimized search query for Google (from intent detection)
+        newsapi_query: Optimized search query for NewsAPI (from intent detection)
         num_google: Number of Google results
         num_news: Number of NewsAPI results
         top_k: Number of top evidence items to return
+        enabled_providers: List of enabled search providers ['google', 'newsapi'].
+                          Defaults to both if None. At least one must be enabled.
         
     Returns:
         List of evidence dicts with 'text', 'url', 'source', 'score' keys
+        
+    Raises:
+        EvidenceError: If no providers are enabled or all searches fail
     """
     logger.info(f"[EVIDENCE] Collecting evidence for: {claim[:100]}...")
     
-    # Build optimized search query
-    query = build_search_query(claim)
-    logger.debug(f"[EVIDENCE] Search query: {query}")
+    # Validate and normalize enabled providers
+    if enabled_providers is None:
+        enabled_providers = ['google', 'newsapi']
+    else:
+        # Normalize to lowercase
+        enabled_providers = [p.lower() for p in enabled_providers if p]
+        
+        # Validate at least one provider is enabled
+        if not enabled_providers:
+            raise EvidenceError("At least one search provider must be enabled")
+        
+        # Validate only known providers
+        known_providers = {'google', 'newsapi'}
+        invalid = [p for p in enabled_providers if p not in known_providers]
+        if invalid:
+            logger.warning(f"[EVIDENCE] Unknown providers ignored: {invalid}")
+            enabled_providers = [p for p in enabled_providers if p in known_providers]
+            
+            if not enabled_providers:
+                raise EvidenceError(f"No valid search providers specified. Valid options: {known_providers}")
     
-    # Search both sources
-    try:
-        google_results = search_google(query, num_google)
-    except SearchError as e:
-        logger.error(f"[EVIDENCE] Google search failed: {e}")
-        google_results = []
+    logger.info(f"[EVIDENCE] Enabled providers: {enabled_providers}")
+    logger.debug(f"[EVIDENCE] Google query: {google_query[:100]}, NewsAPI query: {newsapi_query[:100]}")
     
-    news_results = search_newsapi(query, num_news)
+    # Search enabled providers using provider-specific queries
+    google_results = []
+    news_results = []
+    
+    if 'google' in enabled_providers:
+        try:
+            google_results = search_google(google_query, num_google)
+            logger.info(f"[SEARCH] Google returned {len(google_results)} results (query: {google_query[:50]}...)")
+        except SearchError as e:
+            logger.error(f"[EVIDENCE] Google search failed: {e}")
+    else:
+        logger.info("[SEARCH] Google search disabled")
+    
+    if 'newsapi' in enabled_providers:
+        try:
+            news_results = search_newsapi(newsapi_query, num_news)
+            logger.info(f"[SEARCH] NewsAPI returned {len(news_results)} results (query: {newsapi_query[:50]}...)")
+        except Exception as e:
+            logger.error(f"[EVIDENCE] NewsAPI search failed: {e}")
+    else:
+        logger.info("[SEARCH] NewsAPI search disabled")
     
     all_results = google_results + news_results
-    logger.info(f"[EVIDENCE] Found {len(all_results)} articles")
+    
+    # Validate we got at least some results
+    if not all_results:
+        error_msg = "No search results obtained from any enabled provider"
+        logger.error(f"[EVIDENCE] {error_msg}")
+        raise EvidenceError(error_msg)
+    
+    logger.info(f"[EVIDENCE] Found {len(all_results)} articles total")
     
     # Scrape articles and extract sentences
     all_sentences = []
@@ -586,7 +544,6 @@ def collect_evidence(
 __all__ = [
     "search_google",
     "search_newsapi",
-    "build_search_query",
     "scrape_article",
     "extract_sentences",
     "rank_sentences",

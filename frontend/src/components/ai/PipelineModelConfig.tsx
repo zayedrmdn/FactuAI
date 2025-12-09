@@ -36,8 +36,8 @@ const taskConfig: Record<
   }
 > = {
   intent: {
-    label: 'Intent Detection',
-    description: 'Quick classification of input type',
+    label: 'Intent & Query Detection',
+    description: 'Classify input type and generate search query',
     icon: Zap,
     color: 'text-yellow-500',
   },

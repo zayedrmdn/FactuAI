@@ -132,9 +132,42 @@ def process_factcheck():
     provider = data.get("provider")
     model_id = data.get("model_id")
     pipeline_models = _build_stage_models(data.get("pipeline_models") or {}, provider, model_id)
+    
+    # Parse and validate search provider settings
+    enabled_search_providers = data.get("enabled_search_providers")
+    if enabled_search_providers is not None:
+        # Validate at least one provider is enabled
+        if not enabled_search_providers or not isinstance(enabled_search_providers, list):
+            return create_error_response("enabled_search_providers must be a non-empty list", 400)
+        
+        # Normalize and validate providers
+        enabled_search_providers = [p.lower() for p in enabled_search_providers if isinstance(p, str)]
+        valid_providers = {'google', 'newsapi'}
+        enabled_search_providers = [p for p in enabled_search_providers if p in valid_providers]
+        
+        if not enabled_search_providers:
+            return create_error_response(
+                f"At least one valid search provider must be enabled. Valid options: {valid_providers}",
+                400
+            )
+    
+    # Parse and validate search result limits
+    num_google = data.get("num_google", 5)
+    num_news = data.get("num_news", 5)
+    
+    # Validate and clamp limits to safe ranges
+    try:
+        num_google = max(1, min(10, int(num_google)))
+    except (ValueError, TypeError):
+        num_google = 5
+    
+    try:
+        num_news = max(1, min(100, int(num_news)))
+    except (ValueError, TypeError):
+        num_news = 5
 
     logger.info(
-        f"[API_REQUEST] POST /api/process | provider={provider} | model={model_id} | progressive={progressive} | include_summary={include_summary}"
+        f"[API_REQUEST] POST /api/process | provider={provider} | model={model_id} | progressive={progressive} | include_summary={include_summary} | search_providers={enabled_search_providers or 'default'} | num_google={num_google} | num_news={num_news}"
     )
 
     if progressive:
@@ -145,6 +178,9 @@ def process_factcheck():
                     max_claims=max_claims,
                     llm=provider,
                     pipeline_models=pipeline_models,
+                    enabled_search_providers=enabled_search_providers,
+                    num_google=num_google,
+                    num_news=num_news,
                 ):
                     if not include_summary and event.get("type") == "summary":
                         continue
@@ -177,6 +213,9 @@ def process_factcheck():
             max_claims=max_claims,
             llm=provider,
             pipeline_models=pipeline_models,
+            enabled_search_providers=enabled_search_providers,
+            num_google=num_google,
+            num_news=num_news,
         )
         
         # Normalize results to include 'label' field

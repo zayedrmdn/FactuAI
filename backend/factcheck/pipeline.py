@@ -50,15 +50,99 @@ PHASE_VERIFYING_CLAIM = "Verifying claim..."
 PHASE_COLLECTING_EVIDENCE = "Collecting evidence..."
 
 
-# ==========================================================================
-# Intent Detection
-# ==========================================================================
-
-def detect_intent(text: str, llm: str = None, model_id: str = None) -> str:
+def extract_fallback_from_text(text: str) -> Optional[Dict[str, str]]:
     """
-    Detect the intent/type of input text.
+    Extract intent and queries from plain text response when JSON parsing fails.
     
-    Categories:
+    Args:
+        text: Raw LLM response text
+        
+    Returns:
+        Dict with intent, google_query, newsapi_query or None if extraction fails
+    """
+    try:
+        text_lower = text.lower()
+        
+        # Extract intent
+        intent = "fact_claim"  # default
+        for intent_type in ["fact_claim", "fact_question", "news_paragraph", "multi_claim", "opinion", "nonsense", "instructional"]:
+            if intent_type in text_lower:
+                intent = intent_type
+                break
+        
+        # Extract queries - look for patterns like "google_query:" or "newsapi_query:"
+        google_query = ""
+        newsapi_query = ""
+        
+        lines = text.split('\n')
+        for line in lines:
+            line = line.strip()
+            if line.startswith('google_query:') or 'google_query' in line.lower():
+                google_query = line.split(':', 1)[1].strip() if ':' in line else line
+            elif line.startswith('newsapi_query:') or 'newsapi_query' in line.lower():
+                newsapi_query = line.split(':', 1)[1].strip() if ':' in line else line
+        
+        # If no explicit queries found, try to extract from the text
+        quotes = []
+        if not google_query:
+            # Look for quoted strings or comma-separated terms
+            import re
+            quotes = re.findall(r'"([^"]*)"', text)
+            if quotes:
+                google_query = quotes[0]
+        
+        if not newsapi_query and quotes and len(quotes) > 1:
+            newsapi_query = quotes[1]
+        
+        # For reasoning models, try to find JSON at the end of the text
+        if not google_query or not newsapi_query:
+            # Look for JSON-like structure at the end
+            last_brace = text.rfind('{')
+            if last_brace != -1:
+                end_brace = text.find('}', last_brace)
+                if end_brace != -1:
+                    potential_json = text[last_brace:end_brace + 1]
+                    try:
+                        import json
+                        parsed = json.loads(potential_json)
+                        if 'google_query' in parsed:
+                            google_query = parsed.get('google_query', google_query)
+                        if 'newsapi_query' in parsed:
+                            newsapi_query = parsed.get('newsapi_query', newsapi_query)
+                        if 'intent' in parsed:
+                            intent = parsed.get('intent', intent)
+                    except json.JSONDecodeError:
+                        pass
+        
+        # Fallback: use first line after intent as query
+        if not google_query:
+            for line in lines:
+                line = line.strip()
+                if len(line) > 10 and not any(word in line.lower() for word in ['intent', 'query', 'output', 'format', 'let me', 'analyze', 'input text']):
+                    google_query = line
+                    break
+        
+        # Ensure we have valid queries
+        if len(google_query.split()) < 2:
+            google_query = text_stripped[:200] if 'text_stripped' in globals() else text[:200]
+        if len(newsapi_query.split()) < 2:
+            newsapi_query = google_query  # Use same as google if newsapi extraction failed
+        
+        return {
+            "intent": intent,
+            "google_query": google_query,
+            "newsapi_query": newsapi_query
+        }
+        
+    except Exception as e:
+        logger.warning(f"[INTENT] Fallback extraction failed: {e}")
+        return None
+
+def detect_intent(text: str, llm: str = None, model_id: str = None) -> Dict[str, str]:
+    """
+    Detect intent and generate optimized search queries in a single LLM call.
+    
+    Intent categories:
     - fact_claim: Single factual claim
     - fact_question: Question about facts
     - news_paragraph: News article or paragraph with multiple claims
@@ -70,86 +154,173 @@ def detect_intent(text: str, llm: str = None, model_id: str = None) -> str:
     Args:
         text: Input text to classify
         llm: Optional LLM provider (uses default if None)
+        model_id: Optional model identifier
         
     Returns:
-        Intent category string
+        Dict with keys: 'intent', 'google_query', 'newsapi_query'
     """
-    logger.debug(f"[INTENT] Detecting intent for: {text[:100]}...")
+    logger.debug(f"[INTENT] Detecting intent and building queries for: {text[:100]}...")
     
-    # Quick heuristics
+    # Quick heuristics for simple cases
     text_stripped = text.strip()
     
     if not text_stripped or len(text_stripped) < 5:
-        return "nonsense"
-    
-    if text_stripped.endswith("?"):
-        return "fact_question"
+        fallback_query = text_stripped[:200] if text_stripped else ""
+        return {"intent": "nonsense", "google_query": fallback_query, "newsapi_query": fallback_query}
     
     text_lower = text_stripped.lower()
-    word_count = len(text_stripped.split())
-    sentence_count = len([s for s in text_stripped.split('.') if s.strip()])
     
-    # Opinion markers
-    opinion_markers = [
-        "i think", "i believe", "in my opinion", "i feel", "should", "ought to"
-    ]
+    # Quick opinion/instructional detection - skip LLM call
+    opinion_markers = ["i think", "i believe", "in my opinion", "i feel", "should", "ought to"]
     if any(marker in text_lower for marker in opinion_markers):
-        return "opinion"
+        return {"intent": "opinion", "google_query": text_stripped[:200], "newsapi_query": text_stripped[:200]}
     
-    # Instructional markers
     instructional_markers = ["how to", "step 1", "first,", "next,", "finally,"]
     if any(marker in text_lower for marker in instructional_markers):
-        return "instructional"
+        return {"intent": "instructional", "google_query": text_stripped[:200], "newsapi_query": text_stripped[:200]}
     
-    # Multi-claim detection: check for multiple sentences or very long text
-    # Single claim: 1-3 sentences, under 200 words
-    # News paragraph: 4+ sentences or 200+ words
-    if sentence_count >= 4 or word_count > 200:
-        return "news_paragraph"
-    
-    # If 2-3 sentences and contains explicit listing markers, might be multi_claim
-    # "and" is too common, so we remove it from the heuristic to avoid unnecessary LLM calls
-    if sentence_count >= 2 and any(marker in text_lower for marker in ['; ', 'also', 'additionally', 'furthermore', 'firstly', 'secondly']):
-        # Use LLM to decide between fact_claim and multi_claim
-        pass  # Fall through to LLM
-    elif sentence_count <= 3 and word_count < 100:
-        # Short text with few sentences = single claim
-        return "fact_claim"
-    
-    # Use LLM for complex cases
+    # Use LLM for intent + search queries extraction
     try:
-        system = """Classify the input text into ONE of these categories:
-- fact_claim: A single factual claim that can be verified
-- news_paragraph: A news article or paragraph with multiple claims
-- multi_claim: Multiple distinct factual claims
-- opinion: Subjective opinion or belief
-- nonsense: Unclear, incoherent, or invalid input
+        system = """You must output valid JSON only. No explanations, no markdown, no extra text.
 
-Respond with ONLY the category name."""
-        
-        # Dynamic token limit: base 200 + 300 buffer for reasoning models
-        dynamic_max_tokens = min(800, max(200, len(text_stripped) // 2 + 300))
+IMPORTANT: For reasoning models, show your analysis in the reasoning field, then output ONLY the JSON at the very end.
+
+Output format:
+{
+  "intent": "fact_claim",
+  "google_query": "covid vaccine microchip tracking conspiracy debunk",
+  "newsapi_query": "covid vaccine microchip"
+}
+
+Rules:
+1. intent must be one of: fact_claim, fact_question, news_paragraph, multi_claim, opinion, nonsense, instructional
+
+2. google_query: 4-8 optimized search terms for Google (multiword phrases allowed, lowercase, no punctuation)
+
+3. newsapi_query: 3-6 shorter keywords for NewsAPI (minimal multiword, lowercase, no punctuation)
+
+4. Extract only essential concepts and entities from the input text.
+
+Output JSON only at the end."""
         
         response = llm_client.chat(
             system,
             f"Text: {text_stripped}",
             provider=llm,
             model_id=model_id,
-            max_tokens=dynamic_max_tokens,
+            max_tokens=300,  # Increased from 150 to prevent truncation
+            temperature=0.3,
         )
-        response_clean = response.strip().lower()
         
-        valid_intents = ["fact_claim", "fact_question", "news_paragraph", "multi_claim", "opinion", "nonsense", "instructional"]
-        for intent in valid_intents:
-            if intent in response_clean:
-                logger.debug(f"[INTENT] Detected: {intent}")
-                return intent
+        # Parse JSON response with robust error handling for reasoning models
+        import json
+        response_clean = response.strip()
+        
+        # Handle various LLM response formats, especially reasoning models
+        # 1. First, try to extract JSON from the end of reasoning text
+        # Reasoning models often put the final answer at the end
+        if not response_clean.startswith('{'):
+            # Look for JSON at the end of the response
+            last_brace = response_clean.rfind('{')
+            if last_brace != -1:
+                # Try to find the matching closing brace
+                brace_count = 0
+                end_pos = last_brace
+                for i in range(last_brace, len(response_clean)):
+                    if response_clean[i] == '{':
+                        brace_count += 1
+                    elif response_clean[i] == '}':
+                        brace_count -= 1
+                        if brace_count == 0:
+                            end_pos = i + 1
+                            break
                 
+                if end_pos > last_brace:
+                    potential_json = response_clean[last_brace:end_pos]
+                    try:
+                        result = json.loads(potential_json)
+                        logger.debug(f"[INTENT] Extracted JSON from end of reasoning text")
+                        response_clean = potential_json  # Use the extracted JSON
+                    except json.JSONDecodeError:
+                        pass  # Continue with other parsing attempts
+        
+        # 2. Handle markdown code blocks
+        if response_clean.startswith('```'):
+            # Extract content between first and last ```
+            parts = response_clean.split('```')
+            if len(parts) >= 3:
+                # Find JSON block (might be labeled as json)
+                for part in parts[1:-1]:  # Skip first and last empty parts
+                    part = part.strip()
+                    if part.startswith('json'):
+                        part = part[4:].strip()
+                    if part.startswith('{') and part.endswith('}'):
+                        response_clean = part
+                        break
+                else:
+                    # If no labeled json block, take the first code block
+                    response_clean = parts[1].strip()
+                    if response_clean.startswith('json'):
+                        response_clean = response_clean[4:].strip()
+            else:
+                # Malformed markdown, try to extract JSON anyway
+                response_clean = response_clean.replace('```', '').strip()
+        
+        # 3. Try to find JSON object anywhere in the response
+        json_start = response_clean.find('{')
+        json_end = response_clean.rfind('}') + 1
+        
+        if json_start != -1 and json_end > json_start:
+            potential_json = response_clean[json_start:json_end]
+            try:
+                result = json.loads(potential_json)
+                response_clean = potential_json  # Use the extracted JSON
+            except json.JSONDecodeError:
+                # If extraction fails, try the whole response
+                pass
+        
+        # 4. Final JSON parsing
+        try:
+            result = json.loads(response_clean)
+        except json.JSONDecodeError as e:
+            logger.warning(f"[INTENT] Failed to parse JSON response: {e}")
+            logger.debug(f"[INTENT] Raw response (first 500 chars): {response[:500]}...")
+            logger.debug(f"[INTENT] Cleaned response (first 500 chars): {response_clean[:500]}...")
+            # Try to extract key information from raw response as fallback
+            fallback_result = extract_fallback_from_text(response)
+            if fallback_result:
+                logger.info(f"[INTENT] Using fallback extraction: {fallback_result}")
+                result = fallback_result
+            else:
+                raise  # Re-raise to trigger outer fallback
+        
+        # Validate intent
+        valid_intents = ["fact_claim", "fact_question", "news_paragraph", "multi_claim", "opinion", "nonsense", "instructional"]
+        intent = result.get("intent", "fact_claim").lower()
+        if intent not in valid_intents:
+            intent = "fact_claim"
+        
+        google_query = result.get("google_query", "").strip()
+        newsapi_query = result.get("newsapi_query", "").strip()
+        
+        # Fallback to original text if queries are too short
+        fallback_query = text_stripped[:200]
+        if len(google_query.split()) < 2:
+            google_query = fallback_query
+        if len(newsapi_query.split()) < 2:
+            newsapi_query = fallback_query
+        
+        logger.debug(f"[INTENT] Detected: {intent}, Google: {google_query[:50]}..., NewsAPI: {newsapi_query[:50]}...")
+        return {"intent": intent, "google_query": google_query, "newsapi_query": newsapi_query}
+                
+    except json.JSONDecodeError as e:
+        logger.warning(f"[INTENT] Failed to parse JSON response: {e}")
+        fallback_query = text_stripped[:200]
+        return {"intent": "fact_claim", "google_query": fallback_query, "newsapi_query": fallback_query}
     except Exception as e:
-        logger.warning(f"[INTENT] LLM classification failed: {e}")
-    
-    # Default fallback
-    return "fact_claim"
+        logger.warning(f"[INTENT] LLM call failed: {e}")
+        fallback_query = text_stripped[:200]
+        return {"intent": "fact_claim", "google_query": fallback_query, "newsapi_query": fallback_query}
 
 
 # ==========================================================================
@@ -266,17 +437,38 @@ def summarize_input(text: str, llm: str = None, model_id: str = None, max_tokens
 Be objective and neutral. Focus on WHAT is being claimed, not whether it's true."""
     
     try:
-        response = llm_client.chat(
-            system,
-            f"Text:\n{text}",
-            provider=llm,
-            model_id=model_id,
-            max_tokens=max_tokens,
-        )
+        # Retry logic for LLM calls
+        response = None
+        max_retries = 2
+        for attempt in range(max_retries):
+            try:
+                response = llm_client.chat(
+                    system,
+                    f"Text:\n{text}",
+                    provider=llm,
+                    model_id=model_id,
+                    max_tokens=max_tokens,
+                    temperature=0.5,  # Moderate temperature for summaries
+                )
+                
+                # Validate response quality
+                if response and len(response.strip()) >= 30:
+                    break  # Good response received
+                else:
+                    logger.warning(f"[SUMMARY] Attempt {attempt + 1}/{max_retries}: Response too short ({len(response) if response else 0} chars)")
+                    if attempt < max_retries - 1:
+                        continue
+                        
+            except Exception as e:
+                logger.error(f"[SUMMARY] Attempt {attempt + 1}/{max_retries} failed: {e}")
+                if attempt < max_retries - 1:
+                    continue
+                else:
+                    response = None
         
-        # Handle empty responses gracefully
-        if not response or not response.strip():
-            logger.warning("[SUMMARY] Empty response, using fallback")
+        # Handle empty or invalid responses gracefully
+        if not response or len(response.strip()) < 20:
+            logger.warning("[SUMMARY] LLM returned invalid response after retries, using fallback")
             # Return first sentence as fallback
             for end in ['. ', '! ', '? ']:
                 idx = text.find(end)
@@ -366,23 +558,28 @@ Keep it factual, neutral, and concise. Avoid repetition."""
 
 def verify_claim(
     claim: str,
+    google_query: str,
+    newsapi_query: str,
     llm: str = None,
     model_id: str = None,
     num_google: int = 5,
     num_news: int = 5,
     top_k: int = 10,
-    original_context: str = None
+    enabled_search_providers: Optional[List[str]] = None
 ) -> Dict[str, Any]:
     """
     Verify a single claim by collecting evidence and generating verdict.
     
     Args:
         claim: The specific claim to verify
-        original_context: Optional original text for better search context
+        google_query: Optimized search query for Google (from intent detection)
+        newsapi_query: Optimized search query for NewsAPI (from intent detection)
         llm: Optional LLM provider
+        model_id: Optional model identifier
         num_google: Number of Google results
         num_news: Number of NewsAPI results
         top_k: Number of top evidence items
+        enabled_search_providers: List of enabled providers ['google', 'newsapi']
         
     Returns:
         Dict with 'verdict', 'confidence', 'reasoning', 'evidence', 'sources'
@@ -390,15 +587,15 @@ def verify_claim(
     logger.info(f"[VERIFY] Checking claim: {claim[:100]}...")
     
     try:
-        # Use original context for search if available (better keywords)
-        search_text = original_context if original_context and len(original_context) > len(claim) else claim
-        
-        # Collect evidence
+        # Collect evidence using the provider-specific queries
         evidence_items = evidence.collect_evidence(
-            search_text,
+            claim,
+            google_query=google_query,
+            newsapi_query=newsapi_query,
             num_google=num_google,
             num_news=num_news,
-            top_k=top_k
+            top_k=top_k,
+            enabled_providers=enabled_search_providers
         )
         
         if not evidence_items:
@@ -437,24 +634,48 @@ Evidence:
         
         # Dynamic token limit based on evidence size
         evidence_token_estimate = len(evidence_text) // 3
-        dynamic_max_tokens = min(1500, max(600, evidence_token_estimate + 500))
+        dynamic_max_tokens = min(2000, max(800, evidence_token_estimate + 500))
         
-        response = llm_client.chat(
-            system,
-            user_msg,
-            provider=llm,
-            model_id=model_id,
-            max_tokens=dynamic_max_tokens,
-        )
+        # Retry logic for LLM calls with error handling
+        response = None
+        max_retries = 2
+        for attempt in range(max_retries):
+            try:
+                response = llm_client.chat(
+                    system,
+                    user_msg,
+                    provider=llm,
+                    model_id=model_id,
+                    max_tokens=dynamic_max_tokens,
+                    temperature=0.3,  # Lower temperature for more consistent factual analysis
+                )
+                
+                # Validate response quality
+                if response and len(response.strip()) >= 50:
+                    break  # Good response received
+                else:
+                    logger.warning(f"[VERIFY] Attempt {attempt + 1}/{max_retries}: Response too short ({len(response) if response else 0} chars)")
+                    if attempt < max_retries - 1:
+                        # Retry with adjusted parameters
+                        dynamic_max_tokens = min(2500, dynamic_max_tokens + 500)
+                        continue
+                    
+            except Exception as e:
+                logger.error(f"[VERIFY] Attempt {attempt + 1}/{max_retries} failed: {e}")
+                if attempt < max_retries - 1:
+                    continue
+                else:
+                    # Final attempt failed, return unverifiable
+                    response = None
         
-        # Handle empty responses gracefully
-        if not response or not response.strip():
-            logger.warning("[VERIFY] Empty LLM response, returning unverifiable")
+        # Handle empty or invalid responses gracefully
+        if not response or len(response.strip()) < 20:
+            logger.warning("[VERIFY] LLM returned invalid response after retries, returning unverifiable")
             return {
                 "verdict": "UNVERIFIABLE",
                 "label": "unverifiable",
                 "confidence": 0.3,
-                "reasoning": "Unable to analyze evidence - no model response received.",
+                "reasoning": "Unable to analyze evidence - model did not provide a valid response. Please try a different model.",
                 "evidence": evidence_items,
                 "sources": [],
                 "source_quotes": []
@@ -531,6 +752,9 @@ def check_text(
     max_claims: int = 5,
     llm: str = None,
     pipeline_models: Optional[Dict[str, Dict[str, str]]] = None,
+    enabled_search_providers: Optional[List[str]] = None,
+    num_google: int = 5,
+    num_news: int = 5,
 ) -> Dict[str, Any]:
     """
     Complete fact-checking pipeline for text input.
@@ -539,6 +763,10 @@ def check_text(
         text: Input text to fact-check
         max_claims: Maximum claims to extract for multi-claim inputs
         llm: Optional LLM provider
+        pipeline_models: Per-stage model configuration
+        enabled_search_providers: List of enabled search providers ['google', 'newsapi']
+        num_google: Number of Google results to fetch
+        num_news: Number of NewsAPI results to fetch
         
     Returns:
         Dict with 'summary', 'results', optional 'validation_error'
@@ -552,14 +780,17 @@ def check_text(
         reasoning_cfg = models["reasoning"]
         summary_cfg = models["summary"]
 
-        # Detect intent
-        _log_model_usage("intent_detection", intent_cfg.get("provider", llm), intent_cfg.get("model_id"))
-        intent = detect_intent(
+        # Detect intent and extract search queries
+        _log_model_usage("intent_query_detection", intent_cfg.get("provider", llm), intent_cfg.get("model_id"))
+        detection_result = detect_intent(
             text,
             llm=intent_cfg.get("provider", llm),
             model_id=intent_cfg.get("model_id"),
         )
-        logger.info(f"[PIPELINE] Detected intent: {intent}")
+        intent = detection_result["intent"]
+        google_query = detection_result["google_query"]
+        newsapi_query = detection_result["newsapi_query"]
+        logger.info(f"[PIPELINE] Detected intent: {intent}, Google: {google_query[:50]}..., NewsAPI: {newsapi_query[:50]}...")
         
         # Handle non-verifiable inputs
         if intent in ["opinion", "nonsense", "instructional"]:
@@ -584,8 +815,13 @@ def check_text(
             _log_model_usage("verify_single", reasoning_cfg.get("provider", llm), reasoning_cfg.get("model_id"))
             result = verify_claim(
                 text,
+                google_query,
+                newsapi_query,
                 llm=reasoning_cfg.get("provider", llm),
                 model_id=reasoning_cfg.get("model_id"),
+                enabled_search_providers=enabled_search_providers,
+                num_google=num_google,
+                num_news=num_news,
             )
             return {
                 "summary": summary,
@@ -615,12 +851,14 @@ def check_text(
                 _log_model_usage("verify_claim", reasoning_cfg.get("provider", llm), reasoning_cfg.get("model_id"))
                 result = verify_claim(
                     claim,
+                    google_query,
+                    newsapi_query,
                     llm=reasoning_cfg.get("provider", llm),
                     model_id=reasoning_cfg.get("model_id"),
-                    num_google=3,
-                    num_news=2,
-                    top_k=5,
-                    original_context=text  # Pass original text for better search
+                    num_google=num_google,
+                    num_news=num_news,
+                    top_k=10,
+                    enabled_search_providers=enabled_search_providers,
                 )
                 results.append({"claim": claim, **result})
             
@@ -633,8 +871,11 @@ def check_text(
             _log_model_usage("verify_single", reasoning_cfg.get("provider", llm), reasoning_cfg.get("model_id"))
             result = verify_claim(
                 text,
+                google_query,
+                newsapi_query,
                 llm=reasoning_cfg.get("provider", llm),
                 model_id=reasoning_cfg.get("model_id"),
+                enabled_search_providers=enabled_search_providers,
             )
             return {
                 "summary": summary,
@@ -655,6 +896,9 @@ def check_text_stream(
     max_claims: int = 5,
     llm: str = None,
     pipeline_models: Optional[Dict[str, Dict[str, str]]] = None,
+    enabled_search_providers: Optional[List[str]] = None,
+    num_google: int = 5,
+    num_news: int = 5,
 ) -> Generator[Dict[str, Any], None, None]:
     """
     Streaming version of check_text that yields progress events.
@@ -669,6 +913,10 @@ def check_text_stream(
         text: Input text
         max_claims: Maximum claims to extract
         llm: Optional LLM provider
+        pipeline_models: Per-stage model configuration
+        enabled_search_providers: List of enabled search providers ['google', 'newsapi']
+        num_google: Number of Google results to fetch
+        num_news: Number of NewsAPI results to fetch
     """
     try:
         models = _resolve_models(pipeline_models, fallback_provider=llm, fallback_model=None)
@@ -680,12 +928,15 @@ def check_text_stream(
         # Intent detection
         yield {"type": "phase", "message": PHASE_DETECTING_INTENT, "progress": 5}
         _log_model_usage("intent_detection", intent_cfg.get("provider", llm), intent_cfg.get("model_id"))
-        intent = detect_intent(
+        detection_result = detect_intent(
             text,
             llm=intent_cfg.get("provider", llm),
             model_id=intent_cfg.get("model_id"),
         )
-        logger.info(f"[PIPELINE] Detected intent: {intent}")
+        intent = detection_result["intent"]
+        google_query = detection_result["google_query"]
+        newsapi_query = detection_result["newsapi_query"]
+        logger.info(f"[PIPELINE] Detected intent: {intent}, Google: {google_query[:50]}..., NewsAPI: {newsapi_query[:50]}...")
         
         if intent in ["opinion", "nonsense", "instructional"]:
             yield {
@@ -711,8 +962,11 @@ def check_text_stream(
             _log_model_usage("verify_single", reasoning_cfg.get("provider", llm), reasoning_cfg.get("model_id"))
             result = verify_claim(
                 text,
+                google_query,
+                newsapi_query,
                 llm=reasoning_cfg.get("provider", llm),
                 model_id=reasoning_cfg.get("model_id"),
+                enabled_search_providers=enabled_search_providers,
             )
             yield {"type": "result", "result": {"claim": text, **result}}
         
@@ -749,12 +1003,13 @@ def check_text_stream(
                 _log_model_usage("verify_claim", reasoning_cfg.get("provider", llm), reasoning_cfg.get("model_id"))
                 result = verify_claim(
                     claim,
+                    search_query,
                     llm=reasoning_cfg.get("provider", llm),
                     model_id=reasoning_cfg.get("model_id"),
-                    num_google=3,
-                    num_news=2,
-                    top_k=5,
-                    original_context=text
+                    num_google=num_google,
+                    num_news=num_news,
+                    top_k=10,
+                    enabled_search_providers=enabled_search_providers,
                 )
                 yield {"type": "result", "result": {"claim": claim, **result}, "claim_index": i + 1}
         
@@ -763,8 +1018,13 @@ def check_text_stream(
             _log_model_usage("verify_single", reasoning_cfg.get("provider", llm), reasoning_cfg.get("model_id"))
             result = verify_claim(
                 text,
+                google_query,
+                newsapi_query,
                 llm=reasoning_cfg.get("provider", llm),
                 model_id=reasoning_cfg.get("model_id"),
+                enabled_search_providers=enabled_search_providers,
+                num_google=num_google,
+                num_news=num_news,
             )
             yield {"type": "result", "result": {"claim": text, **result}}
 

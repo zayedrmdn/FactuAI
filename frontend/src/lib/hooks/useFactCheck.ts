@@ -232,6 +232,14 @@ export function useFactCheck() {
     const summaryModel = getModelById(pipelineModels.summary.modelId);
     const reasoningModel = getModelById(pipelineModels.reasoning.modelId);
 
+    // Get search providers configuration
+    const { useSearchProvidersStore } = await import('@/stores/search-providers-store');
+    const enabledSearchProviders = useSearchProvidersStore.getState().getEnabledProviders();
+
+    // Get search limits configuration
+    const { useSearchLimitsStore } = await import('@/stores/search-limits-store');
+    const { numGoogle, numNews } = useSearchLimitsStore.getState();
+
     // Compute effective model config with session overrides
     const temperature =
       selection.sessionOverrides?.temperature ?? baseModel?.defaultTemperature ?? 0.7;
@@ -253,6 +261,11 @@ export function useFactCheck() {
       max_tokens: maxTokens,
       top_p: topP,
       system_prompt: systemPrompt,
+      // Search providers configuration
+      enabled_search_providers: enabledSearchProviders,
+      // Search result limits
+      num_google: numGoogle,
+      num_news: numNews,
       // Pipeline-specific model configuration
       pipeline_models: {
         intent: {
@@ -283,6 +296,8 @@ export function useFactCheck() {
     console.log('   Model:', requestPayload.model_display_name);
     console.log('   Temperature:', requestPayload.temperature);
     console.log('   Max Tokens:', requestPayload.max_tokens);
+    console.log('   Search Providers:', enabledSearchProviders.join(', '));
+    console.log('   Search Limits: Google =', numGoogle, '| NewsAPI =', numNews);
     console.log('   Pipeline Models:');
     console.log(
       '     ⚡ Intent:',

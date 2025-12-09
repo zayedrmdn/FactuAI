@@ -11,6 +11,7 @@ export interface FactCheckResult {
   evidence: string;
   sources: string[];
   explanation?: string;
+  reasoning?: string;
   source_quotes?: SourceQuote[];
 }
 
