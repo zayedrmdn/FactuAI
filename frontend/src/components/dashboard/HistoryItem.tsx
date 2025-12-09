@@ -60,8 +60,13 @@ export default function HistoryItem({
   const getOverallAssessment = () => {
     if (!item.results?.length) return null;
 
-    // Simple heuristic: if any claim is false, flag as false. Otherwise use majority.
-    const verdicts = item.results.map((r) => r.label);
+    // Normalize verdict strings defensively; avoid undefined .includes
+    const verdicts = item.results
+      .map((r) => (typeof r.label === 'string' ? r.label.toLowerCase() : ''))
+      .filter((v) => v.length > 0);
+
+    if (verdicts.length === 0) return VERDICT_CONFIG['unknown'];
+
     if (verdicts.some((v) => v.includes('false'))) return VERDICT_CONFIG['false'];
     if (verdicts.some((v) => v.includes('half') || v.includes('barely')))
       return VERDICT_CONFIG['half_true'];

@@ -12,6 +12,7 @@ Uses simple functions instead of class hierarchies.
 import os
 from typing import Optional, Dict, Any
 from utils.logging import get_logger
+import time
 from utils.helpers import LLMClientError
 
 logger = get_logger(__name__)
@@ -38,9 +39,8 @@ def _init_openrouter():
             base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
             api_key=api_key,
         )
-        model = os.getenv("OPENROUTER_MODEL", "anthropic/claude-3-haiku")
-        logger.info(f"[OPENROUTER] Initialized with model: {model}")
-        return {"client": client, "model": model}
+        logger.info("[OPENROUTER] Initialized (model selection from frontend)")
+        return {"client": client, "model": None}  # Model comes from frontend
     except Exception as e:
         logger.error(f"[OPENROUTER] Failed to initialize: {e}")
         return None
@@ -59,9 +59,8 @@ def _init_nvidia():
             base_url=os.getenv("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1"),
             api_key=api_key,
         )
-        model = os.getenv("NVIDIA_MODEL", "meta/llama-3.1-8b-instruct")
-        logger.info(f"[NVIDIA] Initialized with model: {model}")
-        return {"client": client, "model": model}
+        logger.info("[NVIDIA] Initialized (model selection from frontend)")
+        return {"client": client, "model": None}  # Model comes from frontend
     except Exception as e:
         logger.error(f"[NVIDIA] Failed to initialize: {e}")
         return None
@@ -163,6 +162,7 @@ def get_provider(provider: str = None) -> Optional[str]:
 def generate(
     prompt: str,
     provider: str = None,
+    model_id: str = None,
     max_tokens: int = 1024,
     temperature: float = 0.7,
     **kwargs
@@ -191,7 +191,7 @@ def generate(
     
     # Handle cloud providers (OpenRouter, Nvidia)
     if provider in ["openrouter", "nvidia"]:
-        return _generate_cloud(prompt, provider, max_tokens, temperature, **kwargs)
+        return _generate_cloud(prompt, provider, model_id, max_tokens, temperature, **kwargs)
     
     # Handle local provider
     elif provider == "local":
@@ -204,6 +204,7 @@ def chat(
     system: str,
     user: str,
     provider: str = None,
+    model_id: str = None,
     max_tokens: int = 1024,
     temperature: float = 0.7,
     **kwargs
@@ -233,7 +234,7 @@ def chat(
     
     # Handle cloud providers
     if provider in ["openrouter", "nvidia"]:
-        return _chat_cloud(system, user, provider, max_tokens, temperature, **kwargs)
+        return _chat_cloud(system, user, provider, model_id, max_tokens, temperature, **kwargs)
     
     # Handle local provider
     elif provider == "local":
@@ -246,26 +247,68 @@ def chat(
 # Provider-Specific Implementation
 # ==========================================================================
 
-def _generate_cloud(prompt: str, provider: str, max_tokens: int, temperature: float, **kwargs) -> str:
+def _generate_cloud(
+    prompt: str,
+    provider: str,
+    model_id: str,
+    max_tokens: int,
+    temperature: float,
+    **kwargs
+) -> str:
     """Generate using cloud provider (OpenRouter or Nvidia)."""
     client_data = _clients[provider]
     if not client_data:
         raise LLMClientError(f"{provider} not available")
     
+    if not model_id:
+        raise LLMClientError(f"{provider} requires model_id parameter (no default model configured)")
+    
+    selected_model = model_id
+    
     try:
+        start_time = time.time()
+        logger.debug(f"[{provider.upper()}] Sending request to {selected_model}...")
+        
         response = client_data["client"].chat.completions.create(
-            model=client_data["model"],
+            model=selected_model,
             messages=[{"role": "user", "content": prompt}],
             max_tokens=max_tokens,
             temperature=temperature,
             **kwargs
         )
         
+        elapsed = time.time() - start_time
+        
         if not response or not response.choices:
             raise LLMClientError(f"{provider} returned empty response")
         
-        result = response.choices[0].message.content
-        logger.debug(f"[{provider.upper()}] Generated {len(result)} chars")
+        message = response.choices[0].message
+        
+        # Handle reasoning models that output to reasoning field instead of content
+        result = message.content or ""
+        if not result and hasattr(message, 'reasoning') and message.reasoning:
+            result = message.reasoning.strip()
+            logger.debug(f"[{provider.upper()}] Extracted from reasoning field ({len(result)} chars): {result[:100]}...")
+        elif not result and hasattr(message, 'reasoning_details') and message.reasoning_details:
+            # Fallback: try to extract from reasoning_details
+            for detail in message.reasoning_details:
+                if 'text' in detail and detail['text']:
+                    result = detail['text'].strip()
+                    logger.debug(f"[{provider.upper()}] Extracted from reasoning_details ({len(result)} chars): {result[:100]}...")
+                    break
+        elif not result and hasattr(message, 'reasoning_details') and message.reasoning_details:
+            # Fallback: try to extract from reasoning_details
+            for detail in message.reasoning_details:
+                if 'text' in detail and detail['text']:
+                    result = detail['text'].strip()
+                    logger.debug(f"[{provider.upper()}] Extracted from reasoning_details ({len(result)} chars): {result[:100]}...")
+                    break
+        
+        logger.info(f"[{provider.upper()}] Generated {len(result)} chars using {selected_model} in {elapsed:.2f}s")
+        
+        if len(result) == 0:
+            logger.warning(f"[{provider.upper()}] Empty response from {selected_model}. Response object: {response}")
+        
         return result
         
     except Exception as e:
@@ -273,15 +316,31 @@ def _generate_cloud(prompt: str, provider: str, max_tokens: int, temperature: fl
         raise LLMClientError(f"{provider} generation failed: {e}")
 
 
-def _chat_cloud(system: str, user: str, provider: str, max_tokens: int, temperature: float, **kwargs) -> str:
+def _chat_cloud(
+    system: str,
+    user: str,
+    provider: str,
+    model_id: str,
+    max_tokens: int,
+    temperature: float,
+    **kwargs
+) -> str:
     """Chat using cloud provider (OpenRouter or Nvidia)."""
     client_data = _clients[provider]
     if not client_data:
         raise LLMClientError(f"{provider} not available")
     
+    if not model_id:
+        raise LLMClientError(f"{provider} requires model_id parameter (no default model configured)")
+    
+    selected_model = model_id
+    
     try:
+        start_time = time.time()
+        logger.debug(f"[{provider.upper()}] Sending request to {selected_model}...")
+        
         response = client_data["client"].chat.completions.create(
-            model=client_data["model"],
+            model=selected_model,
             messages=[
                 {"role": "system", "content": system},
                 {"role": "user", "content": user}
@@ -291,11 +350,17 @@ def _chat_cloud(system: str, user: str, provider: str, max_tokens: int, temperat
             **kwargs
         )
         
+        elapsed = time.time() - start_time
+        
         if not response or not response.choices:
             raise LLMClientError(f"{provider} returned empty response")
         
-        result = response.choices[0].message.content
-        logger.debug(f"[{provider.upper()}] Generated {len(result)} chars")
+        result = response.choices[0].message.content or ""
+        logger.info(f"[{provider.upper()}] Generated {len(result)} chars using {selected_model} in {elapsed:.2f}s")
+        
+        if len(result) == 0:
+            logger.warning(f"[{provider.upper()}] Empty response from {selected_model}. Response object: {response}")
+        
         return result
         
     except Exception as e:

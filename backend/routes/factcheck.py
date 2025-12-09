@@ -7,17 +7,139 @@ Consolidated routes for:
 - Video speech-to-text + fact-checking
 """
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, Response, stream_with_context
 import tempfile
 import os
+import json
 
 from factcheck import pipeline, ocr, video
 from utils.logging import get_logger
-from utils.helpers import handle_errors, ValidationError
+from utils.helpers import handle_errors, ValidationError, create_error_response
 
 logger = get_logger(__name__)
 
 bp = Blueprint("factcheck", __name__, url_prefix="/api")
+
+
+def _build_stage_models(payload: dict, fallback_provider: str, fallback_model_id: str) -> dict:
+    """Normalize pipeline model selections with sensible fallbacks."""
+    payload = payload or {}
+    def stage_cfg(key: str) -> dict:
+        cfg = payload.get(key) or {}
+        return {
+            "provider": cfg.get("provider") or fallback_provider,
+            "model_id": cfg.get("model_id") or fallback_model_id,
+        }
+    return {
+        "intent": stage_cfg("intent"),
+        "extraction": stage_cfg("extraction"),
+        "reasoning": stage_cfg("reasoning"),
+    }
+
+
+@bp.post("/validate")
+def validate_content():
+    """Basic validation before fact-checking (no LLM call - just checks length/format)."""
+    data = request.get_json(silent=True) or {}
+    text = (data.get("text") or "").strip()
+    
+    if not text:
+        return jsonify({
+            "isValid": False,
+            "error": "Text is required for validation.",
+            "suggestion": "Please enter a factual statement or question.",
+        }), 400
+    
+    # Basic length check
+    if len(text) < 5:
+        return jsonify({
+            "isValid": False,
+            "error": "Input too short.",
+            "suggestion": "Please provide a complete factual claim or question.",
+        })
+    
+    if len(text) > 5000:
+        return jsonify({
+            "isValid": False,
+            "error": "Input too long.",
+            "suggestion": "Please limit input to 5000 characters.",
+        })
+    
+    # Quick heuristic checks for obviously invalid input
+    if text.lower() in ["test", "hello", "hi", "hey", "...", "???"]:
+        return jsonify({
+            "isValid": False,
+            "error": "Input not meaningful.",
+            "suggestion": "Please provide a factual claim or question to verify.",
+        })
+    
+    # All basic checks passed
+    return jsonify({"isValid": True, "error": "", "suggestion": ""})
+
+
+@bp.post("/process")
+def process_factcheck():
+    """Progressive fact-check endpoint with SSE support."""
+    data = request.get_json(silent=True) or {}
+
+    text = (data.get("text") or "").strip()
+    if not text:
+        return create_error_response("text field is required", 400)
+
+    max_claims = data.get("max_claims", 5)
+    include_summary = bool(data.get("include_summary", True))
+    progressive = bool(data.get("progressive", True))
+
+    provider = data.get("provider")
+    model_id = data.get("model_id")
+    pipeline_models = _build_stage_models(data.get("pipeline_models") or {}, provider, model_id)
+
+    logger.info(
+        f"[API_REQUEST] POST /api/process | provider={provider} | model={model_id} | progressive={progressive} | include_summary={include_summary}"
+    )
+
+    if progressive:
+        def event_stream():
+            try:
+                for event in pipeline.check_text_stream(
+                    text,
+                    max_claims=max_claims,
+                    llm=provider,
+                    pipeline_models=pipeline_models,
+                ):
+                    if not include_summary and event.get("type") == "summary":
+                        continue
+                    yield f"data: {json.dumps(event)}\n\n"
+            except Exception as e:
+                logger.error(f"[API] Progressive processing failed: {e}", exc_info=True)
+                error_event = {"type": "error", "message": "Internal server error"}
+                yield f"data: {json.dumps(error_event)}\n\n"
+
+        headers = {
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        }
+        return Response(
+            stream_with_context(event_stream()),
+            mimetype="text/event-stream",
+            headers=headers,
+        )
+
+    try:
+        result = pipeline.check_text(
+            text,
+            max_claims=max_claims,
+            llm=provider,
+            pipeline_models=pipeline_models,
+        )
+        if not include_summary:
+            result.pop("summary", None)
+        return jsonify(result)
+    except ValidationError as e:
+        return create_error_response(str(e), 400)
+    except Exception as e:
+        logger.error(f"[API] Fact-check failed: {e}", exc_info=True)
+        return create_error_response("Internal server error", 500)
 
 
 @bp.post("/factcheck")

@@ -290,6 +290,10 @@ export function useFactCheck() {
       `(${requestPayload.pipeline_models.reasoning.provider})`
     );
 
+    toast.message('Using models', {
+      description: `Intent: ${requestPayload.pipeline_models.intent.model_display_name} | Extraction: ${requestPayload.pipeline_models.extraction.model_display_name} | Reasoning: ${requestPayload.pipeline_models.reasoning.model_display_name}`,
+    });
+
     // Process fact-check request
     try {
       setLoadingPhase('Extracting claims...');

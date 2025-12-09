@@ -89,6 +89,16 @@ export default function ClaimCard({
   textSize,
   animationDelay,
 }: Readonly<ClaimCardProps>) {
+  const sourceUrls = Array.isArray(result.sources)
+    ? result.sources
+        .map((s) => {
+          if (typeof s === 'string') return s;
+          if (s && typeof s === 'object') return s.url || s.text || s.title || '';
+          return '';
+        })
+        .filter((s) => !!s)
+    : [];
+
   const config = VERDICT_CONFIG[result.label] ?? VERDICT_CONFIG.unknown;
   const VerdictIcon = config!.icon;
 
@@ -237,14 +247,14 @@ export default function ClaimCard({
                   <div className="flex items-center gap-2">
                     <ExternalLink className="h-4 w-4 text-slate-500" />
                     <span className="text-slate-700 font-medium">
-                      All Sources ({result.sources.length})
+                      All Sources ({sourceUrls.length})
                     </span>
                   </div>
                 }
               >
                 <div className="px-4">
                   <ul className="space-y-2">
-                    {result.sources.map((url, idx) => (
+                    {sourceUrls.map((url, idx) => (
                       <li key={`source-${idx}`} className="flex items-start gap-2 text-sm">
                         <span className="text-xs text-slate-400 w-5 shrink-0">{idx + 1}.</span>
                         <a

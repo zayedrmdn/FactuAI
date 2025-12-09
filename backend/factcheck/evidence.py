@@ -9,7 +9,10 @@ Consolidated evidence gathering module combining:
 Simplified from 15 files to 1 module with clear functions.
 """
 
+# Set HF_HOME before ANY imports to suppress deprecation warning
 import os
+os.environ.setdefault("HF_HOME", str(__file__).replace("evidence.py", "").replace("factcheck", ".cache") + "/huggingface")
+
 import json
 import re
 import requests
@@ -61,6 +64,9 @@ def search_google(query: str, num_results: int = 5) -> List[Dict[str, str]]:
         SearchError: If search fails
     """
     if not GOOGLE_API_KEY or not GOOGLE_CX_ID:
+        logger.error(
+            "[SEARCH] Google API credentials not configured (GOOGLE_API_KEY, GOOGLE_CX_ID/GOOGLE_CSE_ID)"
+        )
         raise SearchError("Google API credentials not configured")
     
     try:
@@ -76,6 +82,7 @@ def search_google(query: str, num_results: int = 5) -> List[Dict[str, str]]:
             items = response.get("items", [])
         except ImportError:
             # Fallback to requests
+            logger.info("[SEARCH] googleapiclient not installed; falling back to requests client")
             response = requests.get(
                 "https://www.googleapis.com/customsearch/v1",
                 params={
@@ -113,11 +120,11 @@ def search_google(query: str, num_results: int = 5) -> List[Dict[str, str]]:
 
 def search_newsapi(query: str, num_results: int = 5, timeframe: str = "RECENT") -> List[Dict[str, str]]:
     """
-    Search NewsAPI for recent articles.
+    Search NewsAPI for recent articles using official client.
     
     Args:
-        query: Search query
-        num_results: Number of results
+        query: Simple keywords (e.g., "COVID vaccines" not full sentences)
+        num_results: Number of results (max 100 for free tier)
         timeframe: Time filter (RECENT, WEEK, MONTH, YEAR, LONG_AGO)
         
     Returns:
@@ -127,51 +134,83 @@ def search_newsapi(query: str, num_results: int = 5, timeframe: str = "RECENT") 
         logger.warning("[SEARCH] NewsAPI key not configured")
         return []
     
-    # Convert timeframe to NewsAPI format
-    timeframe_map = {
-        "RECENT": "7d",
-        "WEEK": "7d",
-        "MONTH": "1m",
-        "YEAR": "1y",
-        "LONG_AGO": None  # No time filter
-    }
-    
     try:
-        params = {
-            "q": query,
-            "apiKey": NEWS_API_KEY,
-            "pageSize": num_results,
-            "language": "en",
-            "sortBy": "relevancy"
+        from newsapi import NewsApiClient
+        newsapi = NewsApiClient(api_key=NEWS_API_KEY)
+        
+        # Extract simple keywords from the original claim/query
+        # NewsAPI works best with 2-3 key terms, not full sentences
+        words = query.lower().split()
+        
+        # Filter out common stop words and take key terms
+        stop_words = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'must', 'can', 'that', 'this', 'these', 'those', 'i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'him', 'her', 'us', 'them'}
+        
+        key_terms = [word for word in words if len(word) > 2 and word not in stop_words and not word.isdigit()]
+        
+        # Take first 2-3 most important terms (prioritize proper nouns and important keywords)
+        keywords = []
+        for term in key_terms[:4]:  # Take up to 4 terms
+            # Prioritize terms that look like proper nouns or important keywords
+            if term[0].isupper() or term in ['covid', 'vaccine', 'vaccines', 'microchip', 'microchips', 'track', 'location', 'thoughts']:
+                keywords.append(term)
+                if len(keywords) >= 3:  # Max 3 keywords for NewsAPI
+                    break
+        
+        # Fallback to first 2-3 terms if no priority terms found
+        if not keywords:
+            keywords = key_terms[:3]
+        
+        # Ensure we have at least 1 keyword
+        if not keywords:
+            keywords = ['news']  # Fallback
+        
+        keywords_str = ' '.join(keywords)
+        
+        # Convert timeframe to date range
+        from datetime import datetime, timedelta
+        to_date = datetime.now()
+        timeframe_map = {
+            "RECENT": 7,
+            "WEEK": 7,
+            "MONTH": 30,
+            "YEAR": 365,
+            "LONG_AGO": None
         }
         
-        time_filter = timeframe_map.get(timeframe)
-        if time_filter:
-            params["from"] = time_filter
+        days = timeframe_map.get(timeframe, 7)
+        from_date = to_date - timedelta(days=days) if days else None
         
-        response = requests.get(
-            "https://newsapi.org/v2/everything",
-            params=params,
-            timeout=10
-        ).json()
+        # Use get_everything endpoint with keyword search
+        response = newsapi.get_everything(
+            q=keywords_str,
+            language='en',
+            sort_by='relevancy',
+            page_size=min(num_results, 100),  # API limit
+            from_param=from_date.strftime('%Y-%m-%d') if from_date else None,
+            to=to_date.strftime('%Y-%m-%d')
+        )
         
-        if response.get("status") != "ok":
+        if response.get('status') != 'ok':
             logger.warning(f"[SEARCH] NewsAPI error: {response.get('message')}")
             return []
         
         results = []
-        for article in response.get("articles", []):
-            url = article.get("url", "").strip()
-            if url.startswith(("http://", "https://")):
+        for article in response.get('articles', []):
+            url = article.get('url', '').strip()
+            if url.startswith(('http://', 'https://')):
+                source_name = article.get('source', {}).get('name', 'NewsAPI')
                 results.append({
-                    "title": article.get("title", ""),
-                    "url": url,
-                    "source": "NewsAPI"
+                    'title': article.get('title', ''),
+                    'url': url,
+                    'source': source_name
                 })
         
-        logger.debug(f"[SEARCH] NewsAPI returned {len(results)} results")
+        logger.debug(f"[SEARCH] NewsAPI returned {len(results)} results for keywords: '{keywords_str}'")
         return results
         
+    except ImportError:
+        logger.error("[SEARCH] newsapi-python not installed. Run: pip install newsapi-python")
+        return []
     except Exception as e:
         logger.error(f"[SEARCH] NewsAPI search failed: {e}")
         return []
@@ -191,7 +230,13 @@ def build_search_query(claim: str) -> str:
     """
     try:
         import spacy
-        nlp = spacy.load("en_core_web_sm")
+        try:
+            nlp = spacy.load("en_core_web_sm")
+        except OSError:
+            # Model not downloaded, use regex fallback
+            logger.warning("[SEARCH] spaCy model 'en_core_web_sm' not found. Run: python -m spacy download en_core_web_sm")
+            raise ImportError("spaCy model not found")
+        
         doc = nlp(claim)
         
         # Extract named entities
@@ -210,7 +255,7 @@ def build_search_query(claim: str) -> str:
             
     except (ImportError, OSError):
         # Fallback to regex-based extraction
-        logger.debug("[SEARCH] spaCy not available, using regex")
+        logger.info("[SEARCH] spaCy not available, using regex fallback for query building")
         
         # Extract proper nouns (capitalized words)
         proper_nouns = re.findall(r"\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b", claim)

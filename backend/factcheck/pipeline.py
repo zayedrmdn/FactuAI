@@ -20,6 +20,27 @@ from factcheck import llm_client, evidence
 
 logger = get_logger(__name__)
 
+
+def _log_model_usage(stage: str, provider: Optional[str], model_id: Optional[str]) -> None:
+    """Centralized trace for which model is used at each pipeline stage."""
+    logger.info(f"[PIPELINE_MODEL] stage={stage} provider={provider or 'default'} model={model_id or 'env_default'}")
+
+
+def _resolve_models(pipeline_models: Optional[Dict[str, Dict[str, str]]], fallback_provider: Optional[str], fallback_model: Optional[str]) -> Dict[str, Dict[str, Optional[str]]]:
+    """KISS helper: normalize per-stage provider/model with simple fallbacks."""
+    pipeline_models = pipeline_models or {}
+    def stage(key: str) -> Dict[str, Optional[str]]:
+        cfg = pipeline_models.get(key) or {}
+        return {
+            "provider": cfg.get("provider") or fallback_provider,
+            "model_id": cfg.get("model_id") or fallback_model,
+        }
+    return {
+        "intent": stage("intent"),
+        "extraction": stage("extraction"),
+        "reasoning": stage("reasoning"),
+    }
+
 # Pipeline phase messages
 PHASE_DETECTING_INTENT = "Detecting intent..."
 PHASE_EXTRACTING_CLAIMS = "Extracting claims..."
@@ -32,7 +53,7 @@ PHASE_COLLECTING_EVIDENCE = "Collecting evidence..."
 # Intent Detection
 # ==========================================================================
 
-def detect_intent(text: str, llm: str = None) -> str:
+def detect_intent(text: str, llm: str = None, model_id: str = None) -> str:
     """
     Detect the intent/type of input text.
     
@@ -92,7 +113,13 @@ def detect_intent(text: str, llm: str = None) -> str:
 
 Respond with ONLY the category name."""
         
-        response = llm_client.chat(system, f"Text: {text_stripped}", provider=llm, max_tokens=16)
+        response = llm_client.chat(
+            system,
+            f"Text: {text_stripped}",
+            provider=llm,
+            model_id=model_id,
+            max_tokens=500,  # Increased for reasoning models that generate extensive reasoning
+        )
         response_clean = response.strip().lower()
         
         valid_intents = ["fact_claim", "fact_question", "news_paragraph", "multi_claim", "opinion", "nonsense", "instructional"]
@@ -112,7 +139,7 @@ Respond with ONLY the category name."""
 # Claim Extraction
 # ==========================================================================
 
-def extract_claims(text: str, max_claims: int = 5, llm: str = None) -> List[str]:
+def extract_claims(text: str, max_claims: int = 5, llm: str = None, model_id: str = None) -> List[str]:
     """
     Extract factual claims from text.
     
@@ -136,7 +163,13 @@ Only include verifiable factual statements.
 Do not include opinions or subjective statements."""
     
     try:
-        response = llm_client.chat(system, text, provider=llm, max_tokens=512)
+        response = llm_client.chat(
+            system,
+            text,
+            provider=llm,
+            model_id=model_id,
+            max_tokens=512,
+        )
         
         # Parse response into claims
         claims = []
@@ -169,7 +202,7 @@ Do not include opinions or subjective statements."""
 # Summarization
 # ==========================================================================
 
-def summarize_input(text: str, llm: str = None, max_tokens: int = 120) -> str:
+def summarize_input(text: str, llm: str = None, model_id: str = None, max_tokens: int = 120) -> str:
     """
     Summarize input text.
     
@@ -187,7 +220,13 @@ def summarize_input(text: str, llm: str = None, max_tokens: int = 120) -> str:
     system = "Summarize the following text into a concise neutral overview. Do NOT classify; just summarize factual content."
     
     try:
-        response = llm_client.chat(system, f"Text:\n{text}", provider=llm, max_tokens=max_tokens)
+        response = llm_client.chat(
+            system,
+            f"Text:\n{text}",
+            provider=llm,
+            model_id=model_id,
+            max_tokens=max_tokens,
+        )
         
         # Clean up response
         if response.startswith("Summary:"):
@@ -216,7 +255,7 @@ def summarize_input(text: str, llm: str = None, max_tokens: int = 120) -> str:
         return text[:100].strip() + ('...' if len(text) > 100 else '')
 
 
-def summarize_evidence(evidence_text: str, llm: str = None) -> str:
+def summarize_evidence(evidence_text: str, llm: str = None, model_id: str = None) -> str:
     """
     Summarize collected evidence.
     
@@ -237,7 +276,13 @@ def summarize_evidence(evidence_text: str, llm: str = None) -> str:
 Keep it factual, neutral, and concise. Avoid repetition."""
     
     try:
-        response = llm_client.chat(system, f"Evidence:\n{evidence_text}", provider=llm, max_tokens=target_words + 30)
+        response = llm_client.chat(
+            system,
+            f"Evidence:\n{evidence_text}",
+            provider=llm,
+            model_id=model_id,
+            max_tokens=target_words + 30,
+        )
         
         # Clean up
         if response.startswith("Summary:"):
@@ -265,6 +310,7 @@ Keep it factual, neutral, and concise. Avoid repetition."""
 def verify_claim(
     claim: str,
     llm: str = None,
+    model_id: str = None,
     num_google: int = 5,
     num_news: int = 5,
     top_k: int = 10
@@ -322,7 +368,13 @@ REASONING: <explanation>"""
 Evidence:
 {evidence_text}"""
         
-        response = llm_client.chat(system, user_msg, provider=llm, max_tokens=300)
+        response = llm_client.chat(
+            system,
+            user_msg,
+            provider=llm,
+            model_id=model_id,
+            max_tokens=600,  # Increased for reasoning models with evidence analysis
+        )
         
         # Parse response
         verdict = "UNVERIFIABLE"
@@ -354,12 +406,23 @@ Evidence:
                 seen_urls.add(source["url"])
                 unique_sources.append(source)
         
+        # Format evidence items as source_quotes for frontend
+        source_quotes = [
+            {
+                "quote": item["text"],
+                "source": item["source"],
+                "url": item["url"]
+            }
+            for item in evidence_items
+        ]
+        
         return {
             "verdict": verdict,
             "confidence": confidence,
             "reasoning": reasoning,
             "evidence": evidence_items,
-            "sources": unique_sources[:5]  # Limit to top 5 sources
+            "sources": unique_sources[:5],  # Limit to top 5 sources
+            "source_quotes": source_quotes  # Add formatted quotes for frontend
         }
         
     except Exception as e:
@@ -374,7 +437,8 @@ Evidence:
 def check_text(
     text: str,
     max_claims: int = 5,
-    llm: str = None
+    llm: str = None,
+    pipeline_models: Optional[Dict[str, Dict[str, str]]] = None,
 ) -> Dict[str, Any]:
     """
     Complete fact-checking pipeline for text input.
@@ -390,8 +454,18 @@ def check_text(
     logger.info(f"[PIPELINE] Starting fact-check for {len(text)} chars")
     
     try:
+        models = _resolve_models(pipeline_models, fallback_provider=llm, fallback_model=None)
+        intent_cfg = models["intent"]
+        extraction_cfg = models["extraction"]
+        reasoning_cfg = models["reasoning"]
+
         # Detect intent
-        intent = detect_intent(text, llm)
+        _log_model_usage("intent_detection", intent_cfg.get("provider", llm), intent_cfg.get("model_id"))
+        intent = detect_intent(
+            text,
+            llm=intent_cfg.get("provider", llm),
+            model_id=intent_cfg.get("model_id"),
+        )
         logger.info(f"[PIPELINE] Detected intent: {intent}")
         
         # Handle non-verifiable inputs
@@ -404,12 +478,22 @@ def check_text(
             }
         
         # Generate summary
-        summary = summarize_input(text, llm)
+        _log_model_usage("summary", reasoning_cfg.get("provider", llm), reasoning_cfg.get("model_id"))
+        summary = summarize_input(
+            text,
+            llm=reasoning_cfg.get("provider", llm),
+            model_id=reasoning_cfg.get("model_id"),
+        )
         
         # Handle different intent types
         if intent == "fact_question":
             # Treat question as a claim
-            result = verify_claim(text, llm)
+            _log_model_usage("verify_single", reasoning_cfg.get("provider", llm), reasoning_cfg.get("model_id"))
+            result = verify_claim(
+                text,
+                llm=reasoning_cfg.get("provider", llm),
+                model_id=reasoning_cfg.get("model_id"),
+            )
             return {
                 "summary": summary,
                 "results": [{"claim": text, **result}]
@@ -417,7 +501,13 @@ def check_text(
         
         elif intent in ["news_paragraph", "multi_claim"]:
             # Extract and verify multiple claims
-            claims = extract_claims(text, max_claims, llm)
+            _log_model_usage("claim_extraction", extraction_cfg.get("provider", llm), extraction_cfg.get("model_id"))
+            claims = extract_claims(
+                text,
+                max_claims,
+                llm=extraction_cfg.get("provider", llm),
+                model_id=extraction_cfg.get("model_id"),
+            )
             
             if not claims:
                 return {
@@ -429,7 +519,15 @@ def check_text(
             
             results = []
             for claim in claims:
-                result = verify_claim(claim, llm, num_google=3, num_news=2, top_k=5)
+                _log_model_usage("verify_claim", reasoning_cfg.get("provider", llm), reasoning_cfg.get("model_id"))
+                result = verify_claim(
+                    claim,
+                    llm=reasoning_cfg.get("provider", llm),
+                    model_id=reasoning_cfg.get("model_id"),
+                    num_google=3,
+                    num_news=2,
+                    top_k=5,
+                )
                 results.append({"claim": claim, **result})
             
             return {
@@ -438,7 +536,12 @@ def check_text(
             }
         
         else:  # fact_claim
-            result = verify_claim(text, llm)
+            _log_model_usage("verify_single", reasoning_cfg.get("provider", llm), reasoning_cfg.get("model_id"))
+            result = verify_claim(
+                text,
+                llm=reasoning_cfg.get("provider", llm),
+                model_id=reasoning_cfg.get("model_id"),
+            )
             return {
                 "summary": summary,
                 "results": [{"claim": text, **result}]
@@ -456,7 +559,8 @@ def check_text(
 def check_text_stream(
     text: str,
     max_claims: int = 5,
-    llm: str = None
+    llm: str = None,
+    pipeline_models: Optional[Dict[str, Dict[str, str]]] = None,
 ) -> Generator[Dict[str, Any], None, None]:
     """
     Streaming version of check_text that yields progress events.
@@ -473,9 +577,19 @@ def check_text_stream(
         llm: Optional LLM provider
     """
     try:
+        models = _resolve_models(pipeline_models, fallback_provider=llm, fallback_model=None)
+        intent_cfg = models["intent"]
+        extraction_cfg = models["extraction"]
+        reasoning_cfg = models["reasoning"]
+
         # Intent detection
         yield {"type": "phase", "message": PHASE_DETECTING_INTENT, "progress": 5}
-        intent = detect_intent(text, llm)
+        _log_model_usage("intent_detection", intent_cfg.get("provider", llm), intent_cfg.get("model_id"))
+        intent = detect_intent(
+            text,
+            llm=intent_cfg.get("provider", llm),
+            model_id=intent_cfg.get("model_id"),
+        )
         logger.info(f"[PIPELINE] Detected intent: {intent}")
         
         if intent in ["opinion", "nonsense", "instructional"]:
@@ -488,18 +602,34 @@ def check_text_stream(
         
         # Summary generation
         yield {"type": "phase", "message": PHASE_GENERATING_SUMMARY, "progress": 10}
-        summary = summarize_input(text, llm)
+        _log_model_usage("summary", reasoning_cfg.get("provider", llm), reasoning_cfg.get("model_id"))
+        summary = summarize_input(
+            text,
+            llm=reasoning_cfg.get("provider", llm),
+            model_id=reasoning_cfg.get("model_id"),
+        )
         yield {"type": "summary", "summary": summary}
         
         # Handle different intents
         if intent == "fact_question":
             yield {"type": "phase", "message": PHASE_VERIFYING_CLAIM, "progress": 30}
-            result = verify_claim(text, llm)
+            _log_model_usage("verify_single", reasoning_cfg.get("provider", llm), reasoning_cfg.get("model_id"))
+            result = verify_claim(
+                text,
+                llm=reasoning_cfg.get("provider", llm),
+                model_id=reasoning_cfg.get("model_id"),
+            )
             yield {"type": "result", "result": {"claim": text, **result}}
         
         elif intent in ["news_paragraph", "multi_claim"]:
             yield {"type": "phase", "message": PHASE_EXTRACTING_CLAIMS, "progress": 15}
-            claims = extract_claims(text, max_claims, llm)
+            _log_model_usage("claim_extraction", extraction_cfg.get("provider", llm), extraction_cfg.get("model_id"))
+            claims = extract_claims(
+                text,
+                max_claims,
+                llm=extraction_cfg.get("provider", llm),
+                model_id=extraction_cfg.get("model_id"),
+            )
             
             if not claims:
                 yield {
@@ -519,13 +649,29 @@ def check_text_stream(
                     "progress": progress
                 }
                 
-                result = verify_claim(claim, llm, num_google=3, num_news=2, top_k=5)
+                _log_model_usage("verify_claim", reasoning_cfg.get("provider", llm), reasoning_cfg.get("model_id"))
+                result = verify_claim(
+                    claim,
+                    llm=reasoning_cfg.get("provider", llm),
+                    model_id=reasoning_cfg.get("model_id"),
+                    num_google=3,
+                    num_news=2,
+                    top_k=5,
+                )
                 yield {"type": "result", "result": {"claim": claim, **result}}
         
         else:  # fact_claim
             yield {"type": "phase", "message": PHASE_VERIFYING_CLAIM, "progress": 30}
-            result = verify_claim(text, llm)
+            _log_model_usage("verify_single", reasoning_cfg.get("provider", llm), reasoning_cfg.get("model_id"))
+            result = verify_claim(
+                text,
+                llm=reasoning_cfg.get("provider", llm),
+                model_id=reasoning_cfg.get("model_id"),
+            )
             yield {"type": "result", "result": {"claim": text, **result}}
+
+        # Signal completion for consumers expecting a final event
+        yield {"type": "complete", "progress": 100}
             
     except Exception as e:
         logger.error(f"[PIPELINE] Stream error: {e}", exc_info=True)

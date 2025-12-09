@@ -15,6 +15,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Set HF_HOME to suppress TRANSFORMERS_CACHE deprecation warning
+if "HF_HOME" not in os.environ and "TRANSFORMERS_CACHE" not in os.environ:
+    # Default to .cache directory in project root
+    os.environ["HF_HOME"] = str(Path(__file__).parent.parent / ".cache" / "huggingface")
+
 
 # ==========================================================================
 # Run Mode Configuration
@@ -74,10 +79,11 @@ QWEN_MODEL = os.getenv("QWEN_MODEL", "unsloth/Qwen2.5-7B-unsloth-bnb-4bit")
 # ==========================================================================
 # Search API Configuration
 # ==========================================================================
+# Support both GOOGLE_CSE_ID and GOOGLE_CX_ID for compatibility
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-GOOGLE_CSE_ID = os.getenv("GOOGLE_CSE_ID")
-GOOGLE_CX_ID = GOOGLE_CSE_ID  # Alias
-NEWS_API_KEY = os.getenv("NEWS_API_KEY")
+GOOGLE_CX_ID = os.getenv("GOOGLE_CX_ID") or os.getenv("GOOGLE_CSE_ID")
+GOOGLE_CSE_ID = GOOGLE_CX_ID  # Backwards-compatible alias
+NEWS_API_KEY = os.getenv("NEWS_API_KEY") or os.getenv("NEWSAPI_KEY")
 
 
 # ==========================================================================

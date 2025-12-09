@@ -5,9 +5,14 @@ Main Flask application entry point.
 """
 
 from dotenv import load_dotenv
-load_dotenv()
-
 import os
+
+# Load environment from project root and backend folder to ensure API keys resolve
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+ROOT_ENV = os.path.join(BASE_DIR, ".env")
+BACKEND_ENV = os.path.join(os.path.dirname(__file__), ".env")
+load_dotenv(ROOT_ENV)
+load_dotenv(BACKEND_ENV)
 from flask import Flask, send_from_directory
 from flask_cors import CORS
 

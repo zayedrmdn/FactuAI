@@ -27,6 +27,20 @@ import { cn } from '@/lib/utils';
 
 type CombinedResult = FactCheckResult | QAResult;
 
+const toSourceStrings = (sources: unknown): string[] => {
+  if (!Array.isArray(sources)) return [];
+  return sources
+    .map((s) => {
+      if (typeof s === 'string') return s;
+      if (s && typeof s === 'object') {
+        const obj = s as { url?: string; text?: string; title?: string };
+        return obj.url || obj.text || obj.title || '';
+      }
+      return '';
+    })
+    .filter((s) => !!s);
+};
+
 /** True if this is a QAResult, false otherwise */
 function isQAResult(r: CombinedResult): r is QAResult {
   return (r as QAResult).answer !== undefined;
@@ -117,7 +131,7 @@ export default function ResultsView({
             `Q${idx + 1}: ${r.question}`,
             `Answer: ${r.answer}`,
             `Confidence: ${(r.confidence * 100).toFixed(1)}%`,
-            `Sources: ${r.sources.join(', ')}`,
+            `Sources: ${toSourceStrings(r.sources).join(', ')}`,
           ].join('\n');
         } else {
           // FactCheckResult branch
@@ -132,7 +146,7 @@ export default function ResultsView({
             `Verdict: ${r.label}\n` +
             `Confidence: ${(r.confidence * 100).toFixed(1)}%\n` +
             `Evidence:\n${evidenceText}\n` +
-            `Sources: ${r.sources.join(', ')}\n`
+            `Sources: ${toSourceStrings(r.sources).join(', ')}\n`
           );
         }
       })
