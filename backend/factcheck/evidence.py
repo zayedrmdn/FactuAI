@@ -644,7 +644,7 @@ def collect_evidence(
     
     logger.info(f"[EVIDENCE] Scraping {len(unique_results)} unique articles...")
     
-    sentences = []
+    sentences_with_meta = []
     
     # Scrape articles
     for res in unique_results:
@@ -660,20 +660,29 @@ def collect_evidence(
                 
             # Extract sentences
             article_sentences = extract_sentences(text)
-            sentences.extend(article_sentences)
+            
+            # Store metadata with each sentence
+            for sent in article_sentences:
+                sentences_with_meta.append({
+                    "text": sent,
+                    "url": res['url'],
+                    "title": res.get('title', 'Unknown Title'),
+                    "source": res.get('source', 'Web')
+                })
             
         except Exception as e:
             logger.warning(f"[SCRAPING] Failed to process {res['url']}: {e}")
             continue
     
-    logger.info(f"[EVIDENCE] Extracted {len(sentences)} total sentences")
+    logger.info(f"[EVIDENCE] Extracted {len(sentences_with_meta)} total sentences")
     
-    if not sentences and not tavily_answer_item:
+    if not sentences_with_meta and not tavily_answer_item:
         logger.warning("[EVIDENCE] No sentences extracted from any source")
         return []
 
     # Rank sentences
-    ranked_sentences = rank_sentences(claim, sentences)
+    sentence_texts = [s["text"] for s in sentences_with_meta]
+    ranked_sentences = rank_sentences(claim, sentence_texts)
     
     # Format top-k evidence
     evidence_items = []
@@ -683,27 +692,33 @@ def collect_evidence(
         evidence_items.append({
             "text": f"AI Analysis: {tavily_answer_item['content']}",
             "url": tavily_answer_item['url'],
+            "title": tavily_answer_item.get('title', 'Tavily AI Answer'),
             "source": "Tavily AI",
             "score": 1.0
         })
     
     # Add ranked sentences
     for sent, score in ranked_sentences[:top_k]:
-        # Find source URL for this sentence (simple heuristic)
-        # In a real system, we'd track source per sentence
-        source_url = ""
-        source_name = "Web"
+        # Find the metadata for this sentence
+        meta = next((s for s in sentences_with_meta if s["text"] == sent), None)
         
-        # Try to find which article this sentence came from
-        # This is expensive, so we just use a placeholder or the first matching source
-        # For now, we'll just return the sentence and score
-        
-        evidence_items.append({
-            "text": sent,
-            "url": source_url,  # We lost the source mapping in extract_sentences
-            "source": source_name,
-            "score": score
-        })
+        if meta:
+            evidence_items.append({
+                "text": sent,
+                "url": meta["url"],
+                "title": meta["title"],
+                "source": meta["source"],
+                "score": score
+            })
+        else:
+             # Fallback if not found (shouldn't happen)
+             evidence_items.append({
+                "text": sent,
+                "url": "",
+                "title": "Unknown Source",
+                "source": "Web",
+                "score": score
+            })
         
     return evidence_items
 

@@ -99,14 +99,22 @@ def test_collect_evidence_integration(mock_rank, mock_extract, mock_scrape, mock
     mock_rank.return_value = [("Sentence 1 with enough words", 0.9), ("Sentence 2 with enough words", 0.8), ("Sentence 3 with enough words", 0.7)]
     
     claim = "Test claim for evidence"
-    result = evidence.collect_evidence(
-        claim, 
-        google_query=claim, 
-        newsapi_query=claim, 
-        num_google=5, 
-        num_news=5, 
-        top_k=10
-    )
+    
+    # Patch PROVIDER_FUNCTIONS to use our mocks
+    with patch.dict(evidence.PROVIDER_FUNCTIONS, {
+        'google': mock_google,
+        'newsapi': mock_news,
+        'tavily': MagicMock()
+    }):
+        result = evidence.collect_evidence(
+            claim, 
+            google_query=claim, 
+            newsapi_query=claim, 
+            num_google=5, 
+            num_news=5, 
+            top_k=10,
+            enabled_providers=['google', 'newsapi']
+        )
     
     # Verify structure - collect_evidence returns a list, not a dict
     assert isinstance(result, list)

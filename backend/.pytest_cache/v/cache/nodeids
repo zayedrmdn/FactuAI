@@ -77,6 +77,8 @@
   "tests/test_unit/test_evidence_pipeline.py::test_scrape_article_returns_text",
   "tests/test_unit/test_evidence_pipeline.py::test_search_google_requires_api_key",
   "tests/test_unit/test_evidence_pipeline.py::test_search_newsapi_requires_api_key",
+  "tests/test_unit/test_evidence_structure.py::test_collect_evidence_returns_title",
+  "tests/test_unit/test_evidence_structure.py::test_collect_evidence_tavily_title",
   "tests/test_unit/test_pipeline_extraction.py::test_extract_claims_filtering_metadata",
   "tests/test_unit/test_pipeline_extraction.py::test_extract_claims_no_substance_filtering",
   "tests/test_unit/test_pipeline_extraction.py::test_extract_claims_with_dashes",
