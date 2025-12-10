@@ -5,18 +5,20 @@ This module defines the supported search providers and their configuration.
 To add a new provider:
 1. Add the provider name to the SearchProvider class.
 2. Add the provider configuration to PROVIDER_CONFIG.
-3. Implement the search function in backend/factcheck/evidence.py and register it in PROVIDER_FUNCTIONS.
+3. Implement the search function in the appropriate file and register it in base.py.
 """
 
 class SearchProvider:
+    """Supported search provider identifiers."""
     GOOGLE = "google"
     NEWSAPI = "newsapi"
     TAVILY = "tavily"
     # Add new providers here (e.g., BING = "bing")
 
 class QueryType:
-    GENERAL = "general"       # Uses google_query (optimized for search engines)
-    NEWS = "news"             # Uses newsapi_query (keywords)
+    """Query types for different search strategies."""
+    GENERAL = "general"           # Uses google_query (optimized for search engines)
+    NEWS = "news"                 # Uses newsapi_query (keywords)
     VERIFICATION = "verification" # Uses verification_question (natural language)
 
 # Configuration for providers

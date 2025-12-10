@@ -175,6 +175,7 @@ def chat(
         system: System prompt (role/instructions)
         user: User message
         provider: Provider to use (openrouter, nvidia, local)
+        model_id: Specific model ID to use
         max_tokens: Maximum tokens to generate
         temperature: Sampling temperature (0-1)
         **kwargs: Additional provider-specific parameters
@@ -206,86 +207,6 @@ def chat(
 # Provider-Specific Implementation
 # ==========================================================================
 
-def _generate_cloud(
-    prompt: str,
-    provider: str,
-    model_id: str,
-    max_tokens: int,
-    temperature: float,
-    **kwargs
-) -> str:
-    """Generate using cloud provider (OpenRouter or Nvidia)."""
-    client_data = _clients[provider]
-    if not client_data:
-        raise LLMClientError(f"{provider} not available")
-    
-    if not model_id:
-        raise LLMClientError(f"{provider} requires model_id parameter (no default model configured)")
-    
-    selected_model = model_id
-    
-    try:
-        start_time = time.time()
-        logger.debug(f"[{provider.upper()}] Sending request to {selected_model}...")
-        
-        response = client_data["client"].chat.completions.create(
-            model=selected_model,
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=max_tokens,
-            temperature=temperature,
-            **kwargs
-        )
-        
-        elapsed = time.time() - start_time
-        
-        if not response or not response.choices:
-            logger.error(f"[{provider.upper()}] No response or choices from {selected_model}")
-            raise LLMClientError(f"{provider} returned empty response")
-        
-        choice = response.choices[0]
-        message = choice.message
-        finish_reason = choice.finish_reason
-        
-        # Handle reasoning models that output to reasoning field instead of content
-        result = message.content or ""
-        
-        if not result and hasattr(message, 'reasoning') and message.reasoning:
-            result = message.reasoning.strip()
-            logger.debug(f"[{provider.upper()}] Extracted from reasoning field ({len(result)} chars)")
-        elif not result and hasattr(message, 'reasoning_details') and message.reasoning_details:
-            # Fallback: try to extract from reasoning_details
-            for detail in message.reasoning_details:
-                if isinstance(detail, dict) and 'text' in detail and detail['text']:
-                    result = detail['text'].strip()
-                    logger.debug(f"[{provider.upper()}] Extracted from reasoning_details ({len(result)} chars)")
-                    break
-        
-        # Properly clean the result - strip whitespace and special chars
-        result = result.strip() if result else ""
-        
-        # Log finish reason issues
-        if finish_reason == 'length':
-            logger.warning(f"[{provider.upper()}] Response truncated (finish_reason=length). Consider increasing max_tokens (current: {max_tokens})")
-        
-        logger.info(f"[{provider.upper()}] Generated {len(result)} chars using {selected_model} in {elapsed:.2f}s (finish_reason={finish_reason})")
-        
-        # Enhanced validation - check for minimal/invalid responses
-        if len(result) == 0:
-            logger.error(f"[{provider.upper()}] Empty response from {selected_model}. Message content: {repr(message.content)}, finish_reason: {finish_reason}")
-            raise LLMClientError(f"{provider} returned empty response from {selected_model}")
-        
-        # Check for suspiciously short responses (likely errors)
-        if len(result) < 10 and finish_reason == 'stop':
-            logger.warning(f"[{provider.upper()}] Suspiciously short response ({len(result)} chars): {repr(result)}. This may indicate a prompt formatting issue.")
-            # Don't fail, but warn - the pipeline will handle it
-        
-        return result
-        
-    except Exception as e:
-        logger.error(f"[{provider.upper()}] Generation failed: {e}")
-        raise LLMClientError(f"{provider} generation failed: {e}")
-
-
 def _chat_cloud(
     system: str,
     user: str,
@@ -309,12 +230,15 @@ def _chat_cloud(
         start_time = time.time()
         logger.debug(f"[{provider.upper()}] Sending request to {selected_model}...")
         
+        # Always try with standard system+user message format first
+        messages = [
+            {"role": "system", "content": system},
+            {"role": "user", "content": user}
+        ]
+        
         response = client_data["client"].chat.completions.create(
             model=selected_model,
-            messages=[
-                {"role": "system", "content": system},
-                {"role": "user", "content": user}
-            ],
+            messages=messages,
             max_tokens=max_tokens,
             temperature=temperature,
             **kwargs
@@ -366,14 +290,47 @@ def _chat_cloud(
         return result
         
     except Exception as e:
+        error_msg = str(e).lower()
+        
+        # Check if error is about system messages not being supported
+        if ("developer instruction" in error_msg or 
+            "system message" in error_msg or
+            "system prompt" in error_msg):
+            
+            logger.warning(f"[{provider.upper()}] Model {selected_model} doesn't support system messages, retrying with merged prompt...")
+            
+            try:
+                # Retry with merged system+user message
+                combined_message = f"{system}\n\n{user}"
+                messages = [{"role": "user", "content": combined_message}]
+                
+                response = client_data["client"].chat.completions.create(
+                    model=selected_model,
+                    messages=messages,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    **kwargs
+                )
+                
+                elapsed = time.time() - start_time
+                
+                if not response or not response.choices:
+                    raise LLMClientError(f"{provider} returned empty response")
+                
+                choice = response.choices[0]
+                message = choice.message
+                result = message.content or ""
+                
+                logger.info(f"[{provider.upper()}] Retry successful: {len(result)} chars in {elapsed:.2f}s")
+                return result
+                
+            except Exception as retry_error:
+                logger.error(f"[{provider.upper()}] Retry also failed: {retry_error}")
+                raise LLMClientError(f"{provider} chat failed after retry: {retry_error}")
+        
+        # For other errors, just raise
         logger.error(f"[{provider.upper()}] Chat failed: {e}")
         raise LLMClientError(f"{provider} chat failed: {e}")
-
-
-def _generate_local(prompt: str, max_tokens: int, temperature: float, **kwargs) -> str:
-    """Generate using local Unsloth model."""
-    # Delegate to chat with default system message
-    return _chat_local("You are a helpful assistant.", prompt, max_tokens, temperature, **kwargs)
 
 
 def _chat_local(system: str, user: str, max_tokens: int, temperature: float, **kwargs) -> str:

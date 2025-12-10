@@ -1,6 +1,8 @@
 import pytest
 from unittest.mock import MagicMock, patch
-from factcheck import evidence
+from search.base import collect_evidence
+from extract.scraper import scrape_article
+from extract.base import extract_sentences
 
 def test_collect_evidence_returns_title():
     """Test that collect_evidence returns items with 'title' key."""

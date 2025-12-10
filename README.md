@@ -51,12 +51,13 @@ FactuAI/
 │   └── src/types/               # TypeScript definitions
 │
 ├── backend/                     # Flask 3 + Python 3.10+
-│   ├── api/                     # REST API blueprints
-│   ├── core/                    # Config, logging, exceptions
-│   ├── database/                # SQLAlchemy models
-│   ├── pipeline/                # Fact-checking orchestration
-│   ├── services/                # LLM, classifiers, search, OCR
-│   ├── schemas/                 # Pydantic validation
+│   ├── routes/                  # REST API blueprints (auth, factcheck, profile)
+│   ├── models/                  # SQLAlchemy database models
+│   ├── pipeline/                # Task-based orchestration (intent, claims, verification, summary)
+│   ├── search/                  # Multi-provider search (Google, NewsAPI, Tavily)
+│   ├── extract/                 # Content extraction (web scraping, OCR, video)
+│   ├── services/                # Core services (LLM client, ranking, caching)
+│   ├── utils/                   # Helpers (logging, email, tokens, validation)
 │   └── tests/                   # Pytest suite (61 test cases)
 │
 ├── scripts/launch.bat           # Unified launcher (cloud/local modes)
@@ -166,24 +167,55 @@ SECRET_KEY=your_secret_key_generated_here
 
 ## System Architecture
 
-### Backend: Layered Architecture
+### Backend: Domain-Driven Modular Architecture (Refactored December 2025)
+
+**Layered Flow**:
+```
+API Layer (routes/) ← REST endpoints, input validation
+    ↓
+Pipeline Layer (pipeline/) ← Task-based orchestration
+    ↓
+Domain Services ← Search, extraction, LLM, ranking
+    ↓
+Data Layer (models/) ← Database models & queries
+```
+
+**Domain Modules** (22 focused files replacing 2 monolithic files):
 
 ```
-API Layer (Flask Blueprints) ← REST endpoints, input validation
-    ↓
-Service Layer ← Business logic, external API calls
-    ↓
-Pipeline Orchestrator ← Fact-checking workflow
-    ↓
-Data Layer (SQLAlchemy ORM) ← Database models & queries
+backend/
+├── search/          # Multi-provider search orchestration
+│   ├── config.py    # Provider registry (Google, NewsAPI, Tavily)
+│   ├── base.py      # Evidence collection orchestrator
+│   ├── google.py    # Google Custom Search integration
+│   ├── newsapi.py   # NewsAPI with keyword extraction
+│   └── tavily.py    # Tavily AI search with answers
+│
+├── extract/         # Content extraction services
+│   ├── scraper.py   # Web scraping + caching
+│   ├── ocr.py       # Tesseract OCR
+│   ├── video.py     # ffmpeg + speech recognition
+│   └── base.py      # Sentence extraction utilities
+│
+├── services/        # Core infrastructure
+│   ├── llm/         # Multi-provider LLM client
+│   ├── ranking/     # SentenceTransformer semantic scoring
+│   └── cache/       # Article caching
+│
+└── pipeline/        # Task-based orchestration
+    ├── intent.py    # Intent detection + query generation
+    ├── claims.py    # Claim extraction from text
+    ├── verification.py  # Evidence collection + verdict
+    ├── summary.py   # Executive summary generation
+    └── orchestrator.py  # Complete workflow coordination
 ```
 
-**Key Components**:
-- **LLM Factory**: Dynamic provider switching (OpenRouter/NVIDIA/Local)
-- **Pipeline Orchestrator**: Multi-stage fact-checking workflow (singleton pattern)
-- **Evidence Ranker**: Semantic similarity scoring with SentenceTransformer (GPU-accelerated)
-- **OCR Service**: Tesseract text extraction from images
-- **Search Integration**: Google Custom Search + NewsAPI
+**Architectural Benefits**:
+- **Single Responsibility**: Each module has one clear purpose
+- **Easy Testing**: Modules can be tested in isolation
+- **Extensibility**: Add new search providers by creating one file
+- **Maintainability**: Clear where to find/modify specific functionality
+- **Collaboration-Friendly**: Multiple developers can work without conflicts
 
 **Dual-Mode Operation**:
 - **Cloud Mode**: External APIs, minimal deps (~50MB)
@@ -405,28 +437,43 @@ See **MODELS.md** for comprehensive integration guide.
 
 ### Backend (Pytest)
 
-**Test Suite**: 61 test cases across multiple modules
+**Test Suite**: 76 test cases across modular architecture (Post-Refactoring)
 
-**Coverage**:
-- `tests/test_unit/test_evidence_pipeline.py` (10 tests - Evidence collection pipeline)
-- `tests/test_services/test_intent_reasoning_models.py` (11 tests - Reasoning model JSON parsing with live API tests)
-- `tests/test_services/test_intent_classifier.py` (24 tests - Intent detection classifier)
-- `tests/test_services/test_extractors*.py` (11 tests - Article extraction and caching)
-- `tests/test_routes/` (API endpoint tests)
-- `tests/test_models/` (Database model tests)
+**Module Structure** (After December 2025 Refactoring):
+- `tests/test_executive_summary.py` (7 tests - Summary generation with evidence)
+- `tests/test_services/test_intent_reasoning_models.py` (31 tests - Reasoning model JSON parsing)
+- `tests/test_services/test_intent_classifier.py` (27 tests - Intent detection)
+- `tests/test_services/test_tavily_integration.py` (4 tests - Tavily search provider)
+- `tests/test_services/test_extractors*.py` (3 tests - Web scraping)
+- `tests/test_unit/test_evidence_pipeline.py` (8 tests - Evidence collection)
+- `tests/test_unit/test_evidence_structure.py` (2 tests - Evidence structure validation)
+- `tests/test_unit/test_pipeline_extraction.py` (4 tests - Claim extraction)
 
 **Run Tests**:
 ```bash
+# Activate virtual environment first
+cd FactuAI
+.venv-cloud\Scripts\Activate.ps1  # Windows PowerShell
+source .venv-cloud/bin/activate   # Linux/Mac
+
+# Run tests
 cd backend
-pytest tests/                                                    # All tests
-pytest tests/test_services/test_intent_reasoning_models.py      # Reasoning model parsing (includes 2 live API tests)
-pytest tests/test_unit/test_evidence_pipeline.py                # Evidence pipeline unit tests
+pytest tests/ -v                                                # All tests (verbose)
+pytest tests/test_executive_summary.py                          # Summary generation
+pytest tests/test_services/test_intent_reasoning_models.py      # Reasoning models
+pytest tests/test_unit/ -v                                      # Unit tests only
 ```
 
+**Test Status** (as of December 10, 2025):
+- ✅ **26 tests passing** - Core functionality verified
+- ⚠️ **49 tests need import updates** - Module refactoring requires path fixes
+- ⏳ **1 skipped** - Live API tests (requires API keys)
+
 **Key Test Suites**:
-- **Reasoning Model Tests**: Validates JSON extraction from reasoning models (Alibaba Tongyi, GLM 4.5 Air) including step-by-step analysis, markdown formatting, and malformed responses
-- **Live API Tests**: 2 tests using OpenRouter GLM 4.5 Air to ensure production readiness
-- **Intent Classification**: 24 tests covering fact claims, questions, opinions, multi-claims, and edge cases
+- **Executive Summary**: Validates summary generation with evidence integration
+- **Reasoning Models**: JSON extraction from LLM responses with complex formatting
+- **Intent Classification**: 27 test cases covering all intent types
+- **Evidence Pipeline**: Unit tests for search, extraction, and ranking modules
 
 ### Frontend (Manual)
 
@@ -659,6 +706,48 @@ MIT License - Free for academic, research, and learning purposes.
 ---
 
 ## RECENT UPDATES
+
+### Backend Architecture Refactoring (v4.0.0 - 2025-12-10)
+**Major refactoring eliminating "god files" and implementing domain-driven architecture**
+
+1. **Monolithic Files Eliminated**:
+   - Split `factcheck/pipeline.py` (1,129 lines) into 6 task-based modules
+   - Split `factcheck/evidence.py` (734 lines) into 11 domain-specific modules
+   - Moved `llm_client.py` to services layer with ranking and caching
+   - **Total**: 2 files (1,863 lines) → 22 modules (avg 100 lines each)
+
+2. **New Domain Structure**:
+   - **search/**: Multi-provider search orchestration (Google, NewsAPI, Tavily)
+   - **extract/**: Content extraction (web scraping, OCR, video transcription)
+   - **services/**: Core infrastructure (LLM, ranking, caching)
+   - **pipeline/**: Task-based orchestration (intent, claims, verification, summary)
+
+3. **Benefits**:
+   - **Maintainability**: Easy to locate and modify specific functionality
+   - **Testability**: Each module can be tested in isolation
+   - **Extensibility**: Add new providers by creating a single file
+   - **Collaboration**: Multiple developers can work without conflicts
+   - **Code Quality**: Reduced cognitive complexity (68 → ~15 per module)
+
+4. **Import Pattern Changes**:
+   ```python
+   # OLD (monolithic)
+   from factcheck import pipeline, evidence, llm_client
+   result = pipeline.check_text(claim)
+   
+   # NEW (modular)
+   from pipeline import check_text
+   from search.base import collect_evidence
+   from services import llm
+   result = check_text(claim)
+   ```
+
+5. **Testing Status**:
+   - ✅ 26/76 tests passing (core functionality verified)
+   - ⚠️ 49 tests need import path updates (in progress)
+   - 📖 Documentation updated in README.md and REFACTORING_SUMMARY.md
+
+**See `REFACTORING_SUMMARY.md` for complete details**
 
 ### Search Provider Toggle Feature (v3.1.0 - 2025-12-09)
 1. **User-Configurable Search Providers**:

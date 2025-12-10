@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import MagicMock, patch
-from factcheck.pipeline import extract_claims
+from pipeline import extract_claims
 
 def test_extract_claims_with_dashes():
     """Test that claims starting with dashes are correctly extracted."""
@@ -10,7 +10,7 @@ def test_extract_claims_with_dashes():
 - More than 1,800 people have been killed by flooding.
     """
     
-    with patch('factcheck.llm_client.chat', return_value=mock_llm_response):
+    with patch('services.llm.chat', return_value=mock_llm_response):
         # Pass enough text to allow multiple claims (50 words per claim approx)
         long_text = "word " * 200 
         claims = extract_claims(long_text)
@@ -27,7 +27,7 @@ def test_extract_claims_with_numbers():
 2. Second claim.
     """
     
-    with patch('factcheck.llm_client.chat', return_value=mock_llm_response):
+    with patch('services.llm.chat', return_value=mock_llm_response):
         # Pass enough text to allow multiple claims
         long_text = "word " * 200
         claims = extract_claims(long_text)
@@ -41,7 +41,7 @@ def test_extract_claims_no_substance_filtering():
     # This claim doesn't have words like 'cure', 'cause', 'prevent' etc.
     mock_llm_response = "- The sky is blue."
     
-    with patch('factcheck.llm_client.chat', return_value=mock_llm_response):
+    with patch('services.llm.chat', return_value=mock_llm_response):
         claims = extract_claims("some text")
         
         assert len(claims) == 1
@@ -56,7 +56,7 @@ Note: This is a note.
 Disclaimer: Not advice.
     """
     
-    with patch('factcheck.llm_client.chat', return_value=mock_llm_response):
+    with patch('services.llm.chat', return_value=mock_llm_response):
         claims = extract_claims("some text")
         
         assert len(claims) == 1

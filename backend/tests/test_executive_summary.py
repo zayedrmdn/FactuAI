@@ -7,27 +7,27 @@ summaries are generated after verification with evidence and reasoning included.
 
 import pytest
 from unittest.mock import Mock, patch
-from factcheck.pipeline import check_text, summarize_input
+from pipeline import check_text, summarize_input
 
 
 class TestExecutiveSummary:
     """Test executive summary generation with evidence integration."""
 
-    @patch('factcheck.pipeline.llm_client')
-    def test_summarize_input_without_evidence(self, mock_llm_client):
+    @patch('pipeline.summary.chat')
+    def test_summarize_input_without_evidence(self, mock_chat):
         """Test backward compatibility - summarize_input works without evidence_results."""
-        mock_llm_client.chat.return_value = "This is a test summary of the input text."
+        mock_chat.return_value = "This is a test summary of the input text."
 
         result = summarize_input("Test input text")
 
         assert isinstance(result, str)
         assert len(result) > 0
-        mock_llm_client.chat.assert_called_once()
+        mock_chat.assert_called_once()
 
-    @patch('factcheck.pipeline.llm_client')
-    def test_summarize_input_with_evidence(self, mock_llm_client):
+    @patch('pipeline.summary.chat')
+    def test_summarize_input_with_evidence(self, mock_chat):
         """Test summarize_input with evidence results included."""
-        mock_llm_client.chat.return_value = "Comprehensive summary including verification results."
+        mock_chat.return_value = "Comprehensive summary including verification results."
 
         evidence_results = [{
             'claim': 'Test claim about AI',
@@ -46,7 +46,7 @@ class TestExecutiveSummary:
         assert len(result) > 0
 
         # Check that the call included evidence context
-        call_args = mock_llm_client.chat.call_args
+        call_args = mock_chat.call_args
         system_prompt = call_args[0][0]
         user_content = call_args[0][1]
 
@@ -55,10 +55,10 @@ class TestExecutiveSummary:
         assert "Verdict: TRUE" in user_content
         assert "AI News Today" in user_content
 
-    @patch('factcheck.pipeline.llm_client')
-    def test_summarize_input_multiple_claims(self, mock_llm_client):
+    @patch('pipeline.summary.chat')
+    def test_summarize_input_multiple_claims(self, mock_chat):
         """Test summarize_input with multiple evidence results."""
-        mock_llm_client.chat.return_value = "Summary covering multiple verified claims."
+        mock_chat.return_value = "Summary covering multiple verified claims."
 
         evidence_results = [
             {
@@ -83,7 +83,7 @@ class TestExecutiveSummary:
         assert len(result) > 0
 
         # Verify both claims are included in context
-        user_content = mock_llm_client.chat.call_args[0][1]
+        user_content = mock_chat.call_args[0][1]
         assert "Claim 1:" in user_content
         assert "Claim 2:" in user_content
         assert "Verdict: TRUE" in user_content
@@ -93,12 +93,12 @@ class TestExecutiveSummary:
 class TestPipelineIntegration:
     """Test that pipeline generates summaries after verification."""
 
-    @patch('factcheck.pipeline.llm_client')
-    @patch('factcheck.evidence.collect_evidence')
-    def test_single_claim_pipeline_summary_timing(self, mock_collect_evidence, mock_llm_client):
+    @patch('pipeline.summary.chat')
+    @patch('search.base.collect_evidence')
+    def test_single_claim_pipeline_summary_timing(self, mock_collect_evidence, mock_chat):
         """Test that summary is generated after verification for single claims."""
         # Mock the LLM calls with proper string responses
-        mock_llm_client.chat.side_effect = [
+        mock_chat.side_effect = [
             # detect_intent response - JSON string
             '{"intent": "fact_claim", "google_query": "test query", "newsapi_query": "test query"}',
             # verify_claim response - formatted verdict string
@@ -129,12 +129,12 @@ REASONING: Good evidence found""",
         # Verify summary contains verification info
         assert "verification results" in result['summary'].lower() or "evidence" in result['summary'].lower()
 
-    @patch('factcheck.pipeline.llm_client')
-    @patch('factcheck.evidence.collect_evidence')
-    def test_multi_claim_pipeline_summary_timing(self, mock_collect_evidence, mock_llm_client):
+    @patch('pipeline.summary.chat')
+    @patch('search.base.collect_evidence')
+    def test_multi_claim_pipeline_summary_timing(self, mock_collect_evidence, mock_chat):
         """Test that summary is generated after verification for multiple claims."""
         # Mock responses with proper string formats
-        mock_llm_client.chat.side_effect = [
+        mock_chat.side_effect = [
             # detect_intent
             '{"intent": "multi_claim", "google_query": "multi claim query", "newsapi_query": "multi claim query"}',
             # extract_claims - return claims one per line with dashes

@@ -28,7 +28,8 @@ $foldersToHide = @(
     "build",
     ".turbo",
     "venv",
-    ".venv"
+    ".venv",
+    ".cache"
 )
 
 # Folders to collapse (show name only, hide content)
@@ -37,7 +38,9 @@ $collapsedFolders = @(
     "instance",
     "uploads",
     ".git",
-    "public"
+    "public",
+    "tests",
+    "scripts"
 )
 
 # Priority files (ALWAYS include full content, regardless of modification date)

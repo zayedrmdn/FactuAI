@@ -12,8 +12,9 @@ import tempfile
 import os
 import json
 
-from factcheck import pipeline, ocr, video
-from factcheck.providers import SUPPORTED_PROVIDERS, validate_providers
+from pipeline import check_text, check_text_stream
+from extract import extract_text_from_image, extract_text_from_video
+from search.config import SUPPORTED_PROVIDERS, validate_providers
 from utils.logging import get_logger
 from utils.helpers import handle_errors, ValidationError, create_error_response
 
@@ -179,7 +180,7 @@ def process_factcheck():
     if progressive:
         def event_stream():
             try:
-                for event in pipeline.check_text_stream(
+                for event in check_text_stream(
                     text,
                     max_claims=max_claims,
                     llm=provider,
@@ -215,7 +216,7 @@ def process_factcheck():
         )
 
     try:
-        result = pipeline.check_text(
+        result = check_text(
             text,
             max_claims=max_claims,
             llm=provider,
@@ -263,7 +264,7 @@ def factcheck():
     
     logger.info(f"[API] Fact-check request: {len(text)} chars")
     
-    result = pipeline.check_text(text, max_claims=max_claims, llm=llm)
+    result = check_text(text, max_claims=max_claims, llm=llm)
     return jsonify(result)
 
 
@@ -292,13 +293,13 @@ def factcheck_image():
     try:
         # Extract text
         logger.info(f"[API] OCR extraction from: {file.filename}")
-        text = ocr.extract_text_from_image(image_path)
+        text = extract_text_from_image(image_path)
         
         if not text:
             return jsonify({"error": "No text found in image"}), 400
         
         # Fact-check extracted text
-        result = pipeline.check_text(text)
+        result = check_text(text)
         result["extracted_text"] = text
         
         return jsonify(result)
@@ -334,13 +335,13 @@ def factcheck_video():
     try:
         # Extract text from video
         logger.info(f"[API] Video processing: {file.filename}")
-        text = video.extract_text_from_video(video_path)
+        text = extract_text_from_video(video_path)
         
         if not text:
             return jsonify({"error": "No speech found in video"}), 400
         
         # Fact-check extracted text
-        result = pipeline.check_text(text)
+        result = check_text(text)
         result["extracted_text"] = text
         
         return jsonify(result)
@@ -373,7 +374,7 @@ def extract_image_text():
         file.save(image_path)
     
     try:
-        text = ocr.extract_text_from_image(image_path)
+        text = extract_text_from_image(image_path)
         return jsonify({"text": text})
         
     finally:
@@ -403,7 +404,7 @@ def extract_video_text():
         file.save(video_path)
     
     try:
-        text = video.extract_text_from_video(video_path)
+        text = extract_text_from_video(video_path)
         return jsonify({"text": text})
         
     finally:

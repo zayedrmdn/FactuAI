@@ -9,7 +9,7 @@ import pytest
 import json
 import os
 from unittest.mock import patch, MagicMock
-from factcheck.pipeline import detect_intent
+from pipeline import detect_intent
 from utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -50,7 +50,7 @@ Final output:
   "newsapi_query": "covid vaccine microchip"
 }"""
         
-        with patch('factcheck.llm_client.chat', return_value=mock_response):
+        with patch('services.llm.chat', return_value=mock_response):
             result = detect_intent("COVID vaccines contain microchips for tracking")
             
             logger.info(f"[TEST] Case 1 Result: {json.dumps(result, indent=2)}")
@@ -82,7 +82,7 @@ Search Query Strategy:
 }
 ```"""
         
-        with patch('factcheck.llm_client.chat', return_value=mock_response):
+        with patch('services.llm.chat', return_value=mock_response):
             result = detect_intent("What causes climate change?")
             
             logger.info(f"[TEST] Case 2 Result: {json.dumps(result, indent=2)}")
@@ -106,7 +106,7 @@ Step 2: Generate queries
 Step 3: Validation
 The intent is correct as fact_claim, and queries are optimized for each provider."""
         
-        with patch('factcheck.llm_client.chat', return_value=mock_response):
+        with patch('services.llm.chat', return_value=mock_response):
             result = detect_intent("5G towers cause cancer")
             
             logger.info(f"[TEST] Case 3 Result: {json.dumps(result, indent=2)}")
@@ -141,7 +141,7 @@ FINAL OUTPUT:
 
 Confidence: 95%"""
         
-        with patch('factcheck.llm_client.chat', return_value=mock_response):
+        with patch('services.llm.chat', return_value=mock_response):
             result = detect_intent("I think AI will take all our jobs")
             
             logger.info(f"[TEST] Case 4 Result: {json.dumps(result, indent=2)}")
@@ -162,7 +162,7 @@ Search queries should be:
 
 Note: No proper JSON formatting provided, testing fallback"""
         
-        with patch('factcheck.llm_client.chat', return_value=mock_response):
+        with patch('services.llm.chat', return_value=mock_response):
             result = detect_intent("The moon landing was fake")
             
             logger.info(f"[TEST] Case 5 Result: {json.dumps(result, indent=2)}")
@@ -266,7 +266,7 @@ class TestEdgeCases:
     
     def test_empty_response_handling(self):
         """Test Case 8: Handle empty or minimal LLM response"""
-        with patch('factcheck.llm_client.chat', return_value="{}"):
+        with patch('services.llm.chat', return_value="{}"):
             result = detect_intent("Test claim")
             
             logger.info(f"[TEST] Edge Case 1 Result: {json.dumps(result, indent=2)}")
@@ -287,7 +287,7 @@ class TestEdgeCases:
   "metadata": {"model": "test", "version": "1.0"}
 }"""
         
-        with patch('factcheck.llm_client.chat', return_value=mock_response):
+        with patch('services.llm.chat', return_value=mock_response):
             result = detect_intent("Test claim with extra fields")
             
             logger.info(f"[TEST] Edge Case 2 Result: {json.dumps(result, indent=2)}")
@@ -323,7 +323,7 @@ Result:
 
 ✅ Analysis complete"""
         
-        with patch('factcheck.llm_client.chat', return_value=mock_response):
+        with patch('services.llm.chat', return_value=mock_response):
             result = detect_intent("What is the émigré population in the US?")
             
             logger.info(f"[TEST] Edge Case 3 Result: {json.dumps(result, indent=2)}")
@@ -335,7 +335,7 @@ Result:
 
 def test_centralized_logging():
     """Test Case 11: Verify centralized logging is being used"""
-    from factcheck import pipeline
+    from pipeline import detect_intent
     
     # Check that pipeline uses utils.logging.get_logger
     assert hasattr(pipeline, 'logger')

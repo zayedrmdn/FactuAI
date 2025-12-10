@@ -10,7 +10,7 @@ This module tests the Tavily search integration including:
 
 import pytest
 from unittest.mock import patch, MagicMock
-from factcheck.evidence import search_tavily
+from search.tavily import search_tavily
 from utils.helpers import SearchError
 
 
@@ -141,7 +141,7 @@ class TestTavilyLiveAPI:
     def test_live_verification_workflow(self):
         """Live test: Full verification workflow with intent detection"""
         from config import TAVILY_API_KEY
-        from factcheck.pipeline import detect_intent
+        from pipeline import detect_intent
         
         if not TAVILY_API_KEY:
             pytest.skip("TAVILY_API_KEY not configured")

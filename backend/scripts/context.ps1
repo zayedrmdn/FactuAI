@@ -15,13 +15,13 @@ $HoursBack = 1
 $targetFolders = @("frontend", "backend", ".github")
 
 # Folders to completely hide from tree
-$foldersToHide = @(".git", ".next", "node_modules", "__pycache__", "unsloth_compiled_cache", "uploads", ".venv-cloud", ".vscode")
+$foldersToHide = @(".git", ".next", "node_modules", "__pycache__", "unsloth_compiled_cache", "uploads", ".venv-cloud", ".vscode", ".cache")
 
 # Folders to collapse (show name only, hide content)
-$collapsedFolders = @("node_modules", ".next", ".git", "dist", "build", "__pycache__", "unsloth_compiled_cache", "uploads")
+$collapsedFolders = @("node_modules", ".next", ".git", "dist", "build", "__pycache__", "unsloth_compiled_cache", "uploads", "tests", "scripts")
 
 # Core folders to fully expand (show recursive structure)
-$coreFolders = @("backend", "frontend", "scripts")
+$coreFolders = @("backend", "frontend")
 
 # Priority files (ALWAYS include full content, regardless of modification date)
 $priorityFiles = @(
@@ -53,7 +53,9 @@ function Get-SmartTree {
         }
     }
     foreach ($folder in $items) {
-        if ($IsRoot -and $coreFolders -contains $folder.Name) {
+        if ($collapsedFolders -contains $folder.Name) {
+            $str += "$Indent|-- [$($folder.Name)/] (Content Hidden)`n"
+        } elseif ($IsRoot -and $coreFolders -contains $folder.Name) {
             $str += "$Indent|-- [$($folder.Name)/]`n"
             $str += Get-SmartTree -Path $folder.FullName -Indent "$Indent    " -IsCore $true
         } elseif ($IsCore) {

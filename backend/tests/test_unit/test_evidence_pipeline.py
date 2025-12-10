@@ -3,7 +3,11 @@ Unit tests for the evidence collection module.
 """
 import pytest
 from unittest.mock import Mock, patch, MagicMock
-from factcheck import evidence
+from search.base import collect_evidence
+from search import search_google, search_newsapi
+from extract.scraper import scrape_article
+from extract.base import extract_sentences
+from services.ranking.scorer import rank_sentences
 
 
 # build_search_query was removed from evidence.py as it's now handled by LLM in detect_intent

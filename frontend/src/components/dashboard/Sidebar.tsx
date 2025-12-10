@@ -10,6 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ShieldCheck,
+  Activity,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -24,6 +25,11 @@ const navItems = [
     title: 'Dashboard',
     href: '/dashboard',
     icon: LayoutDashboard,
+  },
+  {
+    title: 'API Limits',
+    href: '/dashboard/limits',
+    icon: Activity,
   },
   {
     title: 'Profile',

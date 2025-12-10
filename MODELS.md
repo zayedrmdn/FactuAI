@@ -409,6 +409,19 @@ result = completion.choices[0].message.content
 - Validate image URLs before requests
 - Excellent for vision-language & multilingual tasks
 
+**⚠️ Known Issues & Limitations**:
+- **System Message Support**: Does NOT support separate system messages ("Developer instruction is not enabled")
+  - **Solution**: Merge system prompt into user message: `f"{system}\n\n{user}"`
+  - **Workaround**: Backend automatically detects and handles this
+- **Rate Limiting**: Free tier frequently rate-limited (429 errors)
+  - **Solution**: Use alternative models during high traffic
+  - **Better Alternatives for Fact-Checking**:
+    * `alibaba/tongyi-deepresearch-30b-a3b:free` - Better reasoning, more reliable
+    * `z-ai/glm-4.5-air:free` - Faster, supports system messages
+    * `tngtech/deepseek-r1t2-chimera:free` - Long context, excellent reasoning
+- **Recommended For**: Multimodal tasks (image analysis), multilingual content
+- **Not Recommended For**: High-frequency API calls, production fact-checking
+
 ---
 
 # NVIDIA NIM Provider

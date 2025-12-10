@@ -9,7 +9,8 @@ import os
 # Add backend to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from factcheck import llm_client, pipeline
+from services import llm
+from pipeline import verify_claim
 from utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -21,7 +22,7 @@ def test_llm_client_direct():
     print("="*60)
     
     try:
-        llm_client.initialize()
+        llm.initialize()
         
         system = "You are a fact-checking AI. Analyze claims objectively."
         user = "Is this claim true: 'COVID-19 vaccines contain microchips'?"
@@ -31,7 +32,7 @@ def test_llm_client_direct():
         print(f"User: {user}")
         print("\nSending request...")
         
-        response = llm_client.chat(
+        response = llm.chat(
             system=system,
             user=user,
             provider="openrouter",
@@ -62,7 +63,7 @@ def test_pipeline_verification():
         print(f"Model: mistralai/mistral-7b-instruct:free")
         print("\nVerifying with evidence collection...")
         
-        result = pipeline.verify_claim(
+        result = verify_claim(
             claim=claim,
             llm="openrouter",
             model_id="mistralai/mistral-7b-instruct:free",
@@ -101,7 +102,8 @@ def test_summary_generation():
         print(f"Model: mistralai/mistral-7b-instruct:free")
         print("\nGenerating summary...")
         
-        summary = pipeline.summarize_input(
+        from pipeline import generate_executive_summary
+        summary = generate_executive_summary(
             text=text,
             llm="openrouter",
             model_id="mistralai/mistral-7b-instruct:free",

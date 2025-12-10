@@ -47,18 +47,20 @@ db.init_app(app)
 # Create tables and initialize everything within app context
 with app.app_context():
     # Initialize LLM providers
-    import factcheck
-    factcheck.initialize()
+    from services import llm
+    llm.initialize()
     
     # Import blueprints (within app context so models can be loaded)
     from routes.factcheck import bp as factcheck_bp
     from routes.auth import bp as auth_bp
     from routes.profile import bp as profile_bp
+    from routes.limits import bp as limits_bp
     
     # Register blueprints
     app.register_blueprint(factcheck_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(profile_bp)
+    app.register_blueprint(limits_bp)
     
     # Create database tables
     db.create_all()

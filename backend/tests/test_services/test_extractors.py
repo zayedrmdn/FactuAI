@@ -5,7 +5,7 @@ import os
 # Add the backend directory to Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from factcheck.evidence import scrape_article
+from extract.scraper import scrape_article
 
 class TestExtractors:
     """Test all article extractors with real URLs."""

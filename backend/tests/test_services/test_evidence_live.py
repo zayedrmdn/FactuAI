@@ -1,7 +1,8 @@
 import os
 import pytest
 from dotenv import load_dotenv
-from factcheck import llm_client, evidence
+from services import llm
+from search.base import collect_evidence
 
 load_dotenv(dotenv_path="D:/Projects/FactuAI/backend/.env")
 
@@ -23,10 +24,10 @@ def live_enabled():
 def test_evidence_live_fetch(claim):
     """Test evidence collection with real API calls."""
     # Initialize LLM
-    llm_client.initialize()
+    llm.initialize()
     
     # Collect evidence using the new simplified API
-    result = evidence.collect_evidence(claim, max_results=5)
+    result = collect_evidence(claim, max_results=5)
     
     print("\n=== CLAIM ===")
     print(claim)
