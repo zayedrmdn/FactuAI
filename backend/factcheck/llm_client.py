@@ -159,47 +159,6 @@ def get_provider(provider: str = None) -> Optional[str]:
 # Generation Functions
 # ==========================================================================
 
-def generate(
-    prompt: str,
-    provider: str = None,
-    model_id: str = None,
-    max_tokens: int = 1024,
-    temperature: float = 0.7,
-    **kwargs
-) -> str:
-    """
-    Generate a response from a single prompt.
-    
-    Args:
-        prompt: User prompt text
-        provider: Provider to use (openrouter, nvidia, local)
-        max_tokens: Maximum tokens to generate
-        temperature: Sampling temperature (0-1)
-        **kwargs: Additional provider-specific parameters
-    
-    Returns:
-        Generated text
-        
-    Raises:
-        LLMClientError: If generation fails
-    """
-    provider = get_provider(provider)
-    if not provider:
-        raise LLMClientError("No LLM providers available")
-    
-    logger.debug(f"[LLM] Generating with {provider}")
-    
-    # Handle cloud providers (OpenRouter, Nvidia)
-    if provider in ["openrouter", "nvidia"]:
-        return _generate_cloud(prompt, provider, model_id, max_tokens, temperature, **kwargs)
-    
-    # Handle local provider
-    elif provider == "local":
-        return _generate_local(prompt, max_tokens, temperature, **kwargs)
-    
-    raise LLMClientError(f"Unknown provider: {provider}")
-
-
 def chat(
     system: str,
     user: str,
@@ -516,7 +475,6 @@ def get_available_providers() -> list:
 
 __all__ = [
     "initialize",
-    "generate",
     "chat",
     "is_available",
     "get_available_providers",

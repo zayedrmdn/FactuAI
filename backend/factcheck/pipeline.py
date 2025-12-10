@@ -180,6 +180,8 @@ def detect_intent(text: str, llm: str = None, model_id: str = None) -> Dict[str,
         return {"intent": "instructional", "google_query": text_stripped[:200], "newsapi_query": text_stripped[:200]}
     
     # Use LLM for intent + search queries extraction
+    import json
+    
     try:
         system = """You must output valid JSON only. No explanations, no markdown, no extra text.
 
@@ -208,12 +210,11 @@ Output JSON only at the end."""
             f"Text: {text_stripped}",
             provider=llm,
             model_id=model_id,
-            max_tokens=300,  # Increased from 150 to prevent truncation
+            max_tokens=500,  # Increased for reasoning models that need more tokens
             temperature=0.3,
         )
         
         # Parse JSON response with robust error handling for reasoning models
-        import json
         response_clean = response.strip()
         
         # Handle various LLM response formats, especially reasoning models
@@ -414,14 +415,15 @@ Now extract from:"""
 # Summarization
 # ==========================================================================
 
-def summarize_input(text: str, llm: str = None, model_id: str = None, max_tokens: int = 500) -> str:
+def summarize_input(text: str, llm: str = None, model_id: str = None, max_tokens: int = 500, evidence_results: List[Dict] = None) -> str:
     """
-    Generate an executive summary of the input text.
+    Generate an executive summary of the input text and verification results.
     
     Args:
-        text: Text to summarize
+        text: Original input text
         llm: Optional LLM provider
-        max_tokens: Maximum tokens for summary (default 300 for reasoning models)
+        max_tokens: Maximum tokens for summary (default 500 for reasoning models)
+        evidence_results: Optional list of verification results with evidence and reasoning
         
     Returns:
         Executive summary string
@@ -429,12 +431,41 @@ def summarize_input(text: str, llm: str = None, model_id: str = None, max_tokens
     if not text or not text.strip():
         return ""
     
-    system = """Generate a brief executive summary (2-3 sentences) that captures:
-1. The main claim(s) or topic
-2. Key context (source, date, entities if mentioned)
-3. Why this matters or what's at stake
+    # Build comprehensive context for summary
+    context_parts = [f"Original Text:\n{text}"]
+    
+    if evidence_results:
+        context_parts.append("\nVerification Results:")
+        for i, result in enumerate(evidence_results, 1):
+            claim = result.get("claim", f"Claim {i}")
+            verdict = result.get("verdict", "UNKNOWN")
+            confidence = result.get("confidence", 0.0)
+            reasoning = result.get("reasoning", "")
+            
+            context_parts.append(f"\nClaim {i}: {claim}")
+            context_parts.append(f"Verdict: {verdict} (Confidence: {confidence:.2f})")
+            context_parts.append(f"Reasoning: {reasoning}")
+            
+            # Include key evidence snippets
+            sources = result.get("sources", [])
+            if sources:
+                context_parts.append("Key Sources:")
+                for source in sources[:3]:  # Limit to top 3 sources
+                    title = source.get("title", "")
+                    url = source.get("url", "")
+                    if title:
+                        context_parts.append(f"- {title}")
+    
+    full_context = "\n".join(context_parts)
+    
+    system = """You are an expert fact-checker. Write a concise, decisive executive summary (maximum 50-60 words).
+    
+    Follow this structure strictly:
+    1.  **The Verdict First:** Start immediately with the final conclusion (e.g., "This claim is False," "This assertion is unsubstantiated").
+    2.  **The Evidence:** Briefly explain *why* based on the provided verification results.
+    3.  **The Consensus:** meaningful reference to the sources (e.g., "refuted by multiple health organizations").
 
-Be objective and neutral. Focus on WHAT is being claimed, not whether it's true."""
+    Avoid passive voice. Be direct. Do not simply repeat the original claim; explain why it is true or false."""
     
     try:
         # Retry logic for LLM calls
@@ -444,7 +475,7 @@ Be objective and neutral. Focus on WHAT is being claimed, not whether it's true.
             try:
                 response = llm_client.chat(
                     system,
-                    f"Text:\n{text}",
+                    f"Content to summarize:\n{full_context}",
                     provider=llm,
                     model_id=model_id,
                     max_tokens=max_tokens,
@@ -502,54 +533,6 @@ Be objective and neutral. Focus on WHAT is being claimed, not whether it's true.
             if idx > 0:
                 return text[:idx + 1].strip()
         return text[:100].strip() + ('...' if len(text) > 100 else '')
-
-
-def summarize_evidence(evidence_text: str, llm: str = None, model_id: str = None) -> str:
-    """
-    Summarize collected evidence.
-    
-    Args:
-        evidence_text: Evidence text to summarize
-        llm: Optional LLM provider
-        
-    Returns:
-        Summary string
-    """
-    if not evidence_text or not evidence_text.strip():
-        return ""
-    
-    words = evidence_text.split()
-    target_words = max(20, min(50, len(words) // 4))
-    
-    system = f"""Summarize the following evidence in about {target_words} words.
-Keep it factual, neutral, and concise. Avoid repetition."""
-    
-    try:
-        response = llm_client.chat(
-            system,
-            f"Evidence:\n{evidence_text[:2000]}",  # Truncate to prevent token overflow
-            provider=llm,
-            model_id=model_id,
-            max_tokens=max(600, target_words * 6),  # Very generous buffer for reasoning models
-        )
-        
-        # Clean up
-        if response.startswith("Summary:"):
-            response = response[8:].strip()
-        
-        response = re.sub(r'\s+', ' ', response).strip()
-        
-        # Truncate to target words
-        response_words = response.split()
-        if len(response_words) > target_words:
-            response = ' '.join(response_words[:target_words]) + '...'
-        
-        return response
-        
-    except Exception as e:
-        logger.error(f"[SUMMARY] Evidence summary failed: {e}")
-        # Fallback: first N words
-        return ' '.join(words[:target_words]) + '...'
 
 
 # ==========================================================================
@@ -801,14 +784,6 @@ def check_text(
                 "suggestion": "Please enter a factual claim, question, or news paragraph."
             }
         
-        # Generate summary
-        _log_model_usage("summary", summary_cfg.get("provider", llm), summary_cfg.get("model_id"))
-        summary = summarize_input(
-            text,
-            llm=summary_cfg.get("provider", llm),
-            model_id=summary_cfg.get("model_id"),
-        )
-        
         # Handle different intent types
         if intent == "fact_question":
             # Treat question as a claim
@@ -823,6 +798,16 @@ def check_text(
                 num_google=num_google,
                 num_news=num_news,
             )
+            
+            # Generate comprehensive summary with verification results
+            _log_model_usage("summary", summary_cfg.get("provider", llm), summary_cfg.get("model_id"))
+            summary = summarize_input(
+                text,
+                llm=summary_cfg.get("provider", llm),
+                model_id=summary_cfg.get("model_id"),
+                evidence_results=[result]
+            )
+            
             return {
                 "summary": summary,
                 "results": [{"claim": text, **result}]
@@ -840,7 +825,7 @@ def check_text(
             
             if not claims:
                 return {
-                    "summary": summary,
+                    "summary": "",
                     "results": [],
                     "validation_error": "No factual claims found.",
                     "suggestion": "Try a different text."
@@ -862,6 +847,15 @@ def check_text(
                 )
                 results.append({"claim": claim, **result})
             
+            # Generate comprehensive summary with all verification results
+            _log_model_usage("summary", summary_cfg.get("provider", llm), summary_cfg.get("model_id"))
+            summary = summarize_input(
+                text,
+                llm=summary_cfg.get("provider", llm),
+                model_id=summary_cfg.get("model_id"),
+                evidence_results=results
+            )
+            
             return {
                 "summary": summary,
                 "results": results
@@ -877,6 +871,16 @@ def check_text(
                 model_id=reasoning_cfg.get("model_id"),
                 enabled_search_providers=enabled_search_providers,
             )
+            
+            # Generate comprehensive summary with verification results
+            _log_model_usage("summary", summary_cfg.get("provider", llm), summary_cfg.get("model_id"))
+            summary = summarize_input(
+                text,
+                llm=summary_cfg.get("provider", llm),
+                model_id=summary_cfg.get("model_id"),
+                evidence_results=[result]
+            )
+            
             return {
                 "summary": summary,
                 "results": [{"claim": text, **result}]
@@ -946,17 +950,9 @@ def check_text_stream(
             }
             return
         
-        # Summary generation
-        yield {"type": "phase", "message": PHASE_GENERATING_SUMMARY, "progress": 10}
-        _log_model_usage("summary", summary_cfg.get("provider", llm), summary_cfg.get("model_id"))
-        summary = summarize_input(
-            text,
-            llm=summary_cfg.get("provider", llm),
-            model_id=summary_cfg.get("model_id"),
-        )
-        yield {"type": "summary", "summary": summary}
+        # Handle different intents and collect results for summary
+        all_results = []
         
-        # Handle different intents
         if intent == "fact_question":
             yield {"type": "phase", "message": PHASE_VERIFYING_CLAIM, "progress": 30}
             _log_model_usage("verify_single", reasoning_cfg.get("provider", llm), reasoning_cfg.get("model_id"))
@@ -968,6 +964,7 @@ def check_text_stream(
                 model_id=reasoning_cfg.get("model_id"),
                 enabled_search_providers=enabled_search_providers,
             )
+            all_results.append(result)
             yield {"type": "result", "result": {"claim": text, **result}}
         
         elif intent in ["news_paragraph", "multi_claim"]:
@@ -1011,6 +1008,7 @@ def check_text_stream(
                     top_k=10,
                     enabled_search_providers=enabled_search_providers,
                 )
+                all_results.append(result)
                 yield {"type": "result", "result": {"claim": claim, **result}, "claim_index": i + 1}
         
         else:  # fact_claim
@@ -1026,7 +1024,19 @@ def check_text_stream(
                 num_google=num_google,
                 num_news=num_news,
             )
+            all_results.append(result)
             yield {"type": "result", "result": {"claim": text, **result}}
+
+        # Summary generation (after all verification is complete)
+        yield {"type": "phase", "message": PHASE_GENERATING_SUMMARY, "progress": 95}
+        _log_model_usage("summary", summary_cfg.get("provider", llm), summary_cfg.get("model_id"))
+        summary = summarize_input(
+            text,
+            llm=summary_cfg.get("provider", llm),
+            model_id=summary_cfg.get("model_id"),
+            evidence_results=all_results
+        )
+        yield {"type": "summary", "summary": summary}
 
         # Signal completion for consumers expecting a final event
         yield {"type": "complete", "progress": 100}
@@ -1043,7 +1053,6 @@ __all__ = [
     "detect_intent",
     "extract_claims",
     "summarize_input",
-    "summarize_evidence",
     "verify_claim",
     "check_text",
     "check_text_stream",

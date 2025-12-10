@@ -57,7 +57,7 @@ FactuAI/
 │   ├── pipeline/                # Fact-checking orchestration
 │   ├── services/                # LLM, classifiers, search, OCR
 │   ├── schemas/                 # Pydantic validation
-│   └── tests/                   # Pytest suite (47 test cases)
+│   └── tests/                   # Pytest suite (61 test cases)
 │
 ├── scripts/launch.bat           # Unified launcher (cloud/local modes)
 ├── .env                         # Environment config (gitignored)
@@ -405,23 +405,28 @@ See **MODELS.md** for comprehensive integration guide.
 
 ### Backend (Pytest)
 
-**Test Suite**: 47 test cases across 4 modules
+**Test Suite**: 61 test cases across multiple modules
 
 **Coverage**:
-- `tests/test_unit/test_evidence_pipeline.py` (10/10 passing)
+- `tests/test_unit/test_evidence_pipeline.py` (10 tests - Evidence collection pipeline)
+- `tests/test_services/test_intent_reasoning_models.py` (11 tests - Reasoning model JSON parsing with live API tests)
+- `tests/test_services/test_intent_classifier.py` (24 tests - Intent detection classifier)
+- `tests/test_services/test_extractors*.py` (11 tests - Article extraction and caching)
 - `tests/test_routes/` (API endpoint tests)
-- `tests/test_services/` (LLM classifier tests, 3 expected LLM variance failures)
 - `tests/test_models/` (Database model tests)
 
 **Run Tests**:
 ```bash
 cd backend
-pytest tests/
-pytest tests/test_unit/test_evidence_pipeline.py  # Specific module
+pytest tests/                                                    # All tests
+pytest tests/test_services/test_intent_reasoning_models.py      # Reasoning model parsing (includes 2 live API tests)
+pytest tests/test_unit/test_evidence_pipeline.py                # Evidence pipeline unit tests
 ```
 
-**Current Status**: 20/23 tests passing (87%)  
-**Expected Failures**: 3 LLM classification variance tests (multi_claim vs fact_claim, nonsense vs fact_claim)
+**Key Test Suites**:
+- **Reasoning Model Tests**: Validates JSON extraction from reasoning models (Alibaba Tongyi, GLM 4.5 Air) including step-by-step analysis, markdown formatting, and malformed responses
+- **Live API Tests**: 2 tests using OpenRouter GLM 4.5 Air to ensure production readiness
+- **Intent Classification**: 24 tests covering fact claims, questions, opinions, multi-claims, and edge cases
 
 ### Frontend (Manual)
 
