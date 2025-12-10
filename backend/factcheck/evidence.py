@@ -506,7 +506,7 @@ def collect_evidence(
     num_google: int = 5,
     num_news: int = 5,
     num_tavily: int = 5,
-    top_k: int = 10,
+    top_k: int = 3,
     enabled_providers: Optional[List[str]] = None,
     verification_question: Optional[str] = None,
     tavily_answer: Optional[str] = None

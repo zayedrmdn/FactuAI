@@ -64,6 +64,14 @@ with app.app_context():
     db.create_all()
 
 
+@app.route('/', methods=['POST'])
+def health_check():
+    """Simple health check endpoint to prevent log spam."""
+    from flask import request
+    logger.info(f"[HEALTH] POST / from {request.remote_addr}, data: {request.get_data(as_text=True)[:200]}...")
+    return {'status': 'ok'}, 200
+
+
 @app.route('/uploads/<path:filename>')
 def uploaded_file(filename):
     """Serve uploaded files."""

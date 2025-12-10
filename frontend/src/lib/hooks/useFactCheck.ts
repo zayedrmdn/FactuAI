@@ -8,7 +8,7 @@ import { usePipelineModelsStore } from '@/stores/pipeline-models-store';
 import type { PipelineTask } from '@/stores/pipeline-models-store';
 import { getModelById } from '@/config/ai-models';
 
-const API_URL = 'http://localhost:5000/api/process';
+const API_URL = 'http://127.0.0.1:5000/api/process';
 
 // Type for SSE data messages
 interface SSEMessage {

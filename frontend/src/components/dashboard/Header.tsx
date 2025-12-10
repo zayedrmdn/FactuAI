@@ -56,7 +56,7 @@ export function Header({ onMobileMenuToggle, mobileMenuOpen = false }: Readonly<
             <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
               {user?.profile_picture && !imageError ? (
                 <Image
-                  src={`http://localhost:5000${user.profile_picture}`}
+                  src={`http://127.0.0.1:5000${user.profile_picture}`}
                   alt="Profile"
                   width={36}
                   height={36}

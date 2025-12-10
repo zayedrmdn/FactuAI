@@ -10,7 +10,7 @@ export const SUPPORTED_VIDEO_TYPES = ['video/'];
 export const SUPPORTED_TEXT_TYPES = ['.txt', '.pdf'];
 
 // API endpoints
-export const API_BASE_URL = 'http://localhost:5000/api';
+export const API_BASE_URL = 'http://127.0.0.1:5000/api';
 
 // UI constants
 export const TEXT_SIZES = {
