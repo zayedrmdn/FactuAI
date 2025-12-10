@@ -12,13 +12,14 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { SEARCH_PROVIDERS, SearchProviderId } from '@/config/search-providers';
 
 /**
  * Search provider configuration
  */
-export type SearchProvider = 'google' | 'newsapi';
+export type SearchProvider = SearchProviderId;
 
-export interface SearchProviderConfig {
+export interface SearchProviderStateItem {
   id: SearchProvider;
   name: string;
   description: string;
@@ -26,7 +27,7 @@ export interface SearchProviderConfig {
 }
 
 export interface SearchProvidersState {
-  providers: SearchProviderConfig[];
+  providers: SearchProviderStateItem[];
   toggleProvider: (providerId: SearchProvider) => void;
   isProviderEnabled: (providerId: SearchProvider) => boolean;
   getEnabledProviders: () => SearchProvider[];
@@ -34,22 +35,41 @@ export interface SearchProvidersState {
 }
 
 /**
- * Default provider configurations
+ * Default provider configurations from central config
  */
-const defaultProviders: SearchProviderConfig[] = [
-  {
-    id: 'google',
-    name: 'Google Search',
-    description: 'Search using Google Custom Search API',
-    enabled: true,
-  },
-  {
-    id: 'newsapi',
-    name: 'NewsAPI',
-    description: 'Search news articles from various sources',
-    enabled: true,
-  },
-];
+const defaultProviders: SearchProviderStateItem[] = SEARCH_PROVIDERS.map(p => ({
+  id: p.id,
+  name: p.name,
+  description: p.description,
+  enabled: p.defaultEnabled
+}));
+
+/**
+ * Merge function to add new providers to existing localStorage data
+ * This ensures backward compatibility when new providers are added
+ */
+const mergeProviders = (
+  storedProviders: SearchProviderStateItem[] | undefined
+): SearchProviderStateItem[] => {
+  if (!storedProviders) return defaultProviders;
+
+  // Create a map of stored providers by ID
+  const storedMap = new Map(storedProviders.map((p) => [p.id, p]));
+
+  // Merge: use stored config if exists, otherwise use default
+  return defaultProviders.map((defaultProvider) => {
+    const stored = storedMap.get(defaultProvider.id);
+    if (stored) {
+      // Update name/description in case they changed in config
+      return {
+        ...stored,
+        name: defaultProvider.name,
+        description: defaultProvider.description
+      };
+    }
+    return defaultProvider; // Add new provider
+  });
+};
 
 /**
  * Search Providers Store implementation
@@ -98,7 +118,7 @@ export const useSearchProvidersStore = create<SearchProvidersState>()(
       canDisable: (providerId) => {
         const state = get();
         const currentProvider = state.providers.find((p) => p.id === providerId);
-        if (!currentProvider || !currentProvider.enabled) return false;
+        if (!currentProvider?.enabled) return false;
 
         // Can disable if there's at least one other enabled provider
         const enabledCount = state.providers.filter((p) => p.enabled).length;
@@ -108,8 +128,32 @@ export const useSearchProvidersStore = create<SearchProvidersState>()(
     {
       name: 'search-providers',
       storage: createJSONStorage(() => localStorage),
+      version: 2, // Increment version to force migration
       // Only persist the providers array
       partialize: (state) => ({ providers: state.providers }),
+      // Merge stored data with new defaults to handle added providers
+      merge: (persistedState, currentState) => {
+        const stored = persistedState as { providers?: SearchProviderStateItem[] };
+        return {
+          ...currentState,
+          providers: mergeProviders(stored?.providers),
+        };
+      },
+      migrate: (persistedState: unknown, version: number) => {
+        // Migration logic for version updates
+        const stored = persistedState as { providers?: SearchProviderStateItem[] };
+        let providers = stored?.providers || defaultProviders;
+
+        // Version 0/1 to 2: Ensure Tavily is present
+        if (version < 2) {
+          providers = mergeProviders(providers);
+        }
+
+        return {
+          ...(persistedState as object),
+          providers,
+        };
+      },
     }
   )
 );

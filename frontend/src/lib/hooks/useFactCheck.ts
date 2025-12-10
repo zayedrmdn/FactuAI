@@ -238,7 +238,7 @@ export function useFactCheck() {
 
     // Get search limits configuration
     const { useSearchLimitsStore } = await import('@/stores/search-limits-store');
-    const { numGoogle, numNews } = useSearchLimitsStore.getState();
+    const { numGoogle, numNews, numTavily } = useSearchLimitsStore.getState();
 
     // Compute effective model config with session overrides
     const temperature =
@@ -266,6 +266,7 @@ export function useFactCheck() {
       // Search result limits
       num_google: numGoogle,
       num_news: numNews,
+      num_tavily: numTavily,
       // Pipeline-specific model configuration
       pipeline_models: {
         intent: {
@@ -297,7 +298,7 @@ export function useFactCheck() {
     console.log('   Temperature:', requestPayload.temperature);
     console.log('   Max Tokens:', requestPayload.max_tokens);
     console.log('   Search Providers:', enabledSearchProviders.join(', '));
-    console.log('   Search Limits: Google =', numGoogle, '| NewsAPI =', numNews);
+    console.log('   Search Limits: Google =', numGoogle, '| NewsAPI =', numNews, '| Tavily =', numTavily);
     console.log('   Pipeline Models:');
     console.log(
       '     ⚡ Intent:',

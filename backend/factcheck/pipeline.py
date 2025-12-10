@@ -128,10 +128,18 @@ def extract_fallback_from_text(text: str) -> Optional[Dict[str, str]]:
         if len(newsapi_query.split()) < 2:
             newsapi_query = google_query  # Use same as google if newsapi extraction failed
         
+        # Extract verification_question if present
+        verification_question = ""
+        for line in lines:
+            if 'verification_question' in line.lower():
+                verification_question = line.split(':', 1)[1].strip() if ':' in line else line
+                break
+        
         return {
             "intent": intent,
             "google_query": google_query,
-            "newsapi_query": newsapi_query
+            "newsapi_query": newsapi_query,
+            "verification_question": verification_question
         }
         
     except Exception as e:
@@ -166,18 +174,33 @@ def detect_intent(text: str, llm: str = None, model_id: str = None) -> Dict[str,
     
     if not text_stripped or len(text_stripped) < 5:
         fallback_query = text_stripped[:200] if text_stripped else ""
-        return {"intent": "nonsense", "google_query": fallback_query, "newsapi_query": fallback_query}
+        return {
+            "intent": "nonsense",
+            "google_query": fallback_query,
+            "newsapi_query": fallback_query,
+            "verification_question": ""
+        }
     
     text_lower = text_stripped.lower()
     
     # Quick opinion/instructional detection - skip LLM call
     opinion_markers = ["i think", "i believe", "in my opinion", "i feel", "should", "ought to"]
     if any(marker in text_lower for marker in opinion_markers):
-        return {"intent": "opinion", "google_query": text_stripped[:200], "newsapi_query": text_stripped[:200]}
+        return {
+            "intent": "opinion",
+            "google_query": text_stripped[:200],
+            "newsapi_query": text_stripped[:200],
+            "verification_question": ""
+        }
     
     instructional_markers = ["how to", "step 1", "first,", "next,", "finally,"]
     if any(marker in text_lower for marker in instructional_markers):
-        return {"intent": "instructional", "google_query": text_stripped[:200], "newsapi_query": text_stripped[:200]}
+        return {
+            "intent": "instructional",
+            "google_query": text_stripped[:200],
+            "newsapi_query": text_stripped[:200],
+            "verification_question": ""
+        }
     
     # Use LLM for intent + search queries extraction
     import json
@@ -191,7 +214,8 @@ Output format:
 {
   "intent": "fact_claim",
   "google_query": "covid vaccine microchip tracking conspiracy debunk",
-  "newsapi_query": "covid vaccine microchip"
+  "newsapi_query": "covid vaccine microchip",
+  "verification_question": "Do COVID-19 vaccines contain microchips for tracking?"
 }
 
 Rules:
@@ -201,7 +225,14 @@ Rules:
 
 3. newsapi_query: 3-6 shorter keywords for NewsAPI (minimal multiword, lowercase, no punctuation)
 
-4. Extract only essential concepts and entities from the input text.
+4. verification_question: ONLY for fact_claim or fact_question intents, generate a natural language question that directly verifies the claim. 
+   Examples:
+   - Claim: "Trump is president of Indonesia" → Question: "Who is the current president of Indonesia?"
+   - Claim: "The moon landing was fake" → Question: "Did the Apollo moon landing actually happen?"
+   - Question: "What causes climate change?" → Question: "What causes climate change?" (keep as is)
+   For other intents (opinion, instructional, etc.), set verification_question to empty string.
+
+5. Extract only essential concepts and entities from the input text.
 
 Output JSON only at the end."""
         
@@ -303,6 +334,7 @@ Output JSON only at the end."""
         
         google_query = result.get("google_query", "").strip()
         newsapi_query = result.get("newsapi_query", "").strip()
+        verification_question = result.get("verification_question", "").strip()
         
         # Fallback to original text if queries are too short
         fallback_query = text_stripped[:200]
@@ -311,17 +343,40 @@ Output JSON only at the end."""
         if len(newsapi_query.split()) < 2:
             newsapi_query = fallback_query
         
-        logger.debug(f"[INTENT] Detected: {intent}, Google: {google_query[:50]}..., NewsAPI: {newsapi_query[:50]}...")
-        return {"intent": intent, "google_query": google_query, "newsapi_query": newsapi_query}
+        # Generate verification question if missing for fact-checkable intents
+        if not verification_question and intent in ["fact_claim", "fact_question"]:
+            if intent == "fact_question":
+                verification_question = text_stripped  # Use original question
+            else:
+                # Generate simple verification question from claim
+                verification_question = f"Is this true: {text_stripped[:150]}?"
+        
+        logger.debug(f"[INTENT] Detected: {intent}, Google: {google_query[:50]}..., NewsAPI: {newsapi_query[:50]}..., VQ: {verification_question[:50] if verification_question else 'N/A'}...")
+        return {
+            "intent": intent,
+            "google_query": google_query,
+            "newsapi_query": newsapi_query,
+            "verification_question": verification_question
+        }
                 
     except json.JSONDecodeError as e:
         logger.warning(f"[INTENT] Failed to parse JSON response: {e}")
         fallback_query = text_stripped[:200]
-        return {"intent": "fact_claim", "google_query": fallback_query, "newsapi_query": fallback_query}
+        return {
+            "intent": "fact_claim",
+            "google_query": fallback_query,
+            "newsapi_query": fallback_query,
+            "verification_question": f"Is this true: {text_stripped[:150]}?"
+        }
     except Exception as e:
         logger.warning(f"[INTENT] LLM call failed: {e}")
         fallback_query = text_stripped[:200]
-        return {"intent": "fact_claim", "google_query": fallback_query, "newsapi_query": fallback_query}
+        return {
+            "intent": "fact_claim",
+            "google_query": fallback_query,
+            "newsapi_query": fallback_query,
+            "verification_question": f"Is this true: {text_stripped[:150]}?"
+        }
 
 
 # ==========================================================================
@@ -547,8 +602,10 @@ def verify_claim(
     model_id: str = None,
     num_google: int = 5,
     num_news: int = 5,
+    num_tavily: int = 5,
     top_k: int = 10,
-    enabled_search_providers: Optional[List[str]] = None
+    enabled_search_providers: Optional[List[str]] = None,
+    verification_question: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Verify a single claim by collecting evidence and generating verdict.
@@ -561,8 +618,10 @@ def verify_claim(
         model_id: Optional model identifier
         num_google: Number of Google results
         num_news: Number of NewsAPI results
+        num_tavily: Number of Tavily results
         top_k: Number of top evidence items
-        enabled_search_providers: List of enabled providers ['google', 'newsapi']
+        enabled_search_providers: List of enabled providers ['google', 'newsapi', 'tavily']
+        verification_question: Optional natural language question for Tavily answer-seeking
         
     Returns:
         Dict with 'verdict', 'confidence', 'reasoning', 'evidence', 'sources'
@@ -577,8 +636,10 @@ def verify_claim(
             newsapi_query=newsapi_query,
             num_google=num_google,
             num_news=num_news,
+            num_tavily=num_tavily,
             top_k=top_k,
-            enabled_providers=enabled_search_providers
+            enabled_providers=enabled_search_providers,
+            verification_question=verification_question
         )
         
         if not evidence_items:
@@ -591,8 +652,14 @@ def verify_claim(
                 "sources": []
             }
         
-        # Build evidence text
+        # Build evidence text with strict length limit
+        # Truncate evidence text to avoid context window overflow (approx 100k chars ~ 25k tokens)
+        MAX_EVIDENCE_CHARS = 100000
         evidence_text = '\n'.join([f"- {item['text']}" for item in evidence_items])
+        
+        if len(evidence_text) > MAX_EVIDENCE_CHARS:
+            logger.warning(f"[VERIFY] Truncating evidence text from {len(evidence_text)} to {MAX_EVIDENCE_CHARS} chars")
+            evidence_text = evidence_text[:MAX_EVIDENCE_CHARS] + "... (truncated)"
         
         # Generate verdict using LLM
         system = """You are a fact-checking AI. Analyze the claim and evidence, then provide:
@@ -773,7 +840,10 @@ def check_text(
         intent = detection_result["intent"]
         google_query = detection_result["google_query"]
         newsapi_query = detection_result["newsapi_query"]
+        verification_question = detection_result.get("verification_question", "")
         logger.info(f"[PIPELINE] Detected intent: {intent}, Google: {google_query[:50]}..., NewsAPI: {newsapi_query[:50]}...")
+        if verification_question:
+            logger.info(f"[PIPELINE] Verification Question: {verification_question}")
         
         # Handle non-verifiable inputs
         if intent in ["opinion", "nonsense", "instructional"]:
@@ -797,6 +867,7 @@ def check_text(
                 enabled_search_providers=enabled_search_providers,
                 num_google=num_google,
                 num_news=num_news,
+                verification_question=verification_question,
             )
             
             # Generate comprehensive summary with verification results
@@ -844,6 +915,7 @@ def check_text(
                     num_news=num_news,
                     top_k=10,
                     enabled_search_providers=enabled_search_providers,
+                    verification_question=verification_question,
                 )
                 results.append({"claim": claim, **result})
             
@@ -870,6 +942,7 @@ def check_text(
                 llm=reasoning_cfg.get("provider", llm),
                 model_id=reasoning_cfg.get("model_id"),
                 enabled_search_providers=enabled_search_providers,
+                verification_question=verification_question,
             )
             
             # Generate comprehensive summary with verification results
@@ -903,6 +976,7 @@ def check_text_stream(
     enabled_search_providers: Optional[List[str]] = None,
     num_google: int = 5,
     num_news: int = 5,
+    num_tavily: int = 5,
 ) -> Generator[Dict[str, Any], None, None]:
     """
     Streaming version of check_text that yields progress events.
@@ -918,9 +992,10 @@ def check_text_stream(
         max_claims: Maximum claims to extract
         llm: Optional LLM provider
         pipeline_models: Per-stage model configuration
-        enabled_search_providers: List of enabled search providers ['google', 'newsapi']
+        enabled_search_providers: List of enabled search providers ['google', 'newsapi', 'tavily']
         num_google: Number of Google results to fetch
         num_news: Number of NewsAPI results to fetch
+        num_tavily: Number of Tavily results to fetch
     """
     try:
         models = _resolve_models(pipeline_models, fallback_provider=llm, fallback_model=None)
@@ -940,7 +1015,10 @@ def check_text_stream(
         intent = detection_result["intent"]
         google_query = detection_result["google_query"]
         newsapi_query = detection_result["newsapi_query"]
+        verification_question = detection_result.get("verification_question")
         logger.info(f"[PIPELINE] Detected intent: {intent}, Google: {google_query[:50]}..., NewsAPI: {newsapi_query[:50]}...")
+        if verification_question:
+            logger.info(f"[PIPELINE] Verification Question: {verification_question}")
         
         if intent in ["opinion", "nonsense", "instructional"]:
             yield {
@@ -962,7 +1040,11 @@ def check_text_stream(
                 newsapi_query,
                 llm=reasoning_cfg.get("provider", llm),
                 model_id=reasoning_cfg.get("model_id"),
+                num_google=num_google,
+                num_news=num_news,
+                num_tavily=num_tavily,
                 enabled_search_providers=enabled_search_providers,
+                verification_question=verification_question,
             )
             all_results.append(result)
             yield {"type": "result", "result": {"claim": text, **result}}
@@ -1000,13 +1082,16 @@ def check_text_stream(
                 _log_model_usage("verify_claim", reasoning_cfg.get("provider", llm), reasoning_cfg.get("model_id"))
                 result = verify_claim(
                     claim,
-                    search_query,
+                    google_query,
+                    newsapi_query,
                     llm=reasoning_cfg.get("provider", llm),
                     model_id=reasoning_cfg.get("model_id"),
                     num_google=num_google,
                     num_news=num_news,
+                    num_tavily=num_tavily,
                     top_k=10,
                     enabled_search_providers=enabled_search_providers,
+                    verification_question=verification_question,
                 )
                 all_results.append(result)
                 yield {"type": "result", "result": {"claim": claim, **result}, "claim_index": i + 1}
@@ -1020,9 +1105,11 @@ def check_text_stream(
                 newsapi_query,
                 llm=reasoning_cfg.get("provider", llm),
                 model_id=reasoning_cfg.get("model_id"),
-                enabled_search_providers=enabled_search_providers,
                 num_google=num_google,
                 num_news=num_news,
+                num_tavily=num_tavily,
+                enabled_search_providers=enabled_search_providers,
+                verification_question=verification_question,
             )
             all_results.append(result)
             yield {"type": "result", "result": {"claim": text, **result}}

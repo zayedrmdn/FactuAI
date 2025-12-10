@@ -23,7 +23,7 @@ FactuAI is a production-grade full-stack monorepo for AI-powered fact-checking a
 **Core Capabilities**:
 - Text/Image/Video claim extraction and verification
 - Multi-provider LLM orchestration (OpenRouter free tier, NVIDIA NIM paid tier)
-- **Configurable search providers** (Google Custom Search, NewsAPI) with intuitive toggles
+- **Modular Search Architecture**: Easily extensible search providers (Google, NewsAPI, Tavily, etc.)
 - Evidence-based fact-checking pipeline with semantic ranking
 - Real-time progressive response streaming (SSE)
 - Per-stage model selection for optimal performance

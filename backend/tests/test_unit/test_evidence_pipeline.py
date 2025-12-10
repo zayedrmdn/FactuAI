@@ -6,22 +6,8 @@ from unittest.mock import Mock, patch, MagicMock
 from factcheck import evidence
 
 
-def test_build_search_query():
-    """Test search query building extracts key entities."""
-    claim = "OpenAI released GPT-5 in January 2025"
-    query = evidence.build_search_query(claim)
-    
-    assert isinstance(query, str)
-    assert len(query) > 0
-    # Should extract key entities
-    assert "OpenAI" in query or "GPT" in query or "2025" in query
-
-
-def test_build_search_query_empty():
-    """Test handling of empty claim."""
-    query = evidence.build_search_query("")
-    assert query == ""
-
+# build_search_query was removed from evidence.py as it's now handled by LLM in detect_intent
+# Removing obsolete tests: test_build_search_query and test_build_search_query_empty
 
 def test_scrape_article_returns_text():
     """Test that article scraping returns text content."""
@@ -113,7 +99,14 @@ def test_collect_evidence_integration(mock_rank, mock_extract, mock_scrape, mock
     mock_rank.return_value = [("Sentence 1 with enough words", 0.9), ("Sentence 2 with enough words", 0.8), ("Sentence 3 with enough words", 0.7)]
     
     claim = "Test claim for evidence"
-    result = evidence.collect_evidence(claim, num_google=5, num_news=5, top_k=10)
+    result = evidence.collect_evidence(
+        claim, 
+        google_query=claim, 
+        newsapi_query=claim, 
+        num_google=5, 
+        num_news=5, 
+        top_k=10
+    )
     
     # Verify structure - collect_evidence returns a list, not a dict
     assert isinstance(result, list)

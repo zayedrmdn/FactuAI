@@ -28,5 +28,8 @@
   "tests/test_services/test_intent_classifier.py::test_detect_intent[Who is prabowo subianto?-fact_question]": true,
   "tests/test_unit/test_evidence_pipeline.py::test_build_search_query": true,
   "tests/test_unit/test_evidence_pipeline.py::test_build_search_query_empty": true,
-  "tests/test_unit/test_evidence_pipeline.py::test_collect_evidence_integration": true
+  "tests/test_services/test_tavily_integration.py::TestTavilySearchMocked::test_search_tavily_for_verification": true,
+  "tests/test_services/test_tavily_integration.py::TestTavilyEvidenceIntegration::test_collect_evidence_with_tavily_enabled": true,
+  "tests/test_services/test_tavily_integration.py::TestTavilyEvidenceIntegration::test_collect_evidence_tavily_fallback": true,
+  "tests/test_executive_summary.py::TestLiveAPIIntegration::test_live_single_claim_summary": true
 }

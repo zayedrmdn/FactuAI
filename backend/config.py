@@ -91,6 +91,9 @@ GOOGLE_CX_ID = os.getenv("GOOGLE_CX_ID") or os.getenv("GOOGLE_CSE_ID")
 GOOGLE_CSE_ID = GOOGLE_CX_ID  # Backwards-compatible alias
 NEWS_API_KEY = os.getenv("NEWS_API_KEY") or os.getenv("NEWSAPI_KEY")
 
+# Tavily API (Answer-seeking search with AI-generated answers)
+TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
+
 
 # ==========================================================================
 # Pipeline Settings

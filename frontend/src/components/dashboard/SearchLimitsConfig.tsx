@@ -9,26 +9,32 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { useSearchLimitsStore, SEARCH_LIMITS } from '@/stores/search-limits-store';
+import { useSearchLimitsStore } from '@/stores/search-limits-store';
 import { useSearchProvidersStore } from '@/stores/search-providers-store';
-import { Hash, RotateCcw, InfoIcon } from 'lucide-react';
+import { Hash, RotateCcw } from 'lucide-react';
+import { SEARCH_PROVIDERS } from '@/config/search-providers';
 
 export function SearchLimitsConfig() {
-  const { numGoogle, numNews, setNumGoogle, setNumNews, resetToDefaults } =
+  const { numGoogle, numNews, numTavily, setNumGoogle, setNumNews, setNumTavily, resetToDefaults } =
     useSearchLimitsStore();
   const { isProviderEnabled } = useSearchProvidersStore();
 
-  const handleGoogleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value, 10);
-    if (!isNaN(value)) {
-      setNumGoogle(value);
+  // Map provider IDs to their state setters and values
+  // This is a bit of a bridge between the dynamic config and the specific store fields
+  // In a full refactor, the store would also be dynamic (e.g. limits: Record<string, number>)
+  const getProviderState = (id: string) => {
+    switch (id) {
+      case 'google': return { value: numGoogle, setter: setNumGoogle };
+      case 'newsapi': return { value: numNews, setter: setNumNews };
+      case 'tavily': return { value: numTavily, setter: setNumTavily };
+      default: return null;
     }
   };
 
-  const handleNewsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (setter: (val: number) => void) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value, 10);
     if (!isNaN(value)) {
-      setNumNews(value);
+      setter(value);
     }
   };
 
@@ -55,86 +61,50 @@ export function SearchLimitsConfig() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Google Search Limit */}
-        <div
-          className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg border p-3 sm:p-4 transition-opacity ${
-            !isProviderEnabled('google') ? 'opacity-50' : ''
-          }`}
-        >
-          <div className="flex-1 space-y-1">
-            <Label
-              htmlFor="num-google"
-              className="text-sm sm:text-base font-medium flex items-center gap-2"
-            >
-              Google Search
-              {!isProviderEnabled('google') && (
-                <span className="text-xs font-normal text-muted-foreground">(Disabled)</span>
-              )}
-            </Label>
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              Number of Google results to fetch (1-{SEARCH_LIMITS.MAX_GOOGLE})
-            </p>
-          </div>
-          <div className="flex items-center gap-2 sm:gap-3">
-            <input
-              id="num-google"
-              type="number"
-              min={SEARCH_LIMITS.MIN}
-              max={SEARCH_LIMITS.MAX_GOOGLE}
-              value={numGoogle}
-              onChange={handleGoogleChange}
-              disabled={!isProviderEnabled('google')}
-              className="w-16 sm:w-20 rounded-md border border-input bg-background px-2 py-1.5 text-sm text-center transition-colors focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-50"
-              aria-label="Number of Google results"
-            />
-            <span className="text-xs text-muted-foreground hidden sm:inline">results</span>
-          </div>
-        </div>
+        {SEARCH_PROVIDERS.filter(p => p.hasLimit).map((provider) => {
+          const state = getProviderState(provider.id);
+          if (!state) return null; // Skip providers not yet in store (until store is fully dynamic)
 
-        {/* NewsAPI Limit */}
-        <div
-          className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg border p-3 sm:p-4 transition-opacity ${
-            !isProviderEnabled('newsapi') ? 'opacity-50' : ''
-          }`}
-        >
-          <div className="flex-1 space-y-1">
-            <Label
-              htmlFor="num-news"
-              className="text-sm sm:text-base font-medium flex items-center gap-2"
-            >
-              NewsAPI
-              {!isProviderEnabled('newsapi') && (
-                <span className="text-xs font-normal text-muted-foreground">(Disabled)</span>
-              )}
-            </Label>
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              Number of news articles to fetch (1-{SEARCH_LIMITS.MAX_NEWS})
-            </p>
-          </div>
-          <div className="flex items-center gap-2 sm:gap-3">
-            <input
-              id="num-news"
-              type="number"
-              min={SEARCH_LIMITS.MIN}
-              max={SEARCH_LIMITS.MAX_NEWS}
-              value={numNews}
-              onChange={handleNewsChange}
-              disabled={!isProviderEnabled('newsapi')}
-              className="w-16 sm:w-20 rounded-md border border-input bg-background px-2 py-1.5 text-sm text-center transition-colors focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-50"
-              aria-label="Number of NewsAPI results"
-            />
-            <span className="text-xs text-muted-foreground hidden sm:inline">articles</span>
-          </div>
-        </div>
+          const isEnabled = isProviderEnabled(provider.id);
 
-        {/* Info Note */}
-        <div className="flex items-start gap-2 rounded-lg bg-muted/50 p-2 sm:p-3">
-          <InfoIcon className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-          <p className="text-xs text-muted-foreground">
-            <strong>Tip:</strong> Start with lower values (3-5) for faster results. Increase if you
-            need more comprehensive evidence coverage.
-          </p>
-        </div>
+          return (
+            <div
+              key={provider.id}
+              className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg border p-3 sm:p-4 transition-opacity ${
+                !isEnabled ? 'opacity-50' : ''
+              }`}
+            >
+              <div className="flex-1 space-y-1">
+                <Label
+                  htmlFor={`num-${provider.id}`}
+                  className="text-sm sm:text-base font-medium flex items-center gap-2"
+                >
+                  {provider.name}
+                  {!isEnabled && (
+                    <span className="text-xs font-normal text-muted-foreground">(Disabled)</span>
+                  )}
+                </Label>
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  Number of results to fetch (1-{provider.maxLimit})
+                </p>
+              </div>
+              <div className="flex items-center gap-2 sm:gap-3">
+                <input
+                  id={`num-${provider.id}`}
+                  type="number"
+                  min={1}
+                  max={provider.maxLimit}
+                  value={state.value}
+                  onChange={handleChange(state.setter)}
+                  disabled={!isEnabled}
+                  className="w-16 sm:w-20 rounded-md border border-input bg-background px-2 py-1.5 text-sm text-center transition-colors focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-50"
+                  aria-label={`Number of ${provider.name} results`}
+                />
+                <span className="text-xs text-muted-foreground hidden sm:inline">results</span>
+              </div>
+            </div>
+          );
+        })}
       </CardContent>
     </Card>
   );
