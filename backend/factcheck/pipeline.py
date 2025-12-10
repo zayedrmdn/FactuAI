@@ -12,6 +12,7 @@ Simplified from orchestrator + factcheck_service + extractors into one module.
 """
 
 import re
+import json
 from typing import Dict, List, Any, Generator, Optional, Tuple
 
 from utils.logging import get_logger
@@ -77,16 +78,15 @@ def extract_fallback_from_text(text: str) -> Optional[Dict[str, str]]:
         lines = text.split('\n')
         for line in lines:
             line = line.strip()
-            if line.startswith('google_query:') or 'google_query' in line.lower():
-                google_query = line.split(':', 1)[1].strip() if ':' in line else line
-            elif line.startswith('newsapi_query:') or 'newsapi_query' in line.lower():
-                newsapi_query = line.split(':', 1)[1].strip() if ':' in line else line
+            if line.lower().startswith('google_query:'):
+                google_query = line.split(':', 1)[1].strip()
+            elif line.lower().startswith('newsapi_query:'):
+                newsapi_query = line.split(':', 1)[1].strip()
         
         # If no explicit queries found, try to extract from the text
         quotes = []
         if not google_query:
             # Look for quoted strings or comma-separated terms
-            import re
             quotes = re.findall(r'"([^"]*)"', text)
             if quotes:
                 google_query = quotes[0]
@@ -97,53 +97,35 @@ def extract_fallback_from_text(text: str) -> Optional[Dict[str, str]]:
         # For reasoning models, try to find JSON at the end of the text
         if not google_query or not newsapi_query:
             # Look for JSON-like structure at the end
-            last_brace = text.rfind('{')
-            if last_brace != -1:
-                end_brace = text.find('}', last_brace)
-                if end_brace != -1:
-                    potential_json = text[last_brace:end_brace + 1]
-                    try:
-                        import json
-                        parsed = json.loads(potential_json)
-                        if 'google_query' in parsed:
-                            google_query = parsed.get('google_query', google_query)
-                        if 'newsapi_query' in parsed:
-                            newsapi_query = parsed.get('newsapi_query', newsapi_query)
-                        if 'intent' in parsed:
-                            intent = parsed.get('intent', intent)
-                    except json.JSONDecodeError:
-                        pass
+            json_match = re.search(r'\{.*\}', text, re.DOTALL)
+            if json_match:
+                try:
+                    parsed = json.loads(json_match.group(0))
+                    if 'google_query' in parsed:
+                        google_query = parsed.get('google_query', google_query)
+                    if 'newsapi_query' in parsed:
+                        newsapi_query = parsed.get('newsapi_query', newsapi_query)
+                    if 'intent' in parsed:
+                        intent = parsed.get('intent', intent)
+                except json.JSONDecodeError:
+                    pass
         
         # Fallback: use first line after intent as query
         if not google_query:
             for line in lines:
                 line = line.strip()
-                if len(line) > 10 and not any(word in line.lower() for word in ['intent', 'query', 'output', 'format', 'let me', 'analyze', 'input text']):
+                if line and line not in [intent, "intent:", "query:", "queries:"]:
                     google_query = line
                     break
         
-        # Ensure we have valid queries
-        if len(google_query.split()) < 2:
-            google_query = text_stripped[:200] if 'text_stripped' in globals() else text[:200]
-        if len(newsapi_query.split()) < 2:
-            newsapi_query = google_query  # Use same as google if newsapi extraction failed
-        
-        # Extract verification_question if present
-        verification_question = ""
-        for line in lines:
-            if 'verification_question' in line.lower():
-                verification_question = line.split(':', 1)[1].strip() if ':' in line else line
-                break
-        
         return {
             "intent": intent,
-            "google_query": google_query,
-            "newsapi_query": newsapi_query,
-            "verification_question": verification_question
+            "google_query": google_query or text[:100],
+            "newsapi_query": newsapi_query or google_query or text[:100],
+            "verification_question": ""
         }
-        
     except Exception as e:
-        logger.warning(f"[INTENT] Fallback extraction failed: {e}")
+        logger.warning(f"[PIPELINE] Fallback extraction failed: {e}")
         return None
 
 def detect_intent(text: str, llm: str = None, model_id: str = None) -> Dict[str, str]:
@@ -203,7 +185,6 @@ def detect_intent(text: str, llm: str = None, model_id: str = None) -> Dict[str,
         }
     
     # Use LLM for intent + search queries extraction
-    import json
     
     try:
         system = """You must output valid JSON only. No explanations, no markdown, no extra text.
@@ -432,28 +413,29 @@ Now extract from:"""
         claims = []
         for line in response.split('\n'):
             line = line.strip()
-            if not line or len(line) < 10:
+            if not line:
                 continue
             
-            # Skip lines that are just metadata/attribution without substance
+            # Clean up formatting markers using regex
+            # Matches:
+            # ^\s*[-*]\s+  -> "- " or "* "
+            # ^\s*\d+\.\s+ -> "1. "
+            # ^\s*-\s*     -> "-" (without space)
+            line = re.sub(r'^(\s*[-*]\s*|\s*\d+\.\s+)', '', line).strip()
+            
+            # Basic validation
+            if len(line) < 10:
+                continue
+                
+            # Skip obvious non-claims
             line_lower = line.lower()
-            if (line_lower.startswith(('claim', 'source:', 'note:', '-', '*', '1.', '2.', '3.', '4.', '5.')) or
-                ('conducted' in line_lower and 'published' in line_lower and len(line) < 100)):
-                # Check if this is JUST attribution without the actual claim
-                has_substance = any(word in line_lower for word in 
-                    ['cure', 'cause', 'prevent', 'increase', 'decrease', 'contain', 'track', 'reduce', 'improve', 'effective'])
-                if not has_substance:
-                    logger.debug(f"[EXTRACTION] Skipping low-quality claim: {line[:50]}...")
-                    continue
-            
-            # Remove numbering (1., 2., etc.)
-            if line[0].isdigit() and '. ' in line:
-                line = line.split('. ', 1)[1]
-            
-            # Remove bullet points
-            if line.startswith('- '):
-                line = line[2:]
-            
+            if line_lower.startswith(('source:', 'note:', 'disclaimer:')):
+                continue
+                
+            # Skip "No claims found" type responses
+            if "no factual claims" in line_lower or "no claims found" in line_lower:
+                continue
+
             claims.append(line)
             if len(claims) >= dynamic_max:
                 break
