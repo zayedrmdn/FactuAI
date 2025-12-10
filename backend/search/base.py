@@ -15,6 +15,7 @@ from search.tavily import search_tavily
 from extract.scraper import scrape_article
 from extract.base import extract_sentences
 from services.ranking.scorer import rank_sentences
+from config import EVIDENCE_DEFAULT_COUNT
 
 logger = get_logger(__name__)
 
@@ -33,7 +34,7 @@ def collect_evidence(
     num_google: int = 5,
     num_news: int = 5,
     num_tavily: int = 5,
-    top_k: int = 3,
+    top_k: int = EVIDENCE_DEFAULT_COUNT,
     enabled_providers: Optional[List[str]] = None,
     verification_question: Optional[str] = None,
     tavily_answer: Optional[str] = None
@@ -225,7 +226,10 @@ def collect_evidence(
         })
     
     # Add ranked sentences
-    for sent, score in ranked_sentences[:top_k]:
+    selected_sentences = ranked_sentences[:top_k]
+    logger.info(f"[EVIDENCE] Selected top {len(selected_sentences)}/{len(ranked_sentences)} ranked sentences")
+    
+    for sent, score in selected_sentences:
         # Find the metadata for this sentence
         meta = next((s for s in sentences_with_meta if s["text"] == sent), None)
         

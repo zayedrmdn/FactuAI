@@ -12,6 +12,7 @@ from pipeline.intent import detect_intent
 from pipeline.claims import extract_claims
 from pipeline.verification import verify_claim
 from pipeline.summary import summarize_input
+from config import EVIDENCE_MULTI_CLAIM_COUNT, EVIDENCE_STREAMING_COUNT, EVIDENCE_DEFAULT_COUNT
 
 logger = get_logger(__name__)
 
@@ -21,6 +22,11 @@ PHASE_EXTRACTING_CLAIMS = "Extracting claims..."
 PHASE_GENERATING_SUMMARY = "Generating summary..."
 PHASE_VERIFYING_CLAIM = "Verifying claim..."
 PHASE_COLLECTING_EVIDENCE = "Collecting evidence..."
+
+# Evidence selection constants
+TOP_K_MULTI_CLAIM = EVIDENCE_MULTI_CLAIM_COUNT  # Conservative for multi-claim processing
+TOP_K_STREAMING = EVIDENCE_STREAMING_COUNT     # More comprehensive for streaming responses
+TOP_K_DEFAULT = EVIDENCE_DEFAULT_COUNT          # Default for single claims
 
 
 def _log_model_usage(stage: str, provider: Optional[str], model_id: Optional[str]) -> None:
@@ -153,6 +159,7 @@ def check_text(
             results = []
             for claim in claims:
                 _log_model_usage("verify_claim", reasoning_cfg.get("provider", llm), reasoning_cfg.get("model_id"))
+                logger.info(f"[PIPELINE] Verifying claim with top_k={TOP_K_MULTI_CLAIM} (multi-claim mode)")
                 result = verify_claim(
                     claim,
                     google_query,
@@ -161,7 +168,7 @@ def check_text(
                     model_id=reasoning_cfg.get("model_id"),
                     num_google=num_google,
                     num_news=num_news,
-                    top_k=3,
+                    top_k=TOP_K_MULTI_CLAIM,
                     enabled_search_providers=enabled_search_providers,
                     verification_question=verification_question,
                 )
@@ -328,6 +335,7 @@ def check_text_stream(
                 }
                 
                 _log_model_usage("verify_claim", reasoning_cfg.get("provider", llm), reasoning_cfg.get("model_id"))
+                logger.info(f"[PIPELINE] Verifying claim with top_k={TOP_K_STREAMING} (streaming mode)")
                 result = verify_claim(
                     claim,
                     google_query,
@@ -337,7 +345,7 @@ def check_text_stream(
                     num_google=num_google,
                     num_news=num_news,
                     num_tavily=num_tavily,
-                    top_k=10,
+                    top_k=TOP_K_STREAMING,
                     enabled_search_providers=enabled_search_providers,
                     verification_question=verification_question,
                 )
@@ -347,6 +355,7 @@ def check_text_stream(
         else:  # fact_claim
             yield {"type": "phase", "message": PHASE_VERIFYING_CLAIM, "progress": 30}
             _log_model_usage("verify_single", reasoning_cfg.get("provider", llm), reasoning_cfg.get("model_id"))
+            logger.info(f"[PIPELINE] Verifying single claim with top_k={TOP_K_DEFAULT} (default)")
             result = verify_claim(
                 text,
                 google_query,

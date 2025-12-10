@@ -99,11 +99,41 @@ TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 # Pipeline Settings
 # ==========================================================================
 MAX_EVIDENCE_WORDS = int(os.getenv("MAX_EVIDENCE_WORDS", "300"))
+MAX_EVIDENCE_CHARS = int(os.getenv("MAX_EVIDENCE_CHARS", "100000"))
 MAX_CLAIMS = int(os.getenv("MAX_CLAIMS", "5"))
 SIMILARITY_THRESHOLD = float(os.getenv("SIMILARITY_THRESHOLD", "0.3"))
 EVIDENCE_MAX_RESULTS = int(os.getenv("EVIDENCE_MAX_RESULTS", "5"))
 SENTS_PER_ARTICLE_DEFAULT = 5
 MIN_SENT_WORDS = 8
+
+
+# ==========================================================================
+# Evidence Selection Configuration
+# ==========================================================================
+# Number of top-ranked evidence sentences to select for verification
+# Different values for different processing modes to balance speed vs comprehensiveness
+EVIDENCE_DEFAULT_COUNT = int(os.getenv("EVIDENCE_DEFAULT_COUNT", "3"))        # Default for single claims
+EVIDENCE_MULTI_CLAIM_COUNT = int(os.getenv("EVIDENCE_MULTI_CLAIM_COUNT", "3")) # Conservative for multi-claim processing
+EVIDENCE_STREAMING_COUNT = int(os.getenv("EVIDENCE_STREAMING_COUNT", "10"))   # More comprehensive for streaming responses
+
+
+# ==========================================================================
+# LLM Generation Configuration
+# ==========================================================================
+# Vocabulary sampling size for local LLM text generation (different from evidence selection)
+LLM_VOCABULARY_SAMPLE_SIZE = int(os.getenv("LLM_VOCABULARY_SAMPLE_SIZE", "20"))
+
+# Dynamic max_tokens calculation for LLM responses
+# Character to token conversion ratio (rough estimate)
+TOKEN_ESTIMATE_RATIO = float(os.getenv("TOKEN_ESTIMATE_RATIO", "3.0"))
+# Base max tokens for LLM responses
+LLM_MAX_TOKENS_BASE = int(os.getenv("LLM_MAX_TOKENS_BASE", "800"))
+# Additional tokens buffer for LLM responses
+LLM_MAX_TOKENS_BUFFER = int(os.getenv("LLM_MAX_TOKENS_BUFFER", "500"))
+# Maximum allowed tokens for LLM responses
+LLM_MAX_TOKENS_MAX = int(os.getenv("LLM_MAX_TOKENS_MAX", "4000"))
+# Base tokens for reasoning models (higher than regular models)
+LLM_MAX_TOKENS_REASONING_BASE = int(os.getenv("LLM_MAX_TOKENS_REASONING_BASE", "2000"))
 
 
 # ==========================================================================

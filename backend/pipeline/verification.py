@@ -10,6 +10,15 @@ from utils.logging import get_logger
 from utils.helpers import PipelineError
 from search.base import collect_evidence
 from services.llm import chat
+from config import (
+    EVIDENCE_DEFAULT_COUNT,
+    MAX_EVIDENCE_CHARS,
+    TOKEN_ESTIMATE_RATIO,
+    LLM_MAX_TOKENS_BASE,
+    LLM_MAX_TOKENS_BUFFER,
+    LLM_MAX_TOKENS_MAX,
+    LLM_MAX_TOKENS_REASONING_BASE
+)
 
 logger = get_logger(__name__)
 
@@ -23,7 +32,7 @@ def verify_claim(
     num_google: int = 5,
     num_news: int = 5,
     num_tavily: int = 5,
-    top_k: int = 3,
+    top_k: int = EVIDENCE_DEFAULT_COUNT,
     enabled_search_providers: Optional[List[str]] = None,
     verification_question: Optional[str] = None
 ) -> Dict[str, Any]:
@@ -62,6 +71,8 @@ def verify_claim(
             verification_question=verification_question
         )
         
+        logger.info(f"[VERIFY] Collected {len(evidence_items)} evidence items (top_k={top_k})")
+        
         if not evidence_items:
             logger.warning("[VERIFY] No evidence found")
             return {
@@ -73,8 +84,9 @@ def verify_claim(
             }
         
         # Build evidence text with strict length limit
-        MAX_EVIDENCE_CHARS = 100000
         evidence_text = '\n'.join([f"- {item['text']}" for item in evidence_items])
+        
+        logger.info(f"[VERIFY] Evidence text: {len(evidence_text)} chars, ~{len(evidence_text)//TOKEN_ESTIMATE_RATIO} tokens")
         
         if len(evidence_text) > MAX_EVIDENCE_CHARS:
             logger.warning(f"[VERIFY] Truncating evidence text from {len(evidence_text)} to {MAX_EVIDENCE_CHARS} chars")
@@ -102,8 +114,16 @@ Evidence:
 {evidence_text}"""
         
         # Dynamic token limit based on evidence size
-        evidence_token_estimate = len(evidence_text) // 3
-        dynamic_max_tokens = min(2000, max(800, evidence_token_estimate + 500))
+        evidence_token_estimate = len(evidence_text) // TOKEN_ESTIMATE_RATIO
+        
+        # Increase base tokens for reasoning models which tend to generate longer responses
+        base_tokens = LLM_MAX_TOKENS_BASE
+        if model_id and 'reasoning' in model_id.lower():
+            base_tokens = max(base_tokens, LLM_MAX_TOKENS_REASONING_BASE)  # Use configured reasoning base
+        
+        dynamic_max_tokens = min(LLM_MAX_TOKENS_MAX, max(base_tokens, int(evidence_token_estimate + LLM_MAX_TOKENS_BUFFER)))
+        
+        logger.info(f"[VERIFY] Dynamic max_tokens: {dynamic_max_tokens} (evidence: ~{evidence_token_estimate} tokens, model: {model_id}, base: {base_tokens})")
         
         # Retry logic for LLM calls with error handling
         response = None

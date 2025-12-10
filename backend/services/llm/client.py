@@ -14,6 +14,7 @@ from typing import Optional, Dict, Any
 from utils.logging import get_logger
 import time
 from utils.helpers import LLMClientError
+from config import LLM_VOCABULARY_SAMPLE_SIZE
 
 logger = get_logger(__name__)
 
@@ -375,7 +376,7 @@ def _chat_local(system: str, user: str, max_tokens: int, temperature: float, **k
             max_new_tokens=max_tokens,
             temperature=temperature,
             top_p=kwargs.get("top_p", 0.8),
-            top_k=kwargs.get("top_k", 20),
+            top_k=kwargs.get("top_k", LLM_VOCABULARY_SAMPLE_SIZE),
             do_sample=True,
             pad_token_id=tokenizer.eos_token_id,
             repetition_penalty=kwargs.get("repetition_penalty", 1.1)
