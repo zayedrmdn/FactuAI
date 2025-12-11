@@ -55,7 +55,6 @@ interface ResultsViewProps {
   progress?: number;
   currentClaim?: number;
   prefs: {
-    labelStyle: 'badge' | 'text';
     textSize: TextSize;
   };
   averageConfidence: number;
@@ -347,7 +346,7 @@ export default function ResultsView({
                 Trust Score
               </h3>
               {averageConfidence !== undefined && averageConfidence !== null && !isNaN(averageConfidence) ? (
-                <OverallScore score={averageConfidence} />
+                <OverallScore score={averageConfidence} textSize={prefs.textSize} />
               ) : (
                 <div className="w-24 h-24 flex items-center justify-center text-slate-400">
                   <span className="text-sm">N/A</span>
@@ -355,7 +354,7 @@ export default function ResultsView({
               )}
               {aiScore !== null && aiScore !== undefined && (
                 <div className="pt-4 w-full border-t border-slate-200 mt-4">
-                  <AIDetectionScore score={aiScore} error={aiError} />
+                  <AIDetectionScore score={aiScore} error={aiError} textSize={prefs.textSize} />
                 </div>
               )}
             </div>

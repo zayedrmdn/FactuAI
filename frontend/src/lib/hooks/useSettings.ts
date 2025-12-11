@@ -3,11 +3,10 @@
 import { useState, useEffect } from 'react';
 
 interface Prefs {
-  labelStyle: 'badge' | 'text';
   textSize: 'sm' | 'md' | 'lg';
 }
 
-const defaultPrefs: Prefs = { labelStyle: 'badge', textSize: 'md' };
+const defaultPrefs: Prefs = { textSize: 'md' };
 
 export function useSettings() {
   const [prefs, setPrefs] = useState<Prefs>(defaultPrefs);

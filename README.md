@@ -650,8 +650,8 @@ Verify: No CORS errors in browser console
 ```
 Status: Active in v2.1.0+
 Feature: Task-specific model selection (Intent, Extraction, Reasoning)
-Location: Dashboard page, above input area
-Note: Removed global ModelSelector from Header for better UX
+Location: Settings Panel (Gear Icon)
+Note: Moved from main dashboard to Settings for cleaner UI (v3.2.0)
 ```
 
 ---

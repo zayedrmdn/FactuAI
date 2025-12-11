@@ -36,13 +36,30 @@ const TRAIL_COLOR = '#e5e7eb'; // Gray 200
 // AI DETECTION SCORE COMPONENT
 // ========================================================================================
 
+import { TextSize } from '@/types/dashboard/ui';
+
+// ... (imports)
+
 interface AIDetectionScoreProps {
   readonly score: number;
   readonly error?: string | undefined;
   readonly className?: string;
+  readonly textSize?: TextSize;
 }
 
-export function AIDetectionScore({ score, error, className = '' }: AIDetectionScoreProps) {
+export function AIDetectionScore({ score, error, className = '', textSize = 'md' }: AIDetectionScoreProps) {
+  const labelClass = {
+    sm: 'text-[10px]',
+    md: 'text-xs',
+    lg: 'text-sm',
+  }[textSize];
+
+  const valueClass = {
+    sm: 'text-xs',
+    md: 'text-sm',
+    lg: 'text-base',
+  }[textSize];
+
   if (error) {
     return (
       <div className={`max-w-xs mx-auto mb-6 ${className}`}>
@@ -73,15 +90,15 @@ export function AIDetectionScore({ score, error, className = '' }: AIDetectionSc
       </div>
 
       <div className="w-full text-center space-y-2">
-        <div className="text-xs font-medium text-gray-600 dark:text-gray-400">
+        <div className={`${labelClass} font-medium text-gray-600 dark:text-gray-400`}>
           AI Detection Score
         </div>
-        <div className="text-sm font-semibold" style={{ color }}>
+        <div className={`${valueClass} font-semibold`} style={{ color }}>
           {label}
         </div>
 
         {/* Legend */}
-        <div className="flex flex-wrap justify-center gap-4 w-full mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400">
+        <div className={`flex flex-wrap justify-center gap-4 w-full mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 ${labelClass} text-gray-500 dark:text-gray-400`}>
           <div className="flex items-center justify-center gap-1">
             <div
               className="w-2 h-2 rounded-full shrink-0"
@@ -123,26 +140,36 @@ export function AIDetectionScore({ score, error, className = '' }: AIDetectionSc
   );
 }
 
-// ========================================================================================
-// OVERALL CONFIDENCE SCORE COMPONENT
-// ========================================================================================
-
 interface OverallScoreProps {
   readonly score: number;
   readonly title?: string;
   readonly className?: string;
+  readonly textSize?: TextSize;
 }
 
 export function OverallScore({
   score,
-  title = 'Overall Confidence',
+  title = 'Confidence Score',
   className = '',
+  textSize = 'md',
 }: OverallScoreProps) {
   const normalizedScore =
     Number.isNaN(score) || score === undefined ? 0 : Math.max(0, Math.min(100, score));
   const { color, label } = getConfidenceColorAndLabel(normalizedScore);
 
   const isSmall = className.includes('w-12') || className.includes('h-12');
+
+  const labelClass = {
+    sm: 'text-[10px]',
+    md: 'text-xs',
+    lg: 'text-sm',
+  }[textSize];
+
+  const valueClass = {
+    sm: 'text-xs',
+    md: 'text-sm',
+    lg: 'text-base',
+  }[textSize];
 
   if (isSmall) {
     return (
@@ -173,19 +200,19 @@ export function OverallScore({
             textColor: color,
             trailColor: TRAIL_COLOR,
             pathTransitionDuration: 0.5,
-            textSize: '16px',
+            textSize: '24px',
           })}
         />
       </div>
 
       <div className="w-full text-center space-y-2">
-        <div className="text-xs font-medium text-gray-600 dark:text-gray-400">{title}</div>
-        <div className="text-sm font-semibold" style={{ color }}>
-          {label} ({normalizedScore.toFixed(0)}%)
+        <div className={`${labelClass} font-medium text-gray-600 dark:text-gray-400`}>{title}</div>
+        <div className={`${valueClass} font-semibold`} style={{ color }}>
+          {label}
         </div>
 
         {/* Legend */}
-        <div className="flex flex-wrap justify-center gap-4 w-full mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400">
+        <div className={`flex flex-wrap justify-center gap-4 w-full mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 ${labelClass} text-gray-500 dark:text-gray-400`}>
           <div className="flex items-center justify-center gap-1">
             <div
               className="w-2 h-2 rounded-full shrink-0"
@@ -226,6 +253,5 @@ export function OverallScore({
     </div>
   );
 }
-
 // Default exports for backwards compatibility
 export default OverallScore;

@@ -193,7 +193,10 @@ export default function ClaimCard({
       <CardContent className="p-6 pt-0 space-y-4">
         {/* Explanation */}
         {result.explanation && (
-          <div className="rounded-lg bg-slate-50 border border-slate-200 p-4 text-sm text-slate-700 leading-relaxed">
+          <div className={cn(
+            "rounded-lg bg-slate-50 border border-slate-200 p-4 text-slate-700 leading-relaxed",
+            textSizeClass
+          )}>
             {result.explanation}
           </div>
         )}

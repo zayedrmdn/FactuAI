@@ -14,10 +14,22 @@ import { useSearchProvidersStore } from '@/stores/search-providers-store';
 import { Hash, RotateCcw } from 'lucide-react';
 import { SEARCH_PROVIDERS } from '@/config/search-providers';
 
-export function SearchLimitsConfig() {
+export function SearchLimitsConfig({ compact = false, textSize = 'md' }: { compact?: boolean; textSize?: 'sm' | 'md' | 'lg' }) {
   const { numGoogle, numNews, numTavily, setNumGoogle, setNumNews, setNumTavily, resetToDefaults } =
     useSearchLimitsStore();
   const { isProviderEnabled } = useSearchProvidersStore();
+
+  const labelClass = {
+    sm: 'text-xs',
+    md: 'text-sm',
+    lg: 'text-base',
+  }[textSize];
+
+  const inputClass = {
+    sm: 'text-xs h-7',
+    md: 'text-sm h-8',
+    lg: 'text-base h-9',
+  }[textSize];
 
   // Map provider IDs to their state setters and values
   // This is a bit of a bridge between the dynamic config and the specific store fields
@@ -37,6 +49,110 @@ export function SearchLimitsConfig() {
       setter(value);
     }
   };
+
+  if (compact) {
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className={`font-medium ${labelClass}`}>Result Limits</h3>
+          <button
+            onClick={resetToDefaults}
+            className={`text-muted-foreground hover:text-foreground flex items-center gap-1 ${textSize === 'sm' ? 'text-[10px]' : 'text-xs'}`}
+            title="Reset to defaults"
+          >
+            <RotateCcw className="h-3 w-3" />
+            Reset
+          </button>
+        </div>
+        <div className="space-y-2">
+          {SEARCH_PROVIDERS.filter(p => p.hasLimit).map((provider) => {
+            const state = getProviderState(provider.id);
+            if (!state) return null;
+
+            const isEnabled = isProviderEnabled(provider.id);
+
+            return (
+              <div
+                key={provider.id}
+                className={`flex items-center justify-between py-1 transition-opacity ${
+                  !isEnabled ? 'opacity-50' : ''
+                }`}
+              >
+                <Label
+                  htmlFor={`num-${provider.id}`}
+                  className={`${labelClass} font-medium flex items-center gap-2`}
+                >
+                  {provider.name}
+                </Label>
+                <div className="flex items-center gap-2">
+                  <input
+                    id={`num-${provider.id}`}
+                    type="number"
+                    min={1}
+                    max={provider.maxLimit}
+                    value={state.value}
+                    onChange={handleChange(state.setter)}
+                    disabled={!isEnabled}
+                    className={`w-14 rounded-md border border-input bg-background px-2 text-right transition-colors focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 ${inputClass}`}
+                  />
+                  <span className={`text-muted-foreground w-8 ${textSize === 'sm' ? 'text-[10px]' : 'text-xs'}`}>max</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  const content = (
+    <div className="space-y-4">
+      {SEARCH_PROVIDERS.filter(p => p.hasLimit).map((provider) => {
+        const state = getProviderState(provider.id);
+        if (!state) return null; // Skip providers not yet in store (until store is fully dynamic)
+
+        const isEnabled = isProviderEnabled(provider.id);
+
+        return (
+          <div
+            key={provider.id}
+            className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg border p-3 sm:p-4 transition-opacity ${
+              !isEnabled ? 'opacity-50' : ''
+            }`}
+          >
+            <div className="flex-1 space-y-1">
+              <Label
+                htmlFor={`num-${provider.id}`}
+                className="text-sm sm:text-base font-medium flex items-center gap-2"
+              >
+                {provider.name}
+                {!isEnabled && (
+                  <span className="text-xs font-normal text-muted-foreground">(Disabled)</span>
+                )}
+              </Label>
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                Number of results to fetch (1-{provider.maxLimit})
+              </p>
+            </div>
+            <div className="flex items-center gap-2 sm:gap-3">
+              <input
+                id={`num-${provider.id}`}
+                type="number"
+                min={1}
+                max={provider.maxLimit}
+                value={state.value}
+                onChange={handleChange(state.setter)}
+                disabled={!isEnabled}
+                className="w-16 sm:w-20 rounded-md border border-input bg-background px-2 py-1.5 text-sm text-center transition-colors focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-50"
+                aria-label={`Number of ${provider.name} results`}
+              />
+              <span className="text-xs text-muted-foreground hidden sm:inline">results</span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
 
   return (
     <Card>
@@ -61,50 +177,7 @@ export function SearchLimitsConfig() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {SEARCH_PROVIDERS.filter(p => p.hasLimit).map((provider) => {
-          const state = getProviderState(provider.id);
-          if (!state) return null; // Skip providers not yet in store (until store is fully dynamic)
-
-          const isEnabled = isProviderEnabled(provider.id);
-
-          return (
-            <div
-              key={provider.id}
-              className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg border p-3 sm:p-4 transition-opacity ${
-                !isEnabled ? 'opacity-50' : ''
-              }`}
-            >
-              <div className="flex-1 space-y-1">
-                <Label
-                  htmlFor={`num-${provider.id}`}
-                  className="text-sm sm:text-base font-medium flex items-center gap-2"
-                >
-                  {provider.name}
-                  {!isEnabled && (
-                    <span className="text-xs font-normal text-muted-foreground">(Disabled)</span>
-                  )}
-                </Label>
-                <p className="text-xs sm:text-sm text-muted-foreground">
-                  Number of results to fetch (1-{provider.maxLimit})
-                </p>
-              </div>
-              <div className="flex items-center gap-2 sm:gap-3">
-                <input
-                  id={`num-${provider.id}`}
-                  type="number"
-                  min={1}
-                  max={provider.maxLimit}
-                  value={state.value}
-                  onChange={handleChange(state.setter)}
-                  disabled={!isEnabled}
-                  className="w-16 sm:w-20 rounded-md border border-input bg-background px-2 py-1.5 text-sm text-center transition-colors focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-50"
-                  aria-label={`Number of ${provider.name} results`}
-                />
-                <span className="text-xs text-muted-foreground hidden sm:inline">results</span>
-              </div>
-            </div>
-          );
-        })}
+        {content}
       </CardContent>
     </Card>
   );

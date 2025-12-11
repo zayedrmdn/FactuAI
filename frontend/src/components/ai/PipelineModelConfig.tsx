@@ -61,13 +61,25 @@ const taskConfig: Record<
   },
 };
 
-export function PipelineModelConfig() {
-  const [isExpanded, setIsExpanded] = useState(false);
+export function PipelineModelConfig({ compact = false, textSize = 'md' }: { compact?: boolean; textSize?: 'sm' | 'md' | 'lg' }) {
+  const [isExpanded, setIsExpanded] = useState(!compact);
   const { intent, extraction, reasoning, summary, setTaskModel, resetToDefaults } = usePipelineModelsStore();
 
   const taskSelections = { intent, extraction, reasoning, summary };
 
   const activeTask = usePipelineModelsStore((state) => state.activeTask);
+
+  const labelClass = {
+    sm: 'text-xs',
+    md: 'text-sm',
+    lg: 'text-base',
+  }[textSize];
+
+  const selectTriggerClass = {
+    sm: 'h-7 text-[10px]',
+    md: 'h-8 text-xs',
+    lg: 'h-9 text-sm',
+  }[textSize];
 
   const renderTaskConfig = (task: PipelineTask) => {
     const config = taskConfig[task];
@@ -76,6 +88,62 @@ export function PipelineModelConfig() {
     const isActive = activeTask === task;
 
     const Icon = config.icon;
+
+    if (compact) {
+      return (
+        <div key={task} className="py-2 border-b last:border-0">
+          <div className="flex items-center gap-2 mb-2">
+            <Icon className={`h-4 w-4 ${config.color}`} />
+            <span className={`${labelClass} font-medium`}>{config.label}</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Select
+              value={selection.provider}
+              onValueChange={(provider) => {
+                const providerModels = getModelsByProvider(provider);
+                const recommendedModel = providerModels.find((m) => m.isRecommended);
+                const defaultModel = recommendedModel || providerModels[0];
+                if (defaultModel) {
+                  setTaskModel(task, provider as AIProvider, defaultModel.id);
+                }
+              }}
+            >
+              <SelectTrigger className={selectTriggerClass}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {modelRegistry.providers.map((provider) => (
+                  <SelectItem key={provider.id} value={provider.id} className="text-xs">
+                    {provider.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select
+              value={selection.modelId}
+              onValueChange={(modelId) => setTaskModel(task, selection.provider, modelId)}
+            >
+              <SelectTrigger className={selectTriggerClass}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="max-h-[300px]">
+                {getModelsByProvider(selection.provider).map((model) => (
+                  <SelectItem key={model.id} value={model.id} className="text-xs">
+                    <div className="flex items-center gap-2 max-w-full">
+                      <span className="truncate">{model.displayName}</span>
+                      {model.isRecommended && (
+                        <span className="text-[10px] text-muted-foreground">★</span>
+                      )}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      );
+    }
 
     return (
       <div
@@ -178,6 +246,29 @@ export function PipelineModelConfig() {
       </div>
     );
   };
+
+  if (compact) {
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className={`font-medium ${labelClass}`}>Pipeline Models</h3>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => resetToDefaults()}
+            title="Reset to defaults"
+            className={`h-6 px-2 ${textSize === 'sm' ? 'text-[10px]' : 'text-xs'}`}
+          >
+            <RotateCcw className="h-3 w-3 mr-1" />
+            Reset
+          </Button>
+        </div>
+        <div className="space-y-1 border rounded-md p-3 bg-card">
+          {(Object.keys(taskConfig) as PipelineTask[]).map(renderTaskConfig)}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Card className="w-full">
