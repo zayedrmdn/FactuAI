@@ -11,10 +11,6 @@
   "tests/test_services/test_intent_classifier.py::test_detect_intent[Nigga balls itch, is it correct?-nonsense]": true,
   "tests/test_unit/test_evidence_pipeline.py::test_rank_sentences_returns_top_k": true,
   "scripts/test_model_integration.py": true,
-  "tests/test_services/test_intent_classifier.py::test_detect_intent[Elon Musk founded SpaceX in 2002.-fact_claim]": true,
-  "tests/test_services/test_intent_classifier.py::test_detect_intent[NASA landed the Perseverance rover on Mars in February 2021.-fact_claim]": true,
-  "tests/test_services/test_intent_classifier.py::test_detect_intent[According to WHO, 'vaccines cause autism'.-fact_claim]": true,
-  "tests/test_services/test_intent_classifier.py::test_detect_intent[Global renewable energy investment reached $1 trillion in 2023.-fact_claim]": true,
   "tests/test_services/test_intent_classifier.py::test_detect_intent[Did WHO declare COVID-19 a pandemic in March 2020?-fact_question]": true,
   "tests/test_services/test_intent_classifier.py::test_detect_intent[I believe electric cars will dominate by 2030.-opinion]": true,
   "tests/test_services/test_intent_classifier.py::test_detect_intent[Ukraine recaptured Bakhmut in July 2025.-fact_claim]": true,
@@ -48,5 +44,6 @@
   "tests/test_unit/test_pipeline_extraction.py::test_extract_claims_with_dashes": true,
   "tests/test_unit/test_pipeline_extraction.py::test_extract_claims_with_numbers": true,
   "tests/test_unit/test_pipeline_extraction.py::test_extract_claims_no_substance_filtering": true,
-  "tests/test_unit/test_pipeline_extraction.py::test_extract_claims_filtering_metadata": true
+  "tests/test_unit/test_pipeline_extraction.py::test_extract_claims_filtering_metadata": true,
+  "tests/test_services/test_intent_classifier.py::test_detect_intent[In 2025, global emissions dropped by 3%, attributed to widespread adoption of EVs, renewable grid upgrades in the EU, and severe industrial slowdowns in China.-multi_claim]": true
 }

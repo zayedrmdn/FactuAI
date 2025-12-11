@@ -19,7 +19,7 @@ test_cases = [
     ("🤯🔥🚀🤡💩", "nonsense"),
     ("Because Musk said in 2023", "nonsense"),
     ("OpenAI released GPT-5 in 2025, and I think it's the best model ever built.", "multi_claim"),
-    ("In 2025, global emissions dropped by 3%, attributed to widespread adoption of EVs, renewable grid upgrades in the EU, and severe industrial slowdowns in China.", "news_paragraph"),
+    ("In 2025, global emissions dropped by 3%, attributed to widespread adoption of EVs, renewable grid upgrades in the EU, and severe industrial slowdowns in China.", "multi_claim"),
     ("Apple launched Vision Pro in 2023, acquired a health startup, and hit a $3 trillion market cap all in one year.", "multi_claim"),
     ("As stated by the UN (https://un.org), 'climate change is a myth.'", "fact_claim"),
     ("WHO declared COVID-19 a pandemic in April 2020, not March 2020 like they said.", "fact_claim"),
@@ -33,4 +33,4 @@ test_cases = [
 @pytest.mark.parametrize("input_text, expected_intent", test_cases)
 def test_detect_intent(input_text, expected_intent, shared_llm):
     actual = detect_intent(input_text, llm=shared_llm)
-    assert actual == expected_intent, f"Expected: {expected_intent}, Got: {actual}, Input: {input_text}"
+    assert actual['intent'] == expected_intent, f"Expected: {expected_intent}, Got: {actual['intent']}, Input: {input_text}"

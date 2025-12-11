@@ -128,38 +128,35 @@ export default function ClaimCard({
     >
       {/* Card Header - Vertical Stack for Mobile, Horizontal for Desktop */}
       <CardHeader className={cn('p-6 pb-4 space-y-4', config!.headerBg)}>
-        {/* Top Row: Badge & Claim Number */}
+        {/* Top Row: Claim Number & Confidence (Demoted) */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              Claim {index + 1}
-            </span>
-            <Badge variant={config!.variant} className="gap-1.5 px-2.5 py-0.5">
-              <VerdictIcon className="h-3.5 w-3.5" />
-              {config!.label}
-            </Badge>
-          </div>
-
-          {/* Confidence Score - Top Right */}
+          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            Claim {index + 1}
+          </span>
+          
           {result.confidence !== undefined && (
-            <div className="hidden sm:flex items-center gap-3">
-              <div className="text-xs font-medium text-slate-500">Confidence</div>
-              <div className="flex items-center gap-2 min-w-[100px]">
-                <Progress
-                  value={result.confidence * 100}
-                  className="h-2 w-16"
-                  indicatorColor={getProgressColor(result.confidence)}
-                />
-                <span className="text-sm font-bold text-slate-700">
-                  {(result.confidence * 100).toFixed(0)}%
-                </span>
-              </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">Confidence</span>
+              <span className="text-xs font-bold text-slate-600 bg-white/50 px-1.5 py-0.5 rounded border border-slate-200/50">
+                {(result.confidence * 100).toFixed(0)}%
+              </span>
             </div>
           )}
         </div>
 
+        {/* Hero Verdict Badge (Promoted) */}
+        <div>
+          <Badge 
+            variant={config!.variant} 
+            className="text-sm sm:text-base px-4 py-1.5 gap-2 shadow-sm"
+          >
+            <VerdictIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+            {config!.label}
+          </Badge>
+        </div>
+
         {/* Claim Text */}
-        <div className="space-y-2">
+        <div className="space-y-2 pt-1">
           <h3
             className={cn(
               'font-medium text-slate-900 leading-relaxed break-words whitespace-normal',
@@ -169,25 +166,6 @@ export default function ClaimCard({
             {result.claim}
           </h3>
         </div>
-
-        {/* Mobile Confidence (if needed) */}
-        {result.confidence !== undefined && (
-          <div className="sm:hidden pt-2 border-t border-slate-200/60 mt-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-slate-500">Confidence Score</span>
-              <div className="flex items-center gap-2">
-                <Progress
-                  value={result.confidence * 100}
-                  className="h-2 w-20"
-                  indicatorColor={getProgressColor(result.confidence)}
-                />
-                <span className="text-sm font-bold text-slate-700">
-                  {(result.confidence * 100).toFixed(0)}%
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
       </CardHeader>
 
       <CardContent className="p-6 pt-0 space-y-4">
@@ -198,6 +176,20 @@ export default function ClaimCard({
             textSizeClass
           )}>
             {result.explanation}
+          </div>
+        )}
+
+        {/* Analysis / Reasoning */}
+        {result.reasoning && (
+          <div className={cn(
+            "rounded-lg bg-blue-50/50 border border-blue-100 p-4 text-slate-700 leading-relaxed",
+            textSizeClass
+          )}>
+            <h4 className="text-xs font-semibold text-blue-700 uppercase tracking-wider mb-2 flex items-center gap-2">
+              <HelpCircle className="h-4 w-4" />
+              Analysis
+            </h4>
+            {result.reasoning}
           </div>
         )}
 

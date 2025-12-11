@@ -29,7 +29,7 @@ def extract_fallback_from_text(text: str) -> Optional[Dict[str, str]]:
         
         # Extract intent
         intent = "fact_claim"  # default
-        for intent_type in ["fact_claim", "fact_question", "news_paragraph", "multi_claim", "opinion", "nonsense", "instructional"]:
+        for intent_type in ["fact_claim", "fact_question", "multi_claim", "opinion", "nonsense", "instructional"]:
             if intent_type in text_lower:
                 intent = intent_type
                 break
@@ -96,16 +96,13 @@ def detect_intent(text: str, llm: str = None, model_id: str = None) -> Dict[str,
     """
     Detect intent and generate optimized search queries in a single LLM call.
     
-    Intent categories:
-    - fact_claim: Single factual claim
-    - fact_question: Question about facts
-    - news_paragraph: News article or paragraph with multiple claims
-    - multi_claim: Multiple claims
-    - opinion: Subjective opinion
-    - nonsense: Invalid/nonsense input
-    - instructional: How-to/instruction text
-    
-    Args:
+Intent categories:
+- fact_claim: Single factual claim
+- fact_question: Question about facts
+- multi_claim: Multiple claims or news paragraph with multiple claims
+- opinion: Subjective opinion
+- nonsense: Invalid/nonsense input
+- instructional: How-to/instruction text    Args:
         text: Input text to classify
         llm: Optional LLM provider (uses default if None)
         model_id: Optional model identifier
@@ -163,7 +160,7 @@ Output format:
 }
 
 Rules:
-1. intent must be one of: fact_claim, fact_question, news_paragraph, multi_claim, opinion, nonsense, instructional
+1. intent must be one of: fact_claim, fact_question, multi_claim, opinion, nonsense, instructional
 
 2. google_query: 4-8 optimized search terms for Google (multiword phrases allowed, lowercase, no punctuation)
 
@@ -259,7 +256,7 @@ Output JSON only at the end."""
                 raise
         
         # Validate intent
-        valid_intents = ["fact_claim", "fact_question", "news_paragraph", "multi_claim", "opinion", "nonsense", "instructional"]
+        valid_intents = ["fact_claim", "fact_question", "multi_claim", "opinion", "nonsense", "instructional"]
         intent = result.get("intent", "fact_claim").lower()
         if intent not in valid_intents:
             intent = "fact_claim"

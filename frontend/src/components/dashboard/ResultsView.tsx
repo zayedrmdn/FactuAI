@@ -2,6 +2,7 @@
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/primitives';
 import {
   FileText,
   Copy,
@@ -13,6 +14,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   XCircle,
+  HelpCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -26,6 +28,23 @@ import { usePdfExport } from '@/lib/hooks/usePdfExport';
 import { cn } from '@/lib/utils';
 
 type CombinedResult = FactCheckResult | QAResult;
+
+const VERDICT_CONFIG: Record<
+  string,
+  {
+    variant: 'success' | 'warning' | 'destructive' | 'secondary';
+    label: string;
+    icon: React.ElementType;
+  }
+> = {
+  true: { variant: 'success', label: 'Verified', icon: CheckCircle2 },
+  mostly_true: { variant: 'success', label: 'Mostly True', icon: CheckCircle2 },
+  false: { variant: 'destructive', label: 'False', icon: XCircle },
+  mostly_false: { variant: 'destructive', label: 'Mostly False', icon: XCircle },
+  unclear: { variant: 'warning', label: 'Unclear', icon: AlertTriangle },
+  mixture: { variant: 'warning', label: 'Mixed', icon: AlertTriangle },
+  unknown: { variant: 'secondary', label: 'Unknown', icon: HelpCircle },
+};
 
 const toSourceStrings = (sources: unknown): string[] => {
   if (!Array.isArray(sources)) return [];
@@ -311,7 +330,7 @@ export default function ResultsView({
       <Card className="border shadow-sm rounded-xl overflow-hidden">
         <CardContent className="p-4 sm:p-6">
           {/* Header Row with Title and Actions */}
-          <div className="flex items-start justify-between mb-6 pb-4 border-b">
+          <div className="flex items-start justify-between mb-6 pb-4 border-b border-slate-100">
             <div className="space-y-1">
               <h2 className="text-lg sm:text-xl font-semibold text-slate-900">Analysis Results</h2>
               <p className="text-xs text-slate-500">
@@ -338,104 +357,121 @@ export default function ResultsView({
             </div>
           </div>
 
-          {/* Main Content Grid - Mobile: stack, Tablet: 2-col, Desktop: 3-col */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-            {/* Trust Score Section */}
-            <div className="flex flex-col items-center justify-center p-4 rounded-lg bg-slate-50/50 border border-slate-100">
-              <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">
-                Trust Score
-              </h3>
-              {averageConfidence !== undefined && averageConfidence !== null && !isNaN(averageConfidence) ? (
-                <OverallScore score={averageConfidence} textSize={prefs.textSize} />
-              ) : (
-                <div className="w-24 h-24 flex items-center justify-center text-slate-400">
-                  <span className="text-sm">N/A</span>
+          {/* HERO SECTION: Claim Verdicts (Promoted) */}
+          <div className="mb-8">
+            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-slate-400" />
+              Verdict Summary
+            </h3>
+            <div className="flex flex-wrap gap-3">
+              {results.map((r, idx) => {
+                if (isQAResult(r)) return null;
+                const config = VERDICT_CONFIG[r.label?.toLowerCase() || 'unknown'] || VERDICT_CONFIG.unknown;
+                const VerdictIcon = config.icon;
+                return (
+                  <div key={idx} className="flex items-center gap-3 bg-white border border-slate-200 rounded-lg p-2 pr-4 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="flex flex-col items-center justify-center w-8 h-8 rounded-md bg-slate-50 text-xs font-bold text-slate-500 border border-slate-100">
+                      #{idx + 1}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Verdict</span>
+                      <div className={cn("flex items-center gap-1.5 font-bold text-sm", 
+                        config.variant === 'success' ? "text-emerald-700" :
+                        config.variant === 'destructive' ? "text-rose-700" :
+                        config.variant === 'warning' ? "text-amber-700" : "text-slate-700"
+                      )}>
+                        <VerdictIcon className="h-4 w-4" />
+                        {config.label}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* SECONDARY GRID: Trust Score, Stats, Actions (Demoted/Compacted) */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 border-t border-slate-100">
+            
+            {/* 1. Trust Score (Demoted to simple stat) */}
+            <div className="flex flex-col justify-center space-y-1">
+              <h4 className="text-xs font-medium text-slate-400 uppercase tracking-wider">Confidence Level</h4>
+              <div className="flex items-baseline gap-3">
+                <span className="text-3xl font-bold text-slate-700">
+                  {averageConfidence !== undefined && !isNaN(averageConfidence) ? averageConfidence.toFixed(0) : 'N/A'}%
+                </span>
+                <div className="h-2 w-24 bg-slate-100 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-slate-400 rounded-full" 
+                    style={{ width: `${averageConfidence || 0}%` }}
+                  />
                 </div>
-              )}
+              </div>
               {aiScore !== null && aiScore !== undefined && (
-                <div className="pt-4 w-full border-t border-slate-200 mt-4">
-                  <AIDetectionScore score={aiScore} error={aiError} textSize={prefs.textSize} />
-                </div>
+                <p className="text-xs text-slate-400 mt-1">
+                  AI Probability: {aiScore.toFixed(0)}%
+                </p>
               )}
             </div>
 
-            {/* Analysis Breakdown Section */}
-            <div className="flex flex-col justify-center p-4 rounded-lg bg-slate-50/50 border border-slate-100">
-              <div className="space-y-1 mb-4">
-                <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Analysis Breakdown
-                </h3>
-                <p className="text-2xl font-bold text-slate-900">
-                  {stats.total}{' '}
-                  <span className="text-base font-normal text-slate-500">
-                    Claim{stats.total !== 1 ? 's' : ''}
-                  </span>
-                </p>
-              </div>
-
-              <div className="space-y-2.5">
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2 text-slate-700">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0" />
-                    <span>Verified</span>
-                  </div>
-                  <span className="font-semibold text-slate-900">{stats.trueCount}</span>
+            {/* 2. Analysis Stats (Tightened) */}
+            <div className="flex flex-col justify-center space-y-2 md:border-l md:border-slate-100 md:pl-6">
+              <h4 className="text-xs font-medium text-slate-400 uppercase tracking-wider">Breakdown</h4>
+              <div className="flex gap-4 text-sm">
+                <div className="flex items-center gap-1.5 text-slate-600">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                  <span className="font-medium">{stats.trueCount}</span> Verified
                 </div>
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2 text-slate-700">
-                    <XCircle className="h-4 w-4 text-rose-500 flex-shrink-0" />
-                    <span>False</span>
-                  </div>
-                  <span className="font-semibold text-slate-900">{stats.falseCount}</span>
+                <div className="flex items-center gap-1.5 text-slate-600">
+                  <XCircle className="h-3.5 w-3.5 text-rose-500" />
+                  <span className="font-medium">{stats.falseCount}</span> False
                 </div>
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2 text-slate-700">
-                    <AlertTriangle className="h-4 w-4 text-amber-500 flex-shrink-0" />
-                    <span>Unclear</span>
-                  </div>
-                  <span className="font-semibold text-slate-900">{stats.mixedCount}</span>
+                <div className="flex items-center gap-1.5 text-slate-600">
+                  <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+                  <span className="font-medium">{stats.mixedCount}</span> Other
                 </div>
               </div>
             </div>
 
-            {/* Actions Section */}
-            <div className="flex flex-col justify-center p-4 rounded-lg bg-slate-50/50 border border-slate-100 md:col-span-2 lg:col-span-1">
-              <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">
-                Quick Actions
-              </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-1 gap-2">
+            {/* 3. Quick Actions (Minimalist Toolbar) */}
+            <div className="flex flex-col justify-center md:items-end space-y-2 md:border-l md:border-slate-100 md:pl-6">
+              <h4 className="text-xs font-medium text-slate-400 uppercase tracking-wider md:text-right">Tools</h4>
+              <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={copyFullResults}
-                  className="w-full justify-start"
-                  title="Copy complete analysis to clipboard"
+                  className="h-8 px-3 text-xs gap-2"
+                  title="Copy Report"
                 >
-                  <Copy className="mr-2 h-3.5 w-3.5" /> Copy
+                  <Copy className="h-3.5 w-3.5" /> Copy
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => exportPdf()}
-                  className="w-full justify-start"
+                  className="h-8 px-3 text-xs gap-2"
+                  title="Download PDF"
                 >
-                  <Download className="mr-2 h-3.5 w-3.5" /> PDF
+                  <Download className="h-3.5 w-3.5" /> PDF
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={shareResults}
-                  className="w-full justify-start"
+                  className="h-8 w-8 p-0"
+                  title="Share"
                 >
-                  <Share2 className="mr-2 h-3.5 w-3.5" /> Share
+                  <Share2 className="h-3.5 w-3.5" />
                 </Button>
                 <Button
                   variant="default"
                   size="sm"
                   onClick={onRetry}
-                  className="w-full justify-start sm:col-span-4 lg:col-span-1"
+                  className="h-8 w-8 p-0 ml-2 bg-slate-900 hover:bg-slate-800"
+                  title="New Analysis"
                 >
-                  <RefreshCw className="mr-2 h-3.5 w-3.5" /> New Analysis
+                  <RefreshCw className="h-3.5 w-3.5" />
                 </Button>
               </div>
             </div>

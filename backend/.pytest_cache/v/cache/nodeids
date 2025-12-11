@@ -28,6 +28,7 @@
   "tests/test_services/test_intent_classifier.py::test_detect_intent[Elon Musk founded SpaceX in 2002.-fact_claim]",
   "tests/test_services/test_intent_classifier.py::test_detect_intent[Global renewable energy investment reached $1 trillion in 2023.-fact_claim]",
   "tests/test_services/test_intent_classifier.py::test_detect_intent[I believe electric cars will dominate by 2030.-opinion]",
+  "tests/test_services/test_intent_classifier.py::test_detect_intent[In 2025, global emissions dropped by 3%, attributed to widespread adoption of EVs, renewable grid upgrades in the EU, and severe industrial slowdowns in China.-multi_claim]",
   "tests/test_services/test_intent_classifier.py::test_detect_intent[In 2025, global emissions dropped by 3%, attributed to widespread adoption of EVs, renewable grid upgrades in the EU, and severe industrial slowdowns in China.-news_paragraph]",
   "tests/test_services/test_intent_classifier.py::test_detect_intent[NASA landed the Perseverance rover on Mars in February 2021.-fact_claim]",
   "tests/test_services/test_intent_classifier.py::test_detect_intent[Nigga balls itch, is it correct?-nonsense]",

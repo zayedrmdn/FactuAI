@@ -171,7 +171,7 @@ Note: No proper JSON formatting provided, testing fallback"""
             assert "intent" in result
             assert "google_query" in result
             assert "newsapi_query" in result
-            assert result["intent"] in ["fact_claim", "fact_question", "news_paragraph", "multi_claim", "opinion", "nonsense", "instructional"]
+            assert result["intent"] in ["fact_claim", "fact_question", "multi_claim", "opinion", "nonsense", "instructional"]
 
 
 class TestLiveAPIReasoningModels:
@@ -202,7 +202,7 @@ class TestLiveAPIReasoningModels:
         assert "newsapi_query" in result
         
         # Validate intent is reasonable
-        assert result["intent"] in ["fact_claim", "fact_question", "news_paragraph", "multi_claim", "opinion", "nonsense", "instructional"]
+        assert result["intent"] in ["fact_claim", "fact_question", "multi_claim", "opinion", "nonsense", "instructional"]
         
         # Validate queries are not empty
         assert len(result["google_query"]) > 0
@@ -238,7 +238,7 @@ class TestLiveAPIReasoningModels:
         assert "newsapi_query" in result
         
         # Validate intent is reasonable for this type of claim
-        assert result["intent"] in ["fact_claim", "fact_question", "news_paragraph"]
+        assert result["intent"] in ["fact_claim", "fact_question", "multi_claim"]
         
         # Validate queries are substantial (not just fallback)
         assert len(result["google_query"].split()) >= 3

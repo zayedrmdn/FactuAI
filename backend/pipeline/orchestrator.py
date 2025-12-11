@@ -138,7 +138,7 @@ def check_text(
                 "results": [{"claim": text, **result}]
             }
         
-        elif intent in ["news_paragraph", "multi_claim"]:
+        elif intent == "multi_claim":
             # Extract and verify multiple claims
             _log_model_usage("claim_extraction", extraction_cfg.get("provider", llm), extraction_cfg.get("model_id"))
             claims = extract_claims(
@@ -304,7 +304,7 @@ def check_text_stream(
             all_results.append(result)
             yield {"type": "result", "result": {"claim": text, **result}}
         
-        elif intent in ["news_paragraph", "multi_claim"]:
+        elif intent == "multi_claim":
             yield {"type": "phase", "message": PHASE_EXTRACTING_CLAIMS, "progress": 15}
             _log_model_usage("claim_extraction", extraction_cfg.get("provider", llm), extraction_cfg.get("model_id"))
             claims = extract_claims(
