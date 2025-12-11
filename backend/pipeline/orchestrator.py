@@ -51,6 +51,51 @@ def _resolve_models(pipeline_models: Optional[Dict[str, Dict[str, str]]], fallba
     }
 
 
+def _process_single_claim(
+    claim: str,
+    intent_cfg: Dict[str, Optional[str]],
+    reasoning_cfg: Dict[str, Optional[str]],
+    *,
+    enabled_search_providers: Optional[List[str]] = None,
+    num_google: int = 5,
+    num_news: int = 5,
+    num_tavily: Optional[int] = None,
+    top_k: int = TOP_K_DEFAULT,
+    fallback_verification_question: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Generate claim-specific queries then verify the claim."""
+
+    _log_model_usage("intent_query_detection", intent_cfg.get("provider"), intent_cfg.get("model_id"))
+    detection = detect_intent(
+        claim,
+        llm=intent_cfg.get("provider"),
+        model_id=intent_cfg.get("model_id"),
+    )
+
+    google_query = detection["google_query"]
+    newsapi_query = detection["newsapi_query"]
+    verification_question = detection.get("verification_question") or fallback_verification_question or f"Is this true: {claim[:150]}?"
+
+    _log_model_usage("verify_claim", reasoning_cfg.get("provider"), reasoning_cfg.get("model_id"))
+    logger.info(f"[PIPELINE] Verifying claim with top_k={top_k} (claim-specific queries)")
+
+    result = verify_claim(
+        claim,
+        google_query,
+        newsapi_query,
+        llm=reasoning_cfg.get("provider"),
+        model_id=reasoning_cfg.get("model_id"),
+        num_google=num_google,
+        num_news=num_news,
+        num_tavily=num_tavily if num_tavily is not None else 5,
+        top_k=top_k,
+        enabled_search_providers=enabled_search_providers,
+        verification_question=verification_question,
+    )
+
+    return {"claim": claim, **result}
+
+
 def check_text(
     text: str,
     max_claims: int = 5,
@@ -158,21 +203,17 @@ def check_text(
             
             results = []
             for claim in claims:
-                _log_model_usage("verify_claim", reasoning_cfg.get("provider", llm), reasoning_cfg.get("model_id"))
-                logger.info(f"[PIPELINE] Verifying claim with top_k={TOP_K_MULTI_CLAIM} (multi-claim mode)")
-                result = verify_claim(
-                    claim,
-                    google_query,
-                    newsapi_query,
-                    llm=reasoning_cfg.get("provider", llm),
-                    model_id=reasoning_cfg.get("model_id"),
-                    num_google=num_google,
-                    num_news=num_news,
-                    top_k=TOP_K_MULTI_CLAIM,
-                    enabled_search_providers=enabled_search_providers,
-                    verification_question=verification_question,
+                results.append(
+                    _process_single_claim(
+                        claim,
+                        intent_cfg,
+                        reasoning_cfg,
+                        enabled_search_providers=enabled_search_providers,
+                        num_google=num_google,
+                        num_news=num_news,
+                        top_k=TOP_K_MULTI_CLAIM,
+                    )
                 )
-                results.append({"claim": claim, **result})
             
             # Generate comprehensive summary with all verification results
             _log_model_usage("summary", summary_cfg.get("provider", llm), summary_cfg.get("model_id"))
@@ -334,23 +375,18 @@ def check_text_stream(
                     "total_claims": total
                 }
                 
-                _log_model_usage("verify_claim", reasoning_cfg.get("provider", llm), reasoning_cfg.get("model_id"))
-                logger.info(f"[PIPELINE] Verifying claim with top_k={TOP_K_STREAMING} (streaming mode)")
-                result = verify_claim(
+                result = _process_single_claim(
                     claim,
-                    google_query,
-                    newsapi_query,
-                    llm=reasoning_cfg.get("provider", llm),
-                    model_id=reasoning_cfg.get("model_id"),
+                    intent_cfg,
+                    reasoning_cfg,
+                    enabled_search_providers=enabled_search_providers,
                     num_google=num_google,
                     num_news=num_news,
                     num_tavily=num_tavily,
                     top_k=TOP_K_STREAMING,
-                    enabled_search_providers=enabled_search_providers,
-                    verification_question=verification_question,
                 )
                 all_results.append(result)
-                yield {"type": "result", "result": {"claim": claim, **result}, "claim_index": i + 1}
+                yield {"type": "result", "result": result, "claim_index": i + 1}
         
         else:  # fact_claim
             yield {"type": "phase", "message": PHASE_VERIFYING_CLAIM, "progress": 30}

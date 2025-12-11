@@ -129,49 +129,79 @@ REASONING: Good evidence found""",
         # Verify summary contains verification info
         assert "verification results" in result['summary'].lower() or "evidence" in result['summary'].lower()
 
-    @patch('pipeline.summary.chat')
-    @patch('search.base.collect_evidence')
-    def test_multi_claim_pipeline_summary_timing(self, mock_collect_evidence, mock_chat):
-        """Test that summary is generated after verification for multiple claims."""
-        # Mock responses with proper string formats
-        mock_chat.side_effect = [
-            # detect_intent
-            '{"intent": "multi_claim", "google_query": "multi claim query", "newsapi_query": "multi claim query"}',
-            # extract_claims - return claims one per line with dashes
-            """- AI will prevent job losses through automation
-- AI will increase productivity in manufacturing""",
-            # verify_claim 1
-            """VERDICT: TRUE
-CONFIDENCE: 0.9
-REASONING: Evidence supports claim 1""",
-            # verify_claim 2
-            """VERDICT: MOSTLY_TRUE
-CONFIDENCE: 0.7
-REASONING: Evidence suggests net positive job impact""",
-            # summarize_input
-            "Comprehensive summary of multiple claims with verification results."
-        ]
+    @patch('pipeline.orchestrator.summarize_input')
+    @patch('pipeline.orchestrator.verify_claim')
+    @patch('pipeline.orchestrator.extract_claims')
+    @patch('pipeline.orchestrator.detect_intent')
+    def test_multi_claim_pipeline_summary_timing(self, mock_detect_intent, mock_extract_claims, mock_verify_claim, mock_summarize_input):
+        """Test that summary is generated after verification for multiple claims with claim-specific queries."""
 
-        mock_collect_evidence.return_value = [
+        # Initial intent detection (full text) → multi_claim
+        mock_detect_intent.side_effect = [
             {
-                'text': 'Test evidence',
-                'url': 'http://example.com',
-                'source': 'Test',
-                'title': 'Test Article',
-                'score': 0.9
-            }
+                "intent": "multi_claim",
+                "google_query": "multi claim query",
+                "newsapi_query": "multi claim query",
+                "verification_question": "",
+            },
+            # Claim 1 intent
+            {
+                "intent": "fact_claim",
+                "google_query": "ai prevents job losses",
+                "newsapi_query": "ai job automation",
+                "verification_question": "Does AI prevent job losses?",
+            },
+            # Claim 2 intent
+            {
+                "intent": "fact_claim",
+                "google_query": "ai increases productivity manufacturing",
+                "newsapi_query": "ai productivity manufacturing",
+                "verification_question": "Does AI increase manufacturing productivity?",
+            },
         ]
 
-        result = check_text("Text with multiple claims to verify. This is a much longer text that contains several statements about artificial intelligence and its impact on society and the economy. The text discusses various aspects of AI development and deployment. Artificial intelligence will revolutionize healthcare by enabling better diagnostics and personalized treatment plans. Machine learning algorithms can predict disease outbreaks and help prevent pandemics. AI systems are being used in education to provide personalized learning experiences for students. Automation through AI will transform manufacturing processes and increase efficiency. Self-driving cars powered by AI will reduce traffic accidents and improve transportation safety. Natural language processing allows computers to understand and generate human-like text. Computer vision systems can analyze medical images with high accuracy. AI chatbots are improving customer service across many industries. Blockchain technology combined with AI creates new possibilities for secure data management. Quantum computing will exponentially increase AI processing capabilities. These technological advancements will create new job opportunities while also requiring workforce reskilling programs.")
+        mock_extract_claims.return_value = [
+            "AI will prevent job losses through automation",
+            "AI will increase productivity in manufacturing",
+        ]
 
-        # Verify structure
+        mock_verify_claim.side_effect = [
+            {
+                "verdict": "TRUE",
+                "confidence": 0.9,
+                "reasoning": "Evidence supports claim 1",
+                "evidence": [],
+                "sources": [],
+                "source_quotes": [],
+                "label": "true",
+            },
+            {
+                "verdict": "MOSTLY_TRUE",
+                "confidence": 0.7,
+                "reasoning": "Evidence suggests net positive job impact",
+                "evidence": [],
+                "sources": [],
+                "source_quotes": [],
+                "label": "mostly_true",
+            },
+        ]
+
+        mock_summarize_input.return_value = "Comprehensive summary of multiple claims with verification results."
+
+        result = check_text(
+            "Text with multiple claims to verify. This is a much longer text that contains several statements about artificial intelligence and its impact on society and the economy. The text discusses various aspects of AI development and deployment. Artificial intelligence will revolutionize healthcare by enabling better diagnostics and personalized treatment plans. Machine learning algorithms can predict disease outbreaks and help prevent pandemics. AI systems are being used in education to provide personalized learning experiences for students. Automation through AI will transform manufacturing processes and increase efficiency. Self-driving cars powered by AI will reduce traffic accidents and improve transportation safety. Natural language processing allows computers to understand and generate human-like text. Computer vision systems can analyze medical images with high accuracy. AI chatbots are improving customer service across many industries. Blockchain technology combined with AI creates new possibilities for secure data management. Quantum computing will exponentially increase AI processing capabilities. These technological advancements will create new job opportunities while also requiring workforce reskilling programs."
+        )
+
         assert 'summary' in result
         assert 'results' in result
         assert len(result['results']) == 2
 
-        # Verify summary was generated (timing test - content tested separately)
+        # Summary should be produced after verification results exist
         assert len(result['summary']) > 0
-        assert "comprehensive" in result['summary'].lower() or "summary" in result['summary'].lower()
+        assert "summary" in result['summary'].lower()
+
+        # Ensure claim-specific detect_intent was called per claim (initial + 2 claims)
+        assert mock_detect_intent.call_count == 3
 @pytest.mark.live
 class TestLiveAPIIntegration:
     """Live API tests for executive summary functionality."""

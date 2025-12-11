@@ -129,6 +129,8 @@ frontend/src/
 2. **Service Layer** (`services/`): Business logic, external API/DB interactions
 3. **Data Layer** (`database/`): SQLAlchemy models and queries
 
+**Multi-claim rule**: For inputs with multiple claims, generate search queries **per claim** (no shared/global queries) to prevent evidence cross-contamination.
+
 **Dependency Injection**:
 - Services initialized in `services/service_manager.py`
 - Pass dependencies explicitly (no global state)

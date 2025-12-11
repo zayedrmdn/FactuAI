@@ -180,6 +180,8 @@ Domain Services ← Search, extraction, LLM, ranking
 Data Layer (models/) ← Database models & queries
 ```
 
+**Multi-claim queries**: In `multi_claim` flows, each extracted claim now gets its own intent/query generation before verification. Searches are **per-claim**, avoiding evidence pollution across unrelated topics.
+
 **Domain Modules** (22 focused files replacing 2 monolithic files):
 
 ```
