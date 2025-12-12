@@ -6,6 +6,9 @@
   "tests/test_executive_summary.py::TestLiveAPIIntegration::test_live_single_claim_summary",
   "tests/test_executive_summary.py::TestPipelineIntegration::test_multi_claim_pipeline_summary_timing",
   "tests/test_executive_summary.py::TestPipelineIntegration::test_single_claim_pipeline_summary_timing",
+  "tests/test_intent_native.py::test_native_intent_extracts_claims",
+  "tests/test_rag_learning.py::test_rag_learning_skips_without_embeddings_key",
+  "tests/test_search_native.py::test_native_search_returns_empty_without_keys",
   "tests/test_services/test_evidence_live.py::test_evidence_live_fetch[OpenAI released GPT-5 in January 2025]",
   "tests/test_services/test_extractors.py::TestExtractors::test_beautifulsoup_fallback",
   "tests/test_services/test_extractors.py::TestExtractors::test_blocked_site_handling",
@@ -83,5 +86,6 @@
   "tests/test_unit/test_pipeline_extraction.py::test_extract_claims_filtering_metadata",
   "tests/test_unit/test_pipeline_extraction.py::test_extract_claims_no_substance_filtering",
   "tests/test_unit/test_pipeline_extraction.py::test_extract_claims_with_dashes",
-  "tests/test_unit/test_pipeline_extraction.py::test_extract_claims_with_numbers"
+  "tests/test_unit/test_pipeline_extraction.py::test_extract_claims_with_numbers",
+  "tests/test_verifier_native.py::test_verifier_returns_unverifiable_without_key"
 ]

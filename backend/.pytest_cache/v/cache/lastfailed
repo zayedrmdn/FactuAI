@@ -45,5 +45,6 @@
   "tests/test_unit/test_pipeline_extraction.py::test_extract_claims_with_numbers": true,
   "tests/test_unit/test_pipeline_extraction.py::test_extract_claims_no_substance_filtering": true,
   "tests/test_unit/test_pipeline_extraction.py::test_extract_claims_filtering_metadata": true,
-  "tests/test_services/test_intent_classifier.py::test_detect_intent[In 2025, global emissions dropped by 3%, attributed to widespread adoption of EVs, renewable grid upgrades in the EU, and severe industrial slowdowns in China.-multi_claim]": true
+  "tests/test_services/test_intent_classifier.py::test_detect_intent[In 2025, global emissions dropped by 3%, attributed to widespread adoption of EVs, renewable grid upgrades in the EU, and severe industrial slowdowns in China.-multi_claim]": true,
+  "scripts/test_mistral_fix.py": true
 }
