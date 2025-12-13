@@ -1,7 +1,4 @@
 [
-  "tests/integration/test_live_analyze.py::test_analyze_endpoint_processes_multi_claim_text_input",
-  "tests/integration/test_live_health.py::test_health_endpoint_returns_service_liveness_status",
-  "tests/integration/test_live_login.py::test_login_endpoint_authenticates_user_credentials",
   "tests/test_executive_summary.py::TestExecutiveSummary::test_summarize_input_multiple_claims",
   "tests/test_executive_summary.py::TestExecutiveSummary::test_summarize_input_with_evidence",
   "tests/test_executive_summary.py::TestExecutiveSummary::test_summarize_input_without_evidence",

@@ -1,5 +1,5 @@
 """
-OCR Service for FactuAI.
+OCR Service for FactuAI
 
 Simple wrapper around PIL + pytesseract for extracting text from images.
 """

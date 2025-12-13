@@ -97,8 +97,6 @@ Backend code lives under `backend/app/` and is organized by feature:
 
 Each feature owns its router + orchestration logic + ports, and may have adapters/persistence.
 
-Shared infrastructure (cross-feature utilities) lives outside features to avoid coupling. Extraction utilities (scraping/OCR/video) now live at `backend/app/infrastructure/extraction/`.
-
 ### Cross-Feature Contracts
 
 Shared types that legitimately cross feature boundaries live in `backend/app/contracts/`.

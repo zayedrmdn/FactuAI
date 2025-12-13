@@ -73,7 +73,3 @@ cd backend
 .\venv\Scripts\Activate.ps1
 pytest -q
 ```
-
-## Technical Debt / Notes
-
-- `app/workers/tasks.py` is currently a lightweight placeholder (logs enqueue intent) and should remain decoupled from feature orchestration if expanded.

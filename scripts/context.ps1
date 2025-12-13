@@ -7,26 +7,19 @@ $projectRoot = Split-Path -Parent $scriptPath
 $outputFile = Join-Path $scriptPath "context_output.txt"
 
 # Recent Activity Settings
-$MaxFilesToRead = 1
-$HoursBack = 1
+$MaxFilesToRead = 10
+$HoursBack = 24
 
 # Target folders to scan for recent activity
-# Added specific feature folders to ensure we catch logic changes
-$targetFolders = @(
-    "backend/app",
-    "backend/migrations",
-    "frontend/src",
-    "docs"
-)
+$targetFolders = @("backend", "frontend/src")
 
-# Folders to completely hide from tree (Noise reduction)
+# Folders to completely hide from tree
 $foldersToHide = @(
     ".agent-memory",
     ".trae", 
     ".venv-cloud",
     ".vscode",
     ".github",
-    ".idea",
     "node_modules",
     "__pycache__",
     ".pytest_cache",
@@ -36,38 +29,36 @@ $foldersToHide = @(
     ".turbo",
     "venv",
     ".venv",
-    ".cache",
-    "coverage",
-    ".husky"
+    ".cache"
 )
 
-# Folders to collapse (Show name only, hide content)
-# Updated based on your actual project structure
+# Folders to collapse (show name only, hide content)
 $collapsedFolders = @(
     "unsloth_compiled_cache",
-    "instance",   # backend/instance
-    "uploads",    # backend/uploads
+    "instance",
+    "uploads",
     ".git",
-    "public",     # frontend/public
-    "tests",      # backend/tests
-    "scripts",    # backend/scripts
-    "migrations"  # backend/migrations (often too noisy for general context)
+    "public",
+    "tests",
+    "scripts"
 )
 
 # Priority files (ALWAYS include full content, regardless of modification date)
-# Updated paths to match your actual Vertical Slice Architecture
 $priorityFiles = @(
-    "CONSTITUTION.md",
-    "AGENTS.md",
+    "CONSTITUTIONS.md",
     "backend/requirements-core.txt",
-    "backend/app/core/settings.py"  # Crucial for env var config
+    "backend/app.py",
+    "backend/core/config.py",
+    "frontend/package.json",
+    "frontend/tsconfig.json",
+    "frontend/next.config.ts",
+    "frontend/tailwind.config.ts",
+    ".env.example"
 )
 
 # Database schema references (pointer only, no content)
-# Pointing to the actual persistence models found in your tree
 $dbReferences = @(
-    "backend/app/persistence/models.py",
-    "backend/app/features/auth/models.py"
+    "backend/database/models/user.py"
 )
 
 # --- FUNCTIONS ---
@@ -75,20 +66,13 @@ $dbReferences = @(
 function Get-SmartTree {
     param ($Path, $Indent = "")
     $str = ""
-    # Get directories
     $items = Get-ChildItem -Path $Path -Directory -ErrorAction SilentlyContinue | 
         Where-Object { $foldersToHide -notcontains $_.Name }
-    # Get files
     $files = Get-ChildItem -Path $Path -File -ErrorAction SilentlyContinue
 
-    # Print Files first (to look like file explorer), or folders first? 
-    # Standard tree is usually folders then files, or mixed. 
-    # Let's do Files then Folders to keep directories distinct.
-    
     foreach ($file in $files) {
         $str += "$Indent|-- $($file.Name)`n"
     }
-    
     foreach ($folder in $items) {
         if ($collapsedFolders -contains $folder.Name) {
             $str += "$Indent|-- [$($folder.Name)/] (Content Hidden)`n"
@@ -126,7 +110,7 @@ $output += "--- DATABASE SCHEMA FILES (Reference Only) ---"
 foreach ($dbRef in $dbReferences) {
     $fullPath = Join-Path $projectRoot $dbRef
     if (Test-Path $fullPath) {
-        $output += "File: $dbRef"
+        $output += "Location: $dbRef"
     }
 }
 $output += ""
@@ -143,8 +127,6 @@ foreach ($priorityPath in $priorityFiles) {
         $output += Get-Content $fullPath -Raw
         $output += "=== END FILE ==="
         $output += ""
-    } else {
-        Write-Host "  ! Missing: $priorityPath" -ForegroundColor Red
     }
 }
 
@@ -152,20 +134,12 @@ foreach ($priorityPath in $priorityFiles) {
 Write-Host "[4/4] Scanning recent activity (last $HoursBack hours)..." -ForegroundColor Yellow
 $cutoffDate = (Get-Date).AddHours(-$HoursBack)
 
-# Helper to check if file is already in priority list (to avoid duplicates)
-function Is-Priority ($filePath) {
-    foreach ($p in $priorityFiles) {
-        if ($filePath.Replace("\", "/").EndsWith($p)) { return $true }
-    }
-    return $false
-}
-
 $recentFiles = Get-ChildItem -Path $targetFolders -Recurse -File -ErrorAction SilentlyContinue |
     Where-Object {
         $_.LastWriteTime -gt $cutoffDate -and
-        $_.Extension -in @('.py', '.tsx', '.ts', '.css', '.js', '.json', '.md', '.sql') -and
+        $_.Extension -in @('.py', '.tsx', '.ts', '.css', '.js', '.json', '.md') -and
         $_.Name -notmatch '\.pyc$|\.map$|\.lock$|package-lock\.json' -and
-        -not (Is-Priority $_.FullName)
+        -not ($priorityFiles -contains ($_.FullName.Replace("$projectRoot\", "").Replace("\", "/")))
     } |
     Sort-Object LastWriteTime -Descending |
     Select-Object -First $MaxFilesToRead
