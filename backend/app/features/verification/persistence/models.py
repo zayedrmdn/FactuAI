@@ -1,3 +1,4 @@
+# Full Path: backend\app\features\verification\persistence\models.py
 from __future__ import annotations
 
 from datetime import datetime
