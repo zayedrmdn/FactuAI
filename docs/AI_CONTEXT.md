@@ -12,9 +12,10 @@ FactuAI is a fact-checking system:
 
 ## Non-Negotiable Rules
 
-- Do not reintroduce legacy modules (old pipeline / Flask stack / sync adapters).
+- Do not reintroduce legacy modules (old internal pipeline / Flask stack / sync adapters).
 - Features do not import other features. Share types via `backend/app/contracts/`.
 - All I/O is async (httpx, asyncpg, redis.asyncio).
+- Standard AI orchestration libraries (LangChain/LangGraph) are allowed for LLM calls and structured output parsing (async-first).
 
 ## Where Things Live
 

@@ -10,7 +10,7 @@ FactuAI is a full-stack fact-checking system with a **native async FastAPI backe
 
 ## Tech Stack
 
-- Backend: FastAPI, SQLAlchemy (async), asyncpg, PostgreSQL+pgvector, Redis, httpx
+- Backend: FastAPI, SQLAlchemy (async), asyncpg, PostgreSQL+pgvector, Redis, httpx, LangChain (`langchain-openai`) for LLM verification
 - Frontend: Next.js (App Router), TypeScript, Tailwind
 
 ## Quick Start (Docker)
@@ -40,7 +40,7 @@ Open:
 - Deep dive (architecture): docs/ARCHITECTURE.md
 - Rules (required for humans + AI agents): CONSTITUTION.md
 - Backend specifics (env vars, tests): backend/README.md
- - AI coding source of truth: AGENTS.md
+- AI coding source of truth: AGENTS.md
 
 ## AI Agent Onboarding
 
@@ -48,4 +48,4 @@ For a fresh chat, feed the agent:
 
 - docs/AI_CONTEXT.md
 - CONSTITUTION.md
- - AGENTS.md
+- AGENTS.md

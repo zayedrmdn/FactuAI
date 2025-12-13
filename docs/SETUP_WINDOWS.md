@@ -67,6 +67,9 @@ cd backend
 pip install -r requirements-core.txt
 pip install -r requirements-dev.txt
 uvicorn app.main:app --reload
+
+Note:
+- Verification uses LangChain (`langchain-openai`) with async invocation and structured output parsing against your configured OpenAI-compatible endpoint.
 ```
 
 Open:

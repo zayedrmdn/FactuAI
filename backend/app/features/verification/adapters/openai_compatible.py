@@ -1,10 +1,13 @@
 # Full path: backend/app/features/verification/adapters/openai_compatible.py
 from __future__ import annotations
 
-import json
 from typing import List
 
-from openai import AsyncOpenAI
+from pydantic import BaseModel, Field
+
+from langchain_core.output_parsers import PydanticOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_openai import ChatOpenAI
 
 from app.contracts.types import ClaimVerdict, EvidenceSnippet
 from app.core.logging import get_logger
@@ -14,46 +17,23 @@ from app.features.verification.ports import ClaimVerifierPort
 logger = get_logger(__name__)
 
 
+class _LLMClaimVerdict(BaseModel):
+    verdict: str = Field(
+        description="One of: true, false, mostly_true, mostly_false, mixed, unverifiable.",
+        pattern=r"^(true|false|mostly_true|mostly_false|mixed|unverifiable)$",
+    )
+    confidence: float = Field(ge=0.0, le=1.0)
+    reasoning: str = Field(min_length=1)
+
+
 _SYSTEM = (
-    "You are a fact-checking AI. Given a claim and evidence snippets, respond ONLY with valid JSON. "
-    "No markdown, no extra text.\n\n"
-    "JSON schema:\n"
-    "{\n"
-    '  "verdict": "true|false|mostly_true|mostly_false|mixed|unverifiable",\n'
-    '  "confidence": 0.0,\n'
-    '  "reasoning": "..."\n'
-    "}\n\n"
+    "You are a fact-checking AI. Given a claim and evidence snippets, return a structured response. "
+    "Do not include markdown or any extra text outside the required format.\n\n"
     "Rules:\n"
-    "- If evidence is insufficient, verdict must be 'unverifiable'.\n"
-    "- confidence must be between 0.0 and 1.0.\n"
+    "- If evidence is insufficient, verdict MUST be 'unverifiable'.\n"
+    "- Confidence MUST be between 0.0 and 1.0.\n\n"
+    "{format_instructions}"
 )
-
-
-def _clamp01(v: float) -> float:
-    return max(0.0, min(1.0, float(v)))
-
-
-def _parse_json(text: str) -> dict:
-    raw = (text or "").strip()
-    if not raw:
-        return {}
-
-    # Try direct JSON first
-    try:
-        return json.loads(raw)
-    except Exception:
-        pass
-
-    # Attempt to extract the first JSON object
-    start = raw.find("{")
-    end = raw.rfind("}")
-    if start >= 0 and end > start:
-        try:
-            return json.loads(raw[start : end + 1])
-        except Exception:
-            return {}
-
-    return {}
 
 
 class OpenAICompatibleClaimVerifier(ClaimVerifierPort):
@@ -99,29 +79,54 @@ class OpenAICompatibleClaimVerifier(ClaimVerifierPort):
                 evidence=evidence,
             )
 
-        client = AsyncOpenAI(api_key=api_key, base_url=base_url or None)
-
-        ev_lines = []
+        ev_lines: list[str] = []
         for item in evidence:
-            title = item.get("title") or ""
-            url = item.get("url") or ""
-            txt = item.get("text") or ""
-            ev_lines.append(f"- {title} {url}\n  {txt}")
+            title = (item.get("title") or "").strip()
+            url = (item.get("url") or "").strip()
+            txt = (item.get("text") or "").strip()
+            head = " ".join([p for p in [title, url] if p])
+            ev_lines.append(f"- {head}\n  {txt}".strip())
 
-        user = f"Claim:\n{claim_clean}\n\nEvidence:\n" + "\n".join(ev_lines)
+        evidence_text = "\n".join(ev_lines)
+
+        parser = PydanticOutputParser(pydantic_object=_LLMClaimVerdict)
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", _SYSTEM),
+                (
+                    "human",
+                    "Claim:\n{claim}\n\nEvidence:\n{evidence}\n",
+                ),
+            ]
+        )
 
         try:
-            resp = await client.chat.completions.create(
+            llm = ChatOpenAI(
                 model=model,
-                messages=[
-                    {"role": "system", "content": _SYSTEM},
-                    {"role": "user", "content": user},
-                ],
                 temperature=0.2,
+                api_key=api_key,
+                base_url=base_url or None,
             )
-            content = (resp.choices[0].message.content or "").strip()
+        except TypeError:
+            llm = ChatOpenAI(
+                model=model,
+                temperature=0.2,
+                openai_api_key=api_key,
+                openai_api_base=base_url or None,
+            )
+
+        chain = prompt | llm | parser
+
+        try:
+            result: _LLMClaimVerdict = await chain.ainvoke(
+                {
+                    "claim": claim_clean,
+                    "evidence": evidence_text,
+                    "format_instructions": parser.get_format_instructions(),
+                }
+            )
         except Exception as exc:
-            logger.warning(f"[VERIFY] LLM call failed: {exc}")
+            logger.warning(f"[VERIFY] LLM structured output failed: {exc}")
             return ClaimVerdict(
                 verdict="unverifiable",
                 confidence=0.0,
@@ -129,31 +134,9 @@ class OpenAICompatibleClaimVerifier(ClaimVerifierPort):
                 evidence=evidence,
             )
 
-        payload = _parse_json(content)
-        verdict = str(payload.get("verdict", "unverifiable")).strip().lower()
-        mapping = {
-            "true": "true",
-            "false": "false",
-            "mostly_true": "mostly_true",
-            "mostly true": "mostly_true",
-            "mostly_false": "mostly_false",
-            "mostly false": "mostly_false",
-            "mixed": "mixed",
-            "unverifiable": "unverifiable",
-            "unknown": "unverifiable",
-        }
-        verdict = mapping.get(verdict, "unverifiable")
-
-        try:
-            confidence = _clamp01(float(payload.get("confidence", 0.0)))
-        except Exception:
-            confidence = 0.0
-
-        reasoning = str(payload.get("reasoning", "")).strip() or "No reasoning provided."
-
         return ClaimVerdict(
-            verdict=verdict,
-            confidence=confidence,
-            reasoning=reasoning,
+            verdict=result.verdict,
+            confidence=float(result.confidence),
+            reasoning=result.reasoning,
             evidence=evidence,
         )

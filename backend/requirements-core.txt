@@ -38,6 +38,10 @@ pgvector>=0.2.5
 # OpenAI-compatible API client (for OpenRouter)
 openai>=1.0.0
 
+# LLM orchestration + structured output parsing
+langchain>=0.2.0
+langchain-openai>=0.1.0
+
 # Production server
 gunicorn>=21.0.0
 

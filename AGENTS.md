@@ -26,6 +26,7 @@ Backend:
 - PostgreSQL + pgvector
 - redis.asyncio
 - httpx (async HTTP)
+- LangChain (`langchain-openai`) for LLM verification (async + structured outputs)
 
 Frontend:
 - Next.js (App Router), TypeScript, Tailwind
@@ -118,6 +119,7 @@ Hard rules:
 - **Vertical Slice Architecture**. Feature-to-feature imports are forbidden.
 - **OCP + DI**. Extend behavior via new implementations + config, not by editing orchestrators.
 - **No legacy pipeline**. Do not reintroduce removed architecture patterns.
+- Standard AI orchestration libraries (LangChain/LangGraph) are allowed for LLM calls and structured parsing (see `CONSTITUTION.md`).
 
 When in doubt, open `CONSTITUTION.md` and follow it.
 

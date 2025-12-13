@@ -18,6 +18,7 @@ FactuAI is a full-stack AI-powered fact-checking system that analyzes claims, ga
 - PostgreSQL 16+ with pgvector extension
 - Redis (async) for caching
 - httpx for async HTTP
+- LangChain (`langchain-openai`) for LLM verification (async + structured outputs)
 
 **Infrastructure:**
 - Docker Compose (Postgres + Redis)
@@ -130,6 +131,9 @@ FactuAI is a full-stack AI-powered fact-checking system that analyzes claims, ga
 2. **intent/** - Extracts structured claims from raw text
 3. **search/** - Pluggable search providers (Tavily, NewsAPI, etc.)
 4. **verification/** - LLM-based verdict grading (OpenAI-compatible endpoints)
+
+Implementation note:
+- The default verifier adapter uses LangChain (`langchain-openai`) to enforce strict structured output parsing and schema validation.
 
 **Shared Contracts:** `backend/app/contracts/` (cross-feature types only)
 

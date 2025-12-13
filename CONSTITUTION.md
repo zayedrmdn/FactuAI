@@ -40,7 +40,16 @@ This file is the single source of truth for **engineering rules**.
 
 ### 5) No Legacy / No Pipeline
 
-- Do not reintroduce removed legacy stacks (old pipeline, old Flask layers, old adapter wrappers).
+- Do not reintroduce removed legacy stacks (old internal pipeline, old Flask layers, old adapter wrappers).
+- “Pipeline” here refers to the deprecated in-repo orchestration stack, not to standard AI libraries.
+
+### 6) Allowed AI Frameworks (LLM Orchestration)
+
+- Using standard AI orchestration frameworks (e.g., LangChain / LangGraph) is explicitly allowed when:
+  - used for prompt templating, LLM invocation, and structured output parsing/validation
+  - kept simple (linear chains; no unnecessary agents/tools/memory)
+  - used async-first (e.g., `ainvoke`) inside the FastAPI runtime
+- This does **not** override other rules (no sync wrappers for core I/O, no cross-feature imports).
 
 ## Continuous Learning (RAG Feedback Loop)
 

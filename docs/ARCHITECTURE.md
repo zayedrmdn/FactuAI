@@ -7,7 +7,7 @@ A request typically follows this shape:
 1. **Analyze** feature receives the request (API boundary)
 2. **Intent** extracts structured claim items (what to check)
 3. **Search** gathers evidence from pluggable providers (OCP)
-4. **Verification** grades claim(s) using an OpenAI-compatible LLM
+4. **Verification** grades claim(s) using LangChain (`langchain-openai`) over an OpenAI-compatible LLM endpoint (async + structured outputs)
 5. **Persistence** stores claim/evidence/verification results in Postgres
 6. **Continuous Learning** (RAG feedback loop) writes embeddings to pgvector for future retrieval
 
