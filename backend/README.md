@@ -73,3 +73,9 @@ cd backend
 .\venv\Scripts\Activate.ps1
 pytest -q
 ```
+
+## Architecture Notes
+
+- **Vertical Slice Architecture:** Features under `app/features/*` are isolated; cross-feature imports are forbidden.
+- **Shared Infrastructure:** Extraction utilities (scraping/OCR/video) live under `app/infrastructure/extraction/`.
+- **Workers:** `app/workers/tasks.py` is a lightweight placeholder for background jobs; keep it decoupled from feature orchestration.

@@ -1,17 +1,24 @@
 """
 Base text extraction utilities.
-
 Provides sentence extraction and text processing.
 """
 
+import os
 import re
 from typing import List
 
-from utils.logging import get_logger
 from utils.helpers import is_junk
-from config import MIN_SENT_WORDS
+from utils.logging import get_logger
 
 logger = get_logger(__name__)
+
+# Fallback for missing config module
+try:
+    from config import MIN_SENT_WORDS as _MIN_SENT_WORDS  # type: ignore
+except (ImportError, ModuleNotFoundError):
+    _MIN_SENT_WORDS = int(os.getenv("MIN_SENT_WORDS", "5"))
+
+MIN_SENT_WORDS = _MIN_SENT_WORDS
 
 
 def extract_sentences(text: str) -> List[str]:
@@ -22,15 +29,13 @@ def extract_sentences(text: str) -> List[str]:
         text: Article text
         
     Returns:
-        List of sentences (min 5 words each)
+        List of sentences (min MIN_SENT_WORDS words each)
     """
     if not text:
         return []
     
-    # Simple sentence splitting
-    sentences = re.split(r'[.!?]+\s+', text)
+    sentences = re.split(r"[.!?]+\s+", text)
     
-    # Filter by minimum word count and junk detection
     valid_sentences = []
     for sent in sentences:
         sent = sent.strip()
@@ -40,4 +45,4 @@ def extract_sentences(text: str) -> List[str]:
     return valid_sentences
 
 
-__all__ = ["extract_sentences"]
+__all__ = ["extract_sentences", "MIN_SENT_WORDS"]

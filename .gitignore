@@ -14,6 +14,14 @@ __pycache__/
 *.pyd
 *.log
 *.tmp
+*.db
+*.sqlite
+*.db-journal
+*.db-wal
+.coverage
+
+# Ignore instance folder (Flask legacy artifact)
+instance/
 
 # Ignore Jupyter auto-save files
 *.ipynb_checkpoints/
@@ -64,4 +72,8 @@ node_modules/
 .husky/
 .cache/huggingface/models--sentence-transformers--all-MiniLM-L6-v2/blobs/c79f2b6a0cea6f4b564fed1938984bace9d30ff0
 /.cache
+
+# Ignore testsprite artifacts
 /testsprite_tests
+testsprite-mcp-test-report.*
+testsprite_backend_test_plan.json

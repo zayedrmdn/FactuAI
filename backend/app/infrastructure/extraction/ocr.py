@@ -1,11 +1,11 @@
 """
-OCR Service for FactuAI
-
+OCR Service for FactuAI.
 Simple wrapper around PIL + pytesseract for extracting text from images.
 """
 
-from PIL import Image
 import pytesseract
+from PIL import Image
+
 from utils.logging import get_logger
 
 logger = get_logger(__name__)

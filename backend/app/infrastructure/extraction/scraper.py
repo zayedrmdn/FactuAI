@@ -1,27 +1,39 @@
 """
 Web scraping functionality.
-
 Extracts main article text from URLs with caching support.
 """
 
+from typing import Dict
+
 import requests
 from bs4 import BeautifulSoup
-from pathlib import Path
 
-from utils.logging import get_logger
 from utils.helpers import is_junk
-from services.cache.article_cache import get_article_cache, save_article_cache
+from utils.logging import get_logger
 
 logger = get_logger(__name__)
 
-# HTTP headers to avoid 403 blocks
+# Fallback cache if services.cache is unavailable
+_ARTICLE_CACHE: Dict[str, str] = {}
+
+try:
+    from services.cache.article_cache import get_article_cache, save_article_cache  # type: ignore
+except (ImportError, ModuleNotFoundError):
+
+    def get_article_cache() -> Dict[str, str]:
+        return _ARTICLE_CACHE
+
+    def save_article_cache(cache: Dict[str, str]) -> None:
+        _ARTICLE_CACHE.update(cache)
+
+
 HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    'Accept-Language': 'en-US,en;q=0.5',
-    'DNT': '1',
-    'Connection': 'keep-alive',
-    'Upgrade-Insecure-Requests': '1'
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.5",
+    "DNT": "1",
+    "Connection": "keep-alive",
+    "Upgrade-Insecure-Requests": "1",
 }
 
 
@@ -35,7 +47,6 @@ def scrape_article(url: str) -> str:
     Returns:
         Extracted article text, or empty string if failed
     """
-    # Check cache first
     cache = get_article_cache()
     if url in cache:
         logger.debug(f"[SCRAPING] Cache hit for: {url}")
@@ -47,40 +58,37 @@ def scrape_article(url: str) -> str:
         if response.status_code == 403:
             logger.warning(f"[SCRAPING] 403 Forbidden: {url}")
             return ""
-        elif response.status_code == 404:
+        if response.status_code == 404:
             logger.warning(f"[SCRAPING] 404 Not Found: {url}")
             return ""
-        elif response.status_code != 200:
+        if response.status_code != 200:
             logger.warning(f"[SCRAPING] HTTP {response.status_code}: {url}")
             return ""
         
-        soup = BeautifulSoup(response.content, 'html.parser')
+        soup = BeautifulSoup(response.content, "html.parser")
         
-        # Remove script and style elements
         for script in soup(["script", "style", "nav", "header", "footer"]):
             script.decompose()
         
-        # Extract all paragraph text
-        paragraphs = soup.find_all('p')
-        text = ' '.join([p.get_text().strip() for p in paragraphs if p.get_text().strip()])
+        paragraphs = soup.find_all("p")
+        text = " ".join([p.get_text().strip() for p in paragraphs if p.get_text().strip()])
         
-        # Filter out junk
-        sentences = text.split('. ')
+        sentences = text.split(". ")
         clean_sentences = [s for s in sentences if not is_junk(s)]
-        text = '. '.join(clean_sentences)
+        text = ". ".join(clean_sentences)
         
         word_count = len(text.split())
         logger.debug(f"[SCRAPING] Extracted {word_count} words from {url}")
         
-        # Enforce strict word limit to prevent massive context
-        MAX_SCRAPE_WORDS = 5000  # Hard limit per article
+        MAX_SCRAPE_WORDS = 5000
         if word_count > MAX_SCRAPE_WORDS:
-            logger.warning(f"[SCRAPING] Truncating massive article ({word_count} words) to {MAX_SCRAPE_WORDS} words: {url}")
+            logger.warning(
+                f"[SCRAPING] Truncating massive article ({word_count} words) to {MAX_SCRAPE_WORDS}: {url}"
+            )
             words = text.split()[:MAX_SCRAPE_WORDS]
-            text = ' '.join(words)
+            text = " ".join(words)
             word_count = MAX_SCRAPE_WORDS
         
-        # Cache the result
         if text and word_count > 50:
             cache[url] = text
             save_article_cache(cache)

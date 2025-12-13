@@ -1,6 +1,5 @@
 """
-Video Processing for FactuAI
-
+Video Processing for FactuAI.
 Extract text from videos using:
 1. ffmpeg for audio extraction
 2. speech_recognition for speech-to-text
@@ -8,7 +7,10 @@ Extract text from videos using:
 
 import os
 import subprocess
+import tempfile
+
 import speech_recognition as sr
+
 from utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -29,14 +31,20 @@ def extract_audio_from_video(video_path: str, audio_path: str) -> bool:
     
     try:
         cmd = [
-            'ffmpeg', '-i', video_path,
-            '-vn',  # No video
-            '-acodec', 'pcm_s16le',  # PCM 16-bit
-            '-ar', '16000',  # 16kHz sample rate
-            '-ac', '1',  # Mono
-            '-y',  # Overwrite output
-            '-loglevel', 'error',  # Reduce ffmpeg output
-            audio_path
+            "ffmpeg",
+            "-i",
+            video_path,
+            "-vn",
+            "-acodec",
+            "pcm_s16le",
+            "-ar",
+            "16000",
+            "-ac",
+            "1",
+            "-y",
+            "-loglevel",
+            "error",
+            audio_path,
         ]
         
         result = subprocess.run(cmd, capture_output=True, text=True)
@@ -68,14 +76,11 @@ def audio_to_text(audio_path: str) -> str:
     try:
         recognizer = sr.Recognizer()
         
-        # Load audio file
         with sr.AudioFile(audio_path) as source:
-            # Adjust for ambient noise
             recognizer.adjust_for_ambient_noise(source, duration=1)
             audio = recognizer.record(source)
         
-        # Convert to text using Google Speech Recognition
-        text = recognizer.recognize_google(audio, language='en-US')
+        text = recognizer.recognize_google(audio, language="en-US")
         logger.debug(f"[VIDEO] Transcribed {len(text)} characters")
         return text.strip()
         
@@ -90,7 +95,7 @@ def audio_to_text(audio_path: str) -> str:
         return ""
 
 
-def extract_text_from_video(video_path: str, audio_path: str = None) -> str:
+def extract_text_from_video(video_path: str, audio_path: str | None = None) -> str:
     """
     Extract text from video by converting speech to text.
     
@@ -104,28 +109,23 @@ def extract_text_from_video(video_path: str, audio_path: str = None) -> str:
     """
     logger.info(f"[VIDEO] Processing video: {video_path}")
     
-    # Create temporary audio file if not provided
-    import tempfile
     cleanup_audio = False
     
     if audio_path is None:
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as tmp:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
             audio_path = tmp.name
         cleanup_audio = True
     
     try:
-        # Extract audio
         if not extract_audio_from_video(video_path, audio_path):
             return ""
         
-        # Convert to text
         text = audio_to_text(audio_path)
         
         return text
         
     finally:
-        # Cleanup temporary audio file
-        if cleanup_audio and os.path.exists(audio_path):
+        if cleanup_audio and audio_path and os.path.exists(audio_path):
             try:
                 os.remove(audio_path)
             except Exception as e:
