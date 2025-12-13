@@ -11,7 +11,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d factuai"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d factuai" ]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -19,17 +19,38 @@ services:
   redis:
     image: redis:7-alpine
     container_name: factuai-redis
-    command: ["redis-server", "--appendonly", "yes"]
+    command: [ "redis-server", "--appendonly", "yes" ]
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
       timeout: 3s
       retries: 20
 
+  embeddings:
+    image: michaelf34/infinity:latest
+    container_name: factuai-embeddings
+    ports:
+      - "7997:7997"
+    environment:
+      INFINITY_MODEL_ID: BAAI/bge-small-en-v1.5
+      INFINITY_BATCH_SIZE: "8"
+    command: v2
+    volumes:
+      - model_cache:/app/.cache
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:7997/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
 volumes:
   postgres_data:
   redis_data:
+  model_cache:
+
+
