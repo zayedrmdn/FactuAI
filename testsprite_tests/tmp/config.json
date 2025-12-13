@@ -2,7 +2,17 @@
   "status": "commited",
   "type": "frontend",
   "scope": "codebase",
-  "localEndpoint": "http://localhost:3000/dashboard",
+  "localEndpoint": "http://localhost:3000",
   "loginUser": "test@example.com",
-  "loginPassword": "test123"
+  "loginPassword": "test123",
+  "executionArgs": {
+    "projectName": "FactuAI",
+    "projectPath": "d:\\Projects\\Factu-AI-2\\FactuAI",
+    "testIds": [],
+    "additionalInstruction": "Focus on frontend E2E tests for the landing page, authentication flows, and dashboard functionality",
+    "envs": {
+      "API_KEY": "sk-user-W-qQQS4kcTPCV2aXvMpzKZgTLE5sYHT6OYyBSSSPr---j7QWH9C94PSAAN-pPjdVVYtTmwwFBVCV0iv6gJOq7bG6xduCmeu4BrOo0LoOBnsTE4NnBRRaus22DNctimiuYzI"
+    }
+  },
+  "proxy": "http://0b2ee0e5-6f42-4de6-8f9b-89fc7153a834:OAoBB07dU7EfMIkReWiCYj7TRVzgNSoe@tun.testsprite.com:8080"
 }

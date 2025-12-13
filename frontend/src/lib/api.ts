@@ -1,7 +1,7 @@
 import { ExtractTextResponse, VideoTextResponse, FactCheckResponse } from '@/types/dashboard/api';
 
 class APIService {
-  private readonly baseURL = 'http://127.0.0.1:5000/api';
+  private readonly baseURL = 'http://127.0.0.1:8000/api';
 
   private async makeRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const response = await fetch(`${this.baseURL}/${endpoint}`, {

@@ -8,7 +8,7 @@ import { usePipelineModelsStore } from '@/stores/pipeline-models-store';
 import type { PipelineTask } from '@/stores/pipeline-models-store';
 import { getModelById } from '@/config/ai-models';
 
-const API_URL = 'http://127.0.0.1:5000/api/process';
+const API_URL = 'http://127.0.0.1:8000/api/analyze';
 
 // Type for SSE data messages
 interface SSEMessage {
@@ -120,9 +120,9 @@ export function useFactCheck() {
   const avgConfidence =
     factResults.length > 0
       ? (factResults.reduce((sum, r) => {
-          const conf = typeof r.confidence === 'number' ? r.confidence : 0;
-          return sum + conf;
-        }, 0) / factResults.length) * 100
+        const conf = typeof r.confidence === 'number' ? r.confidence : 0;
+        return sum + conf;
+      }, 0) / factResults.length) * 100
       : 0;
 
   /** Reset all state to initial values */

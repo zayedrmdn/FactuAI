@@ -75,40 +75,21 @@ export function validateBasic(text: string): ValidationResult {
   return { isValid: true, error: '', suggestion: '' };
 }
 
-// LLM validation using backend
+/**
+ * Validate text for fact-checking.
+ * 
+ * NOTE: V4 backend does not have /api/validate endpoint.
+ * We use client-side validation only (basic text checks).
+ * The backend's /api/analyze endpoint will handle its own validation.
+ */
 export async function validateForFactCheck(text: string): Promise<ValidationResult> {
-  // First do basic validation
+  // Use basic validation only - backend V4 doesn't have /api/validate
   const basicResult = validateBasic(text);
-  if (!basicResult.isValid) {
-    return {
-      isValid: false,
-      error: basicResult.error || '',
-      suggestion: basicResult.suggestion || '',
-    };
-  }
-
-  // Call backend LLM for final validation
-  try {
-    const response = await fetch('/api/validate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: text.trim() }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Validation failed: ${response.status}`);
-    }
-
-    const result = await response.json();
-    return result;
-  } catch (error) {
-    console.warn('LLM validation failed, falling back to basic validation:', error);
-    return {
-      isValid: basicResult.isValid,
-      error: basicResult.error || '',
-      suggestion: basicResult.suggestion || '',
-    };
-  }
+  return {
+    isValid: basicResult.isValid,
+    error: basicResult.error || '',
+    suggestion: basicResult.suggestion || '',
+  };
 }
 
 function isObviousGibberish(text: string): boolean {

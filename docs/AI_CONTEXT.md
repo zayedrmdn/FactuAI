@@ -45,10 +45,15 @@ Migrations:
 
 ### Change the LLM Provider
 
+**Default Model:** `meta-llama/llama-3.3-70b-instruct` via OpenRouter
+
 Set:
-- `LLM_API_BASE_URL`
-- `LLM_API_KEY`
-- model env var (e.g. `OPENROUTER_MODEL` or `NVIDIA_MODEL`)
+- `LLM_API_BASE_URL` (default: `https://openrouter.ai/api/v1`)
+- `LLM_API_KEY` or `OPENROUTER_API_KEY`
+- `OPENROUTER_MODEL` (default: `meta-llama/llama-3.3-70b-instruct`)
+
+For NVIDIA NIM:
+- `NVIDIA_MODEL` (default: `meta/llama-3.1-8b-instruct`)
 
 ### Continuous Learning
 

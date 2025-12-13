@@ -43,7 +43,10 @@ export function Sidebar({ collapsed, onToggle }: Readonly<SidebarProps>) {
   const router = useRouter();
 
   const handleLogout = () => {
+    localStorage.removeItem('token');
     localStorage.removeItem('user');
+    // Clear the user hook cache to prevent stale data
+    import('@/lib/hooks/useUser').then(({ clearUserCache }) => clearUserCache());
     router.push('/');
     globalThis.location.reload();
   };

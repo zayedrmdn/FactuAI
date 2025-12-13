@@ -40,7 +40,7 @@ class Settings(BaseModel):
     redis_required: bool = _env_bool("REDIS_REQUIRED", "false")
 
     llm_provider: str = os.getenv("LLM_PROVIDER", "nvidia")
-    openrouter_model: str = os.getenv("OPENROUTER_MODEL", "anthropic/claude-3-haiku")
+    openrouter_model: str = os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3.3-70b-instruct")
     nvidia_model: str = os.getenv("NVIDIA_MODEL", "meta/llama-3.1-8b-instruct")
 
     # OpenAI-compatible client configuration (OpenRouter, local gateways, etc.)

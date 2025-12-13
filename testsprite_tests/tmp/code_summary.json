@@ -2,168 +2,401 @@
   "tech_stack": [
     "Python 3.11+",
     "FastAPI",
+    "SQLAlchemy (async)",
+    "PostgreSQL + pgvector",
+    "Redis",
     "TypeScript",
     "Next.js 15",
     "React 19",
-    "PostgreSQL 16 + pgvector",
-    "Redis",
-    "SQLAlchemy async",
-    "LangChain",
-    "Tailwind CSS",
-    "Docker"
+    "TailwindCSS 4",
+    "Zustand",
+    "Radix UI",
+    "Framer Motion"
   ],
   "features": [
     {
-      "name": "Health Check",
-      "description": "Liveness endpoint for monitoring backend service status",
-      "files": ["backend/app/main.py"]
+      "name": "Health Check API",
+      "description": "Liveness endpoint to check if the API is running",
+      "files": [
+        "backend/app/main.py"
+      ],
+      "api_doc": {
+        "openapi": "3.0.0",
+        "paths": {
+          "/health": {
+            "get": {
+              "summary": "Health check endpoint",
+              "operationId": "health",
+              "responses": {
+                "200": {
+                  "description": "Service is healthy",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "status": {
+                            "type": "string",
+                            "example": "ok"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     },
     {
       "name": "Analyze API",
-      "description": "Multi-claim fact-checking analysis with async orchestration across intent, search, and verification features",
+      "description": "Multi-claim fact-checking analysis endpoint. Extracts claims from text, gathers evidence from search providers, and verifies claims using LLM.",
       "files": [
         "backend/app/features/analyze/router.py",
-        "backend/app/features/analyze/service.py",
         "backend/app/features/analyze/schemas.py",
-        "backend/app/features/analyze/_utils.py"
-      ]
+        "backend/app/features/analyze/service.py"
+      ],
+      "api_doc": {
+        "openapi": "3.0.0",
+        "paths": {
+          "/api/analyze": {
+            "post": {
+              "summary": "Analyze text for fact-checking",
+              "operationId": "analyze",
+              "tags": [
+                "analyze"
+              ],
+              "requestBody": {
+                "required": true,
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "required": [
+                        "text"
+                      ],
+                      "properties": {
+                        "text": {
+                          "type": "string",
+                          "minLength": 5,
+                          "maxLength": 5000,
+                          "description": "Text to analyze for claims"
+                        },
+                        "provider": {
+                          "type": "string",
+                          "enum": [
+                            "openrouter",
+                            "nvidia"
+                          ],
+                          "default": "nvidia",
+                          "description": "LLM provider to use"
+                        },
+                        "max_claims": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 8,
+                          "default": 3,
+                          "description": "Maximum number of claims to extract"
+                        },
+                        "enable_web_search": {
+                          "type": "boolean",
+                          "default": true,
+                          "description": "Enable web search for evidence"
+                        },
+                        "enable_kb": {
+                          "type": "boolean",
+                          "default": true,
+                          "description": "Enable knowledge base lookup"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "responses": {
+                "200": {
+                  "description": "Analysis results",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "request_id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "model_used": {
+                            "type": "string"
+                          },
+                          "latency_ms": {
+                            "type": "integer"
+                          },
+                          "claims": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "claim_text": {
+                                  "type": "string"
+                                },
+                                "verdict": {
+                                  "type": "string",
+                                  "enum": [
+                                    "true",
+                                    "false",
+                                    "mostly_true",
+                                    "mostly_false",
+                                    "mixed",
+                                    "unverifiable"
+                                  ]
+                                },
+                                "confidence": {
+                                  "type": "number"
+                                },
+                                "reasoning": {
+                                  "type": "string"
+                                },
+                                "evidence": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "snippet": {
+                                        "type": "string"
+                                      },
+                                      "source_url": {
+                                        "type": "string",
+                                        "format": "uri"
+                                      },
+                                      "source_title": {
+                                        "type": "string"
+                                      },
+                                      "source_domain": {
+                                        "type": "string"
+                                      },
+                                      "relevance_score": {
+                                        "type": "number"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "400": {
+                  "description": "Bad request",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "detail": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "500": {
+                  "description": "Internal server error",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "detail": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     },
     {
-      "name": "Intent Extraction",
-      "description": "LLM-powered claim extraction and routing from raw text input",
-      "files": [
-        "backend/app/features/intent/adapters/native.py",
-        "backend/app/features/intent/ports.py"
-      ]
-    },
-    {
-      "name": "Search Providers",
-      "description": "Pluggable evidence gathering from Tavily, NewsAPI, and other providers",
-      "files": [
-        "backend/app/features/search/adapters/native.py",
-        "backend/app/features/search/providers/tavily.py",
-        "backend/app/features/search/providers/newsapi.py",
-        "backend/app/features/search/ports.py"
-      ]
-    },
-    {
-      "name": "Claim Verification",
-      "description": "LangChain-based async LLM verification with structured output parsing (ChatOpenAI + Pydantic)",
-      "files": [
-        "backend/app/features/verification/adapters/openai_compatible.py",
-        "backend/app/features/verification/ports.py"
-      ]
-    },
-    {
-      "name": "Authentication",
-      "description": "User registration, login, and profile management",
+      "name": "Login API",
+      "description": "User authentication endpoint for login",
       "files": [
         "backend/app/features/auth/router.py",
-        "backend/app/features/auth/models.py"
-      ]
-    },
-    {
-      "name": "Database Migrations",
-      "description": "SQL-based schema migrations for Postgres + pgvector",
-      "files": [
-        "backend/migrations/v3_0_001_init.sql",
-        "backend/migrations/v3_0_002_users.sql",
-        "backend/app/core/db.py"
-      ]
-    },
-    {
-      "name": "Dependency Injection",
-      "description": "OCP-compliant DI container for pluggable adapters (intent, search, verification)",
-      "files": [
-        "backend/app/core/container.py",
-        "backend/app/core/settings.py",
-        "backend/app/core/deps.py"
-      ]
-    },
-    {
-      "name": "Extraction Infrastructure",
-      "description": "Shared utilities for web scraping, OCR, and video transcription",
-      "files": [
-        "backend/app/infrastructure/extraction/scraper.py",
-        "backend/app/infrastructure/extraction/ocr.py",
-        "backend/app/infrastructure/extraction/video.py",
-        "backend/app/infrastructure/extraction/base.py"
-      ]
+        "backend/app/features/auth/service.py",
+        "backend/app/contracts/auth.py"
+      ],
+      "api_doc": {
+        "openapi": "3.0.0",
+        "paths": {
+          "/api/login": {
+            "post": {
+              "summary": "User login",
+              "operationId": "login",
+              "requestBody": {
+                "required": true,
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "required": [
+                        "email",
+                        "password"
+                      ],
+                      "properties": {
+                        "email": {
+                          "type": "string",
+                          "format": "email"
+                        },
+                        "password": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "responses": {
+                "200": {
+                  "description": "Login successful",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "user": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "integer"
+                              },
+                              "email": {
+                                "type": "string"
+                              },
+                              "username": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "is_active": {
+                                "type": "boolean"
+                              }
+                            }
+                          },
+                          "message": {
+                            "type": "string",
+                            "default": "Login successful"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "401": {
+                  "description": "Invalid credentials"
+                },
+                "503": {
+                  "description": "Database unavailable"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     {
       "name": "Landing Page",
-      "description": "Public marketing site with hero, features, how-it-works, and CTA sections",
+      "description": "Public landing page with hero section, features showcase, how it works section, and call to action",
       "files": [
         "frontend/src/app/page.tsx",
-        "frontend/src/components/landing/LandingNav.tsx",
         "frontend/src/components/landing/HeroSection.tsx",
         "frontend/src/components/landing/Features.tsx",
         "frontend/src/components/landing/HowItWorks.tsx",
         "frontend/src/components/landing/CallToAction.tsx",
-        "frontend/src/components/landing/Footer.tsx"
+        "frontend/src/components/landing/Footer.tsx",
+        "frontend/src/components/landing/LandingNav.tsx"
       ]
     },
     {
-      "name": "User Authentication (Frontend)",
-      "description": "Login and registration pages with form validation (react-hook-form + zod)",
+      "name": "Authentication UI",
+      "description": "User authentication flows including login, register, forgot password, and reset password pages",
       "files": [
         "frontend/src/app/login/page.tsx",
         "frontend/src/app/register/page.tsx",
         "frontend/src/app/forgot-password/page.tsx",
-        "frontend/src/app/reset-password/page.tsx"
+        "frontend/src/app/reset-password/page.tsx",
+        "frontend/src/lib/hooks/useUser.ts"
       ]
     },
     {
-      "name": "Dashboard Layout",
-      "description": "Authenticated workspace with sidebar navigation and responsive header",
-      "files": [
-        "frontend/src/app/dashboard/layout.tsx",
-        "frontend/src/components/dashboard/Sidebar.tsx",
-        "frontend/src/components/dashboard/Header.tsx"
-      ]
-    },
-    {
-      "name": "Investigation Console",
-      "description": "Main dashboard for fact-checking text/images/videos with history panel",
+      "name": "Dashboard",
+      "description": "Main application dashboard for fact-checking with input options, results display, and history",
       "files": [
         "frontend/src/app/dashboard/page.tsx",
+        "frontend/src/components/dashboard/Header.tsx",
+        "frontend/src/components/dashboard/Sidebar.tsx",
         "frontend/src/components/dashboard/InputCard.tsx",
+        "frontend/src/components/dashboard/InputTabs.tsx",
+        "frontend/src/components/dashboard/TextInput.tsx",
+        "frontend/src/components/dashboard/ImageInput.tsx",
+        "frontend/src/components/dashboard/VideoInput.tsx",
         "frontend/src/components/dashboard/ResultsView.tsx",
-        "frontend/src/components/dashboard/HistoryPanel.tsx"
+        "frontend/src/components/dashboard/ClaimCard.tsx",
+        "frontend/src/components/dashboard/QAResultCard.tsx",
+        "frontend/src/components/dashboard/HistoryPanel.tsx",
+        "frontend/src/components/dashboard/HistoryItem.tsx"
       ]
     },
     {
-      "name": "Profile Management",
-      "description": "User profile settings and account management",
+      "name": "Fact Checking Core",
+      "description": "Core fact-checking functionality including API calls, state management, and result processing",
       "files": [
-        "frontend/src/app/dashboard/profile/page.tsx"
-      ]
-    },
-    {
-      "name": "API Rate Limits",
-      "description": "OpenRouter API usage and quota monitoring dashboard",
-      "files": [
-        "frontend/src/app/dashboard/limits/page.tsx"
-      ]
-    },
-    {
-      "name": "Frontend API Client",
-      "description": "Type-safe API service layer for backend communication",
-      "files": [
+        "frontend/src/lib/hooks/useFactCheck.ts",
+        "frontend/src/lib/hooks/useAppState.ts",
         "frontend/src/lib/api.ts",
         "frontend/src/lib/api-dashboard.ts",
-        "frontend/src/types/dashboard/api.ts"
+        "frontend/src/stores/ai-store.ts",
+        "frontend/src/types/ai.ts"
       ]
     },
     {
-      "name": "UI Components",
-      "description": "Reusable shadcn/ui components (buttons, cards, forms, dialogs, etc.)",
+      "name": "Settings & Configuration",
+      "description": "User settings including search providers, search limits, and pipeline model configuration",
       "files": [
-        "frontend/src/components/ui/button.tsx",
-        "frontend/src/components/ui/card.tsx",
-        "frontend/src/components/ui/form-controls.tsx",
-        "frontend/src/components/ui/dialog.tsx",
-        "frontend/src/components/ui/dropdown-menu.tsx"
+        "frontend/src/components/dashboard/SettingsDialog.tsx",
+        "frontend/src/components/dashboard/SearchProvidersConfig.tsx",
+        "frontend/src/components/dashboard/SearchLimitsConfig.tsx",
+        "frontend/src/components/ai/PipelineModelConfig.tsx",
+        "frontend/src/stores/search-providers-store.ts",
+        "frontend/src/stores/search-limits-store.ts",
+        "frontend/src/stores/pipeline-models-store.ts"
+      ]
+    },
+    {
+      "name": "Input Processing",
+      "description": "Handles different input types including text, images, videos, and file uploads with validation",
+      "files": [
+        "frontend/src/lib/hooks/useInputType.ts",
+        "frontend/src/lib/hooks/useInputValidation.ts",
+        "frontend/src/lib/hooks/useFileUpload.ts",
+        "frontend/src/lib/hooks/useImageProcessing.ts",
+        "frontend/src/lib/hooks/useVideoProcessing.ts",
+        "frontend/src/lib/validation.ts"
+      ]
+    },
+    {
+      "name": "PDF Export",
+      "description": "Export fact-checking results to PDF format",
+      "files": [
+        "frontend/src/lib/pdfExport.ts",
+        "frontend/src/lib/hooks/usePdfExport.ts"
       ]
     }
   ]

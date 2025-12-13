@@ -17,7 +17,7 @@ export default function UserAvatar() {
       {user.profile_picture && !imageError ? (
         /* eslint-disable-next-line @next/next/no-img-element */
         <img
-          src={`http://127.0.0.1:5000${user.profile_picture}`}
+          src={`http://127.0.0.1:8000${user.profile_picture}`}
           alt="Profile"
           className="w-8 h-8 rounded-full object-cover border border-gray-300"
           onError={() => setImageError(true)}

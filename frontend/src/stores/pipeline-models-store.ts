@@ -37,7 +37,7 @@ export interface PipelineModelsState {
   resetToDefaults: () => void;
 }
 
-// Default model selections
+// Default model selections - Llama 3.3 70B for reasoning, efficient models for other tasks
 const getDefaultTaskModels = (): Record<PipelineTask, TaskModelSelection> => ({
   intent: {
     provider: 'nvidia',
@@ -49,7 +49,7 @@ const getDefaultTaskModels = (): Record<PipelineTask, TaskModelSelection> => ({
   },
   reasoning: {
     provider: 'openrouter',
-    modelId: 'openrouter-tongyi-deepresearch-30b',
+    modelId: 'openrouter-llama-3.3-70b', // NEW: Llama 3.3 70B for superior verification reasoning
   },
   summary: {
     provider: 'nvidia',

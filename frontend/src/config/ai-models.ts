@@ -36,6 +36,26 @@ const GENERAL_SYSTEM_PROMPT = `You are a helpful, accurate, and concise AI assis
 // ============================================================================
 
 const openRouterModels: ModelConfig[] = [
+  // ⭐ DEFAULT MODEL - Llama 3.3 70B
+  {
+    id: 'openrouter-llama-3.3-70b',
+    displayName: 'Meta: Llama 3.3 70B Instruct ⭐',
+    provider: 'openrouter',
+    modelId: 'meta-llama/llama-3.3-70b-instruct',
+    description: '⭐ NEW DEFAULT: Superior reasoning at low cost ($0.10/M input). 131K context window.',
+    defaultTemperature: 0.3,
+    defaultMaxTokens: 4096,
+    defaultTopP: 0.9,
+    defaultSystemPrompt: FACTCHECK_SYSTEM_PROMPT,
+    capabilities: {
+      contextWindow: 131072,
+      supportsStreaming: true,
+      supportsFunctionCalling: true,
+      supportsVision: false,
+    },
+    tier: 'premium',
+    isRecommended: true,
+  },
   {
     id: 'openrouter-tongyi-deepresearch-30b',
     displayName: 'Alibaba: Tongyi DeepResearch 30B A3B',
@@ -53,7 +73,7 @@ const openRouterModels: ModelConfig[] = [
       supportsVision: false,
     },
     tier: 'free',
-    isRecommended: true,
+    isRecommended: false,
   },
   {
     id: 'openrouter-olmo-3-32b',
@@ -368,8 +388,8 @@ const providers: ProviderConfig[] = [
  */
 export const modelRegistry: ModelRegistry = {
   providers,
-  defaultProvider: 'nvidia',
-  defaultModelId: 'nvidia-qwen2.5-7b', // Default: Fast and efficient
+  defaultProvider: 'openrouter',
+  defaultModelId: 'openrouter-llama-3.3-70b', // Default: Meta Llama 3.3 70B - Superior reasoning at low cost
 };
 
 // ============================================================================

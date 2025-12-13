@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -15,7 +16,7 @@ import {
 } from '@/components/ui/card';
 import { toast } from 'sonner';
 import Link from 'next/link';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, AlertCircle } from 'lucide-react';
 
 const schema = z.object({
   email: z.string().min(1, 'Email or username is required'),
@@ -25,6 +26,8 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 export default function LoginPage() {
+  const [loginError, setLoginError] = useState<string | null>(null);
+
   const {
     register,
     handleSubmit,
@@ -34,6 +37,9 @@ export default function LoginPage() {
   });
 
   const onSubmit = async (data: FormData) => {
+    // Clear any previous error
+    setLoginError(null);
+
     try {
       const res = await fetch('/api/login', {
         method: 'POST',
@@ -44,7 +50,9 @@ export default function LoginPage() {
       const result = await res.json();
 
       if (!res.ok) {
-        toast.error(result.error || 'Invalid credentials');
+        const errorMessage = result.error || result.detail || 'Invalid credentials';
+        setLoginError(errorMessage);
+        toast.error(errorMessage);
         return;
       }
 
@@ -53,7 +61,9 @@ export default function LoginPage() {
       globalThis.location.href = '/dashboard';
     } catch (err: unknown) {
       const error = err as Error;
-      toast.error(error.message || 'Something went wrong');
+      const errorMessage = error.message || 'Something went wrong. Please try again.';
+      setLoginError(errorMessage);
+      toast.error(errorMessage);
     }
   };
 
@@ -83,6 +93,14 @@ export default function LoginPage() {
               <CardDescription>Enter your email below to access your dashboard</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">
+              {/* Inline error alert for login failures */}
+              {loginError && (
+                <div className="flex items-center gap-2 p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  <span>{loginError}</span>
+                </div>
+              )}
+
               <form onSubmit={handleSubmit(onSubmit)}>
                 <div className="grid gap-4">
                   <div className="grid gap-2">
