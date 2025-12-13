@@ -50,9 +50,6 @@ frontend/node_modules/
 # Ignore script extraction outputs
 scripts/extraction_outputs/
 
-# Ignore configuration files
-.env
-
 # Ignore Jupyter notebooks and notebook folder
 *.ipynb
 notebooks/
