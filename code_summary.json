@@ -1,0 +1,146 @@
+{
+    "tech_stack": [
+        "TypeScript",
+        "Next.js 15",
+        "React 19",
+        "TailwindCSS 4",
+        "Zustand",
+        "Radix UI",
+        "Framer Motion",
+        "React Hook Form",
+        "Zod"
+    ],
+    "features": [
+        {
+            "name": "Landing Page",
+            "description": "Public landing page with hero section, features showcase, how it works section, and call to action",
+            "files": [
+                "frontend/src/app/page.tsx",
+                "frontend/src/components/landing/HeroSection.tsx",
+                "frontend/src/components/landing/Features.tsx",
+                "frontend/src/components/landing/HowItWorks.tsx",
+                "frontend/src/components/landing/CallToAction.tsx",
+                "frontend/src/components/landing/Footer.tsx",
+                "frontend/src/components/landing/LandingNav.tsx"
+            ]
+        },
+        {
+            "name": "Authentication",
+            "description": "User authentication flows including login, register, forgot password, and reset password",
+            "files": [
+                "frontend/src/app/login/page.tsx",
+                "frontend/src/app/register/page.tsx",
+                "frontend/src/app/forgot-password/page.tsx",
+                "frontend/src/app/reset-password/page.tsx",
+                "frontend/src/lib/hooks/useUser.ts"
+            ]
+        },
+        {
+            "name": "Dashboard",
+            "description": "Main application dashboard for fact-checking with input options, results display, and history",
+            "files": [
+                "frontend/src/app/dashboard/page.tsx",
+                "frontend/src/components/dashboard/Header.tsx",
+                "frontend/src/components/dashboard/Sidebar.tsx",
+                "frontend/src/components/dashboard/InputCard.tsx",
+                "frontend/src/components/dashboard/InputTabs.tsx",
+                "frontend/src/components/dashboard/TextInput.tsx",
+                "frontend/src/components/dashboard/ImageInput.tsx",
+                "frontend/src/components/dashboard/VideoInput.tsx",
+                "frontend/src/components/dashboard/ResultsView.tsx",
+                "frontend/src/components/dashboard/ClaimCard.tsx",
+                "frontend/src/components/dashboard/QAResultCard.tsx",
+                "frontend/src/components/dashboard/HistoryPanel.tsx",
+                "frontend/src/components/dashboard/HistoryItem.tsx"
+            ]
+        },
+        {
+            "name": "Fact Checking",
+            "description": "Core fact-checking functionality including API calls, state management, and result processing",
+            "files": [
+                "frontend/src/lib/hooks/useFactCheck.ts",
+                "frontend/src/lib/hooks/useAppState.ts",
+                "frontend/src/lib/api.ts",
+                "frontend/src/lib/api-dashboard.ts",
+                "frontend/src/stores/ai-store.ts",
+                "frontend/src/types/ai.ts"
+            ]
+        },
+        {
+            "name": "Settings & Configuration",
+            "description": "User settings including search providers, search limits, and pipeline model configuration",
+            "files": [
+                "frontend/src/components/dashboard/SettingsDialog.tsx",
+                "frontend/src/components/dashboard/SearchProvidersConfig.tsx",
+                "frontend/src/components/dashboard/SearchLimitsConfig.tsx",
+                "frontend/src/components/ai/PipelineModelConfig.tsx",
+                "frontend/src/stores/search-providers-store.ts",
+                "frontend/src/stores/search-limits-store.ts",
+                "frontend/src/stores/pipeline-models-store.ts",
+                "frontend/src/lib/hooks/useSettings.ts",
+                "frontend/src/lib/hooks/useKeyLimits.ts"
+            ]
+        },
+        {
+            "name": "Input Processing",
+            "description": "Handles different input types including text, images, videos, and file uploads with validation",
+            "files": [
+                "frontend/src/lib/hooks/useInputType.ts",
+                "frontend/src/lib/hooks/useInputValidation.ts",
+                "frontend/src/lib/hooks/useFileUpload.ts",
+                "frontend/src/lib/hooks/useImageProcessing.ts",
+                "frontend/src/lib/hooks/useVideoProcessing.ts",
+                "frontend/src/lib/validation.ts",
+                "frontend/src/components/ui/file-input.tsx"
+            ]
+        },
+        {
+            "name": "History Management",
+            "description": "Manages user fact-checking history with persistence and retrieval",
+            "files": [
+                "frontend/src/lib/hooks/useHistory.ts",
+                "frontend/src/components/dashboard/HistoryPanel.tsx",
+                "frontend/src/components/dashboard/HistoryItem.tsx"
+            ]
+        },
+        {
+            "name": "PDF Export",
+            "description": "Export fact-checking results to PDF format",
+            "files": [
+                "frontend/src/lib/pdfExport.ts",
+                "frontend/src/lib/hooks/usePdfExport.ts"
+            ]
+        },
+        {
+            "name": "UI Components",
+            "description": "Reusable UI components built with Radix UI primitives and custom styling",
+            "files": [
+                "frontend/src/components/ui/button.tsx",
+                "frontend/src/components/ui/card.tsx",
+                "frontend/src/components/ui/dialog.tsx",
+                "frontend/src/components/ui/dropdown-menu.tsx",
+                "frontend/src/components/ui/select.tsx",
+                "frontend/src/components/ui/accordion.tsx",
+                "frontend/src/components/ui/alert.tsx",
+                "frontend/src/components/ui/label.tsx",
+                "frontend/src/components/ui/popover.tsx",
+                "frontend/src/components/ui/switch.tsx",
+                "frontend/src/components/ui/tooltip.tsx",
+                "frontend/src/components/ui/skeleton.tsx",
+                "frontend/src/components/ui/primitives.tsx",
+                "frontend/src/components/ui/form-controls.tsx",
+                "frontend/src/components/ui/feedback-states.tsx",
+                "frontend/src/components/ui/file-input.tsx",
+                "frontend/src/components/ui/score-display.tsx"
+            ]
+        },
+        {
+            "name": "AI Components",
+            "description": "AI-specific UI components for displaying verification results and pipeline status",
+            "files": [
+                "frontend/src/components/ai/ai-components.tsx",
+                "frontend/src/components/ai/PipelineModelConfig.tsx"
+            ]
+        }
+    ]
+}

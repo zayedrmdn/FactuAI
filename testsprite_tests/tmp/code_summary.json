@@ -1,0 +1,170 @@
+{
+  "tech_stack": [
+    "Python 3.11+",
+    "FastAPI",
+    "TypeScript",
+    "Next.js 15",
+    "React 19",
+    "PostgreSQL 16 + pgvector",
+    "Redis",
+    "SQLAlchemy async",
+    "LangChain",
+    "Tailwind CSS",
+    "Docker"
+  ],
+  "features": [
+    {
+      "name": "Health Check",
+      "description": "Liveness endpoint for monitoring backend service status",
+      "files": ["backend/app/main.py"]
+    },
+    {
+      "name": "Analyze API",
+      "description": "Multi-claim fact-checking analysis with async orchestration across intent, search, and verification features",
+      "files": [
+        "backend/app/features/analyze/router.py",
+        "backend/app/features/analyze/service.py",
+        "backend/app/features/analyze/schemas.py",
+        "backend/app/features/analyze/_utils.py"
+      ]
+    },
+    {
+      "name": "Intent Extraction",
+      "description": "LLM-powered claim extraction and routing from raw text input",
+      "files": [
+        "backend/app/features/intent/adapters/native.py",
+        "backend/app/features/intent/ports.py"
+      ]
+    },
+    {
+      "name": "Search Providers",
+      "description": "Pluggable evidence gathering from Tavily, NewsAPI, and other providers",
+      "files": [
+        "backend/app/features/search/adapters/native.py",
+        "backend/app/features/search/providers/tavily.py",
+        "backend/app/features/search/providers/newsapi.py",
+        "backend/app/features/search/ports.py"
+      ]
+    },
+    {
+      "name": "Claim Verification",
+      "description": "LangChain-based async LLM verification with structured output parsing (ChatOpenAI + Pydantic)",
+      "files": [
+        "backend/app/features/verification/adapters/openai_compatible.py",
+        "backend/app/features/verification/ports.py"
+      ]
+    },
+    {
+      "name": "Authentication",
+      "description": "User registration, login, and profile management",
+      "files": [
+        "backend/app/features/auth/router.py",
+        "backend/app/features/auth/models.py"
+      ]
+    },
+    {
+      "name": "Database Migrations",
+      "description": "SQL-based schema migrations for Postgres + pgvector",
+      "files": [
+        "backend/migrations/v3_0_001_init.sql",
+        "backend/migrations/v3_0_002_users.sql",
+        "backend/app/core/db.py"
+      ]
+    },
+    {
+      "name": "Dependency Injection",
+      "description": "OCP-compliant DI container for pluggable adapters (intent, search, verification)",
+      "files": [
+        "backend/app/core/container.py",
+        "backend/app/core/settings.py",
+        "backend/app/core/deps.py"
+      ]
+    },
+    {
+      "name": "Extraction Infrastructure",
+      "description": "Shared utilities for web scraping, OCR, and video transcription",
+      "files": [
+        "backend/app/infrastructure/extraction/scraper.py",
+        "backend/app/infrastructure/extraction/ocr.py",
+        "backend/app/infrastructure/extraction/video.py",
+        "backend/app/infrastructure/extraction/base.py"
+      ]
+    },
+    {
+      "name": "Landing Page",
+      "description": "Public marketing site with hero, features, how-it-works, and CTA sections",
+      "files": [
+        "frontend/src/app/page.tsx",
+        "frontend/src/components/landing/LandingNav.tsx",
+        "frontend/src/components/landing/HeroSection.tsx",
+        "frontend/src/components/landing/Features.tsx",
+        "frontend/src/components/landing/HowItWorks.tsx",
+        "frontend/src/components/landing/CallToAction.tsx",
+        "frontend/src/components/landing/Footer.tsx"
+      ]
+    },
+    {
+      "name": "User Authentication (Frontend)",
+      "description": "Login and registration pages with form validation (react-hook-form + zod)",
+      "files": [
+        "frontend/src/app/login/page.tsx",
+        "frontend/src/app/register/page.tsx",
+        "frontend/src/app/forgot-password/page.tsx",
+        "frontend/src/app/reset-password/page.tsx"
+      ]
+    },
+    {
+      "name": "Dashboard Layout",
+      "description": "Authenticated workspace with sidebar navigation and responsive header",
+      "files": [
+        "frontend/src/app/dashboard/layout.tsx",
+        "frontend/src/components/dashboard/Sidebar.tsx",
+        "frontend/src/components/dashboard/Header.tsx"
+      ]
+    },
+    {
+      "name": "Investigation Console",
+      "description": "Main dashboard for fact-checking text/images/videos with history panel",
+      "files": [
+        "frontend/src/app/dashboard/page.tsx",
+        "frontend/src/components/dashboard/InputCard.tsx",
+        "frontend/src/components/dashboard/ResultsView.tsx",
+        "frontend/src/components/dashboard/HistoryPanel.tsx"
+      ]
+    },
+    {
+      "name": "Profile Management",
+      "description": "User profile settings and account management",
+      "files": [
+        "frontend/src/app/dashboard/profile/page.tsx"
+      ]
+    },
+    {
+      "name": "API Rate Limits",
+      "description": "OpenRouter API usage and quota monitoring dashboard",
+      "files": [
+        "frontend/src/app/dashboard/limits/page.tsx"
+      ]
+    },
+    {
+      "name": "Frontend API Client",
+      "description": "Type-safe API service layer for backend communication",
+      "files": [
+        "frontend/src/lib/api.ts",
+        "frontend/src/lib/api-dashboard.ts",
+        "frontend/src/types/dashboard/api.ts"
+      ]
+    },
+    {
+      "name": "UI Components",
+      "description": "Reusable shadcn/ui components (buttons, cards, forms, dialogs, etc.)",
+      "files": [
+        "frontend/src/components/ui/button.tsx",
+        "frontend/src/components/ui/card.tsx",
+        "frontend/src/components/ui/form-controls.tsx",
+        "frontend/src/components/ui/dialog.tsx",
+        "frontend/src/components/ui/dropdown-menu.tsx"
+      ]
+    }
+  ]
+}

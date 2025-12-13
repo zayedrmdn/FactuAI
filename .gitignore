@@ -57,10 +57,6 @@ scripts/extraction_outputs/
 *.ipynb
 notebooks/
 
-# Ignore virtual environment folders named 'venv-<something>'
-.venv-cloud/
-.venv-local/
-
 # Ignore AI agent and tool folders
 .agent-memory/
 .trae/
@@ -72,8 +68,3 @@ node_modules/
 .husky/
 .cache/huggingface/models--sentence-transformers--all-MiniLM-L6-v2/blobs/c79f2b6a0cea6f4b564fed1938984bace9d30ff0
 /.cache
-
-# Ignore testsprite artifacts
-/testsprite_tests
-testsprite-mcp-test-report.*
-testsprite_backend_test_plan.json
