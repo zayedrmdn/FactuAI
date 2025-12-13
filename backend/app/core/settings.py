@@ -1,3 +1,4 @@
+# Full path: backend/app/core/settings.py
 import os
 from functools import lru_cache
 

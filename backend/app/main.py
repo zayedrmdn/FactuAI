@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.deps import lifespan
 from app.features.analyze.router import router as analyze_router
+from app.features.auth.router import router as auth_router
 
 app = FastAPI(title="FactuAI API", version="1.0.0", lifespan=lifespan)
 
@@ -15,6 +16,7 @@ app.add_middleware(
 )
 
 app.include_router(analyze_router, prefix="/api")
+app.include_router(auth_router, prefix="/api")
 
 
 @app.get("/health")

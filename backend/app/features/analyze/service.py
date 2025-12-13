@@ -105,25 +105,32 @@ class AnalyzeService:
         request_id = uuid.uuid4()
         latency_ms = int((time.perf_counter() - start) * 1000)
 
-        repo = SqlAlchemyVerificationRepository(self._db)
-        verification_id = await repo.persist(
-            request_id=request_id,
-            input_text=request.text,
-            model_used=model,
-            latency_ms=latency_ms,
-            claims=claim_results,
-        )
+        verification_id: int | None = None
+        try:
+            repo = SqlAlchemyVerificationRepository(self._db)
+            verification_id = await repo.persist(
+                request_id=request_id,
+                input_text=request.text,
+                model_used=model,
+                latency_ms=latency_ms,
+                claims=claim_results,
+            )
+        except Exception as exc:
+            if self._settings.db_required:
+                raise
+            logger.info(f"[DB] Persist skipped (DB unavailable): {exc}")
 
         # Continuous Learning: asynchronously embed/store high-confidence verifications.
         try:
-            best_confidence = max((float(c.confidence) for c in claim_results), default=0.0)
-            if best_confidence >= float(self._settings.learning_confidence_threshold):
-                learner = RagLearningService(settings=self._settings)
-                learner.schedule(verification_id)
+            if verification_id is not None:
+                best_confidence = max((float(c.confidence) for c in claim_results), default=0.0)
+                if best_confidence >= float(self._settings.learning_confidence_threshold):
+                    learner = RagLearningService(settings=self._settings)
+                    learner.schedule(verification_id)
         except Exception:
             logger.warning("[RAG] Failed to schedule learning")
 
-        if self._redis is not None:
+        if self._redis is not None and verification_id is not None:
             logger.info(f"[ANALYZE] Persisted verification_id={verification_id}")
 
         return request_id, model, latency_ms, claim_results
