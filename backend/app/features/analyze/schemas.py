@@ -7,7 +7,7 @@ from pydantic import BaseModel, HttpUrl, UUID4, conint, constr
 
 class AnalyzeRequest(BaseModel):
     text: constr(min_length=5, max_length=5000)
-    provider: Optional[Literal["openrouter", "nvidia"]] = "nvidia"
+    provider: Optional[Literal["openrouter", "nvidia"]] = None  # Uses settings.llm_provider
     max_claims: conint(ge=1, le=8) = 3
     enable_web_search: bool = True
     enable_kb: bool = True

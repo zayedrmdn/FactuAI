@@ -136,3 +136,27 @@ When adding new behavior:
 After editing:
 - Run `pytest` in `backend/`.
 - Avoid introducing new warnings.
+
+## Environment Variable Security Protocol
+
+**CRITICAL: AI agents must NEVER attempt to read, view, or access the live `.env` file.**
+
+This protocol exists to prevent accidental exposure of API keys and secrets in:
+- Chat logs
+- Code suggestions
+- Debugging output
+- File content displays
+
+**Allowed Actions:**
+- Read `.env.example` for configuration templates
+- Reference `backend/app/core/settings.py` for default values
+- Check `docs/AI_CONTEXT.md` or `AGENTS.md` for environment variable documentation
+- Ask the user to verify their `.env` configuration manually
+
+**Forbidden Actions:**
+- Opening, reading, or displaying `.env` contents
+- Suggesting commands that would print `.env` contents (e.g., `cat .env`, `type .env`)
+- Attempting to bypass gitignore restrictions for `.env` files
+
+When debugging environment issues, guide the user to check their `.env` manually and report only the relevant variable names (not values) that may be misconfigured.
+

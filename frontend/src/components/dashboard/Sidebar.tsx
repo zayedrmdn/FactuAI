@@ -5,12 +5,10 @@ import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
-  User,
   LogOut,
   ChevronLeft,
   ChevronRight,
   ShieldCheck,
-  Activity,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -20,21 +18,12 @@ interface SidebarProps {
   readonly onToggle: () => void;
 }
 
+// V4 Backend only supports dashboard - Profile and API Limits are not yet implemented
 const navItems = [
   {
     title: 'Dashboard',
     href: '/dashboard',
     icon: LayoutDashboard,
-  },
-  {
-    title: 'API Limits',
-    href: '/dashboard/limits',
-    icon: Activity,
-  },
-  {
-    title: 'Profile',
-    href: '/dashboard/profile',
-    icon: User,
   },
 ];
 

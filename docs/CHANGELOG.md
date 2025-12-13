@@ -2,6 +2,45 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.0.3] - 2025-12-14
+
+### Frontend Cleanup & Configuration Finalization
+
+This release consolidates the frontend API layer and removes unsupported features.
+
+#### Added
+
+- **`backend/.env.example`** - New environment configuration template with:
+  - `OPENROUTER_MODEL=meta-llama/llama-3.3-70b-instruct`
+  - `LLM_API_BASE_URL=https://openrouter.ai/api/v1`
+  - Full documentation for all environment variables
+
+- **Environment Variable Security Protocol** - Added to `AGENTS.md`:
+  - AI agents must never read live `.env` files
+  - Use `.env.example` or documentation only
+
+#### Removed
+
+- **`frontend/src/lib/api-dashboard.ts`** - Duplicate API client (identical to `api.ts`)
+- **`frontend/src/app/dashboard/profile/`** - Profile route (V4 backend doesn't support `/api/profile`)
+- **`frontend/src/app/dashboard/limits/`** - API Limits route (not implemented in V4)
+- Removed Profile and API Limits links from Sidebar navigation
+
+#### Fixed
+
+- Cleaned up unused imports in `ResultsView.tsx` and `ClaimCard.tsx`
+- Fixed TypeScript errors for possibly undefined `config` in verdict display
+
+#### Files Modified
+
+- `AGENTS.md` - Added security protocol
+- `frontend/src/lib/api.ts` - Remains the single API client
+- `frontend/src/components/dashboard/Sidebar.tsx` - Simplified navigation
+- `frontend/src/components/dashboard/ResultsView.tsx` - Removed unused imports
+- `frontend/src/components/dashboard/ClaimCard.tsx` - Removed unused code
+
+---
+
 ## [4.0.2] - 2025-12-14
 
 ### New Default Model: Meta Llama 3.3 70B Instruct

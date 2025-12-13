@@ -2,7 +2,6 @@
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/primitives';
 import {
   FileText,
   Copy,
@@ -19,7 +18,7 @@ import {
 import { toast } from 'sonner';
 
 import { LoadingAnimation, ErrorState } from '@/components/ui/feedback-states';
-import { AIDetectionScore, OverallScore } from '@/components/ui/score-display';
+// Score displays are embedded directly in the component
 import ClaimCard from './ClaimCard';
 import { FactCheckResult, QAResult } from '@/types/dashboard/factcheck';
 import { TextSize } from '@/types/dashboard/ui';
@@ -98,7 +97,8 @@ export default function ResultsView({
   prefs,
   averageConfidence,
   aiScore,
-  aiError,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  aiError, // Reserved for future AI error display
   onRetry,
   onClear,
   onCancel,
@@ -170,7 +170,7 @@ export default function ResultsView({
         sections.push(`Verdict: ${r.label?.toUpperCase() || 'UNKNOWN'}`);
         sections.push(`Confidence: ${(r.confidence * 100).toFixed(0)}%`);
         sections.push('');
-        
+
         if (r.reasoning) {
           sections.push(`Analysis:`);
           sections.push(r.reasoning);
@@ -366,7 +366,8 @@ export default function ResultsView({
             <div className="flex flex-wrap gap-3">
               {results.map((r, idx) => {
                 if (isQAResult(r)) return null;
-                const config = VERDICT_CONFIG[r.label?.toLowerCase() || 'unknown'] || VERDICT_CONFIG.unknown;
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                const config = (VERDICT_CONFIG[r.label?.toLowerCase() || 'unknown'] ?? VERDICT_CONFIG.unknown)!;
                 const VerdictIcon = config.icon;
                 return (
                   <div key={idx} className="flex items-center gap-3 bg-white border border-slate-200 rounded-lg p-2 pr-4 shadow-sm hover:shadow-md transition-shadow">
@@ -375,10 +376,10 @@ export default function ResultsView({
                     </div>
                     <div className="flex flex-col">
                       <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Verdict</span>
-                      <div className={cn("flex items-center gap-1.5 font-bold text-sm", 
+                      <div className={cn("flex items-center gap-1.5 font-bold text-sm",
                         config.variant === 'success' ? "text-emerald-700" :
-                        config.variant === 'destructive' ? "text-rose-700" :
-                        config.variant === 'warning' ? "text-amber-700" : "text-slate-700"
+                          config.variant === 'destructive' ? "text-rose-700" :
+                            config.variant === 'warning' ? "text-amber-700" : "text-slate-700"
                       )}>
                         <VerdictIcon className="h-4 w-4" />
                         {config.label}
@@ -392,7 +393,7 @@ export default function ResultsView({
 
           {/* SECONDARY GRID: Trust Score, Stats, Actions (Demoted/Compacted) */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 border-t border-slate-100">
-            
+
             {/* 1. Trust Score (Demoted to simple stat) */}
             <div className="flex flex-col justify-center space-y-1">
               <h4 className="text-xs font-medium text-slate-400 uppercase tracking-wider">Confidence Level</h4>
@@ -401,8 +402,8 @@ export default function ResultsView({
                   {averageConfidence !== undefined && !isNaN(averageConfidence) ? averageConfidence.toFixed(0) : 'N/A'}%
                 </span>
                 <div className="h-2 w-24 bg-slate-100 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-slate-400 rounded-full" 
+                  <div
+                    className="h-full bg-slate-400 rounded-full"
                     style={{ width: `${averageConfidence || 0}%` }}
                   />
                 </div>

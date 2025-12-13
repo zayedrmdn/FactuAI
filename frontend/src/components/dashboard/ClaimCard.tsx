@@ -3,7 +3,7 @@
 import { TextSize } from '@/types/dashboard/ui';
 import { FactCheckResult } from '@/types/dashboard/factcheck';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Badge, Progress } from '@/components/ui/primitives';
+import { Badge } from '@/components/ui/primitives';
 import { Accordion, AccordionItem } from '@/components/ui/accordion';
 import {
   CheckCircle2,
@@ -91,15 +91,15 @@ export default function ClaimCard({
 }: Readonly<ClaimCardProps>) {
   const sourceUrls = Array.isArray(result.sources)
     ? result.sources
-        .map((s) => {
-          if (typeof s === 'string') return s;
-          if (s && typeof s === 'object') {
-            const obj = s as Record<string, unknown>;
-            return String(obj.url || obj.text || obj.title || '');
-          }
-          return '';
-        })
-        .filter((s) => !!s)
+      .map((s) => {
+        if (typeof s === 'string') return s;
+        if (s && typeof s === 'object') {
+          const obj = s as Record<string, unknown>;
+          return String(obj.url || obj.text || obj.title || '');
+        }
+        return '';
+      })
+      .filter((s) => !!s)
     : [];
 
   const config = VERDICT_CONFIG[result.label] ?? VERDICT_CONFIG.unknown;
@@ -110,13 +110,6 @@ export default function ClaimCard({
     md: 'text-base',
     lg: 'text-lg',
   }[textSize];
-
-  // Calculate progress color based on confidence
-  const getProgressColor = (score: number) => {
-    if (score >= 0.8) return 'oklch(0.623 0.214 163.525)'; // emerald-500
-    if (score >= 0.5) return 'oklch(0.769 0.188 70.08)'; // amber-500
-    return 'oklch(0.627 0.265 303.9)'; // purple/indigo or red
-  };
 
   return (
     <Card
@@ -133,7 +126,7 @@ export default function ClaimCard({
           <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
             Claim {index + 1}
           </span>
-          
+
           {result.confidence !== undefined && (
             <div className="flex items-center gap-2">
               <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">Confidence</span>
@@ -146,8 +139,8 @@ export default function ClaimCard({
 
         {/* Hero Verdict Badge (Promoted) */}
         <div>
-          <Badge 
-            variant={config!.variant} 
+          <Badge
+            variant={config!.variant}
             className="text-sm sm:text-base px-4 py-1.5 gap-2 shadow-sm"
           >
             <VerdictIcon className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -232,8 +225,8 @@ export default function ClaimCard({
                   </div>
                 ) : (
                   <p className="text-sm text-slate-500">
-                    {Array.isArray(result.evidence) 
-                      ? result.evidence.map(item => item.text || item).join('. ') 
+                    {Array.isArray(result.evidence)
+                      ? result.evidence.map(item => item.text || item).join('. ')
                       : (result.evidence || 'No detailed evidence available.')}
                   </p>
                 )}
