@@ -1,0 +1,323 @@
+/**
+ * AI Model Registry
+ *
+ * Single source of truth for all AI providers and their models.
+ * Colocated from src/config/ai-models.ts as part of feature-centric architecture.
+ *
+ * To add a new model:
+ * 1. Add the model configuration to the appropriate provider's models array
+ * 2. Ensure all required fields are populated
+ * 3. Set appropriate defaults for temperature, tokens, and system prompt
+ *
+ * To add a new provider:
+ * 1. Add the provider ID to AIProvider type in ./types.ts
+ * 2. Create a new ProviderConfig entry in the providers array below
+ * 3. Update defaultProvider if needed
+ */
+
+import type { ModelRegistry, ProviderConfig, ModelConfig } from './types';
+import { SYSTEM_PROMPTS, DEFAULT_PROVIDER, DEFAULT_MODEL_ID } from './constants';
+
+// ============================================================================
+// OPENROUTER MODELS
+// ============================================================================
+
+const openRouterModels: ModelConfig[] = [
+    // ⭐ DEFAULT MODEL - Llama 3.3 70B
+    {
+        id: 'openrouter-llama-3.3-70b',
+        displayName: 'Meta: Llama 3.3 70B Instruct ⭐',
+        provider: 'openrouter',
+        modelId: 'meta-llama/llama-3.3-70b-instruct',
+        description: '⭐ NEW DEFAULT: Superior reasoning at low cost ($0.10/M input). 131K context window.',
+        defaultTemperature: 0.3,
+        defaultMaxTokens: 4096,
+        defaultTopP: 0.9,
+        defaultSystemPrompt: SYSTEM_PROMPTS.FACTCHECK,
+        capabilities: {
+            contextWindow: 131072,
+            supportsStreaming: true,
+            supportsFunctionCalling: true,
+            supportsVision: false,
+        },
+        tier: 'premium',
+        isRecommended: true,
+    },
+    {
+        id: 'openrouter-tongyi-deepresearch-30b',
+        displayName: 'Alibaba: Tongyi DeepResearch 30B A3B',
+        provider: 'openrouter',
+        modelId: 'alibaba/tongyi-deepresearch-30b-a3b:free',
+        description: 'Deep research model with reasoning capabilities (Free tier)',
+        defaultTemperature: 0.3,
+        defaultMaxTokens: 8000,
+        defaultTopP: 0.9,
+        defaultSystemPrompt: SYSTEM_PROMPTS.RESEARCH,
+        capabilities: {
+            contextWindow: 128000,
+            supportsStreaming: true,
+            supportsFunctionCalling: true,
+            supportsVision: false,
+        },
+        tier: 'free',
+        isRecommended: false,
+    },
+    {
+        id: 'openrouter-olmo-3-32b',
+        displayName: 'AllenAI: Olmo 3 32B Think',
+        provider: 'openrouter',
+        modelId: 'allenai/olmo-3-32b-think:free',
+        description: 'Reasoning-focused model with enhanced thinking capabilities (Free tier)',
+        defaultTemperature: 0.2,
+        defaultMaxTokens: 6000,
+        defaultTopP: 0.85,
+        defaultSystemPrompt: SYSTEM_PROMPTS.RESEARCH,
+        capabilities: {
+            contextWindow: 32768,
+            supportsStreaming: true,
+            supportsFunctionCalling: false,
+            supportsVision: false,
+        },
+        tier: 'free',
+        isRecommended: false,
+    },
+    {
+        id: 'openrouter-gpt-oss-120b',
+        displayName: 'OpenAI: GPT-OSS 120B',
+        provider: 'openrouter',
+        modelId: 'openai/gpt-oss-120b:free',
+        description: 'Large open-source model for complex reasoning tasks (Free tier)',
+        defaultTemperature: 0.7,
+        defaultMaxTokens: 4096,
+        defaultTopP: 0.9,
+        defaultSystemPrompt: SYSTEM_PROMPTS.GENERAL,
+        capabilities: {
+            contextWindow: 8192,
+            supportsStreaming: true,
+            supportsFunctionCalling: true,
+            supportsVision: false,
+        },
+        tier: 'free',
+        isRecommended: false,
+    },
+    {
+        id: 'openrouter-nemotron-nano-9b',
+        displayName: 'NVIDIA: Nemotron Nano 9B V2',
+        provider: 'openrouter',
+        modelId: 'nvidia/nemotron-nano-9b-v2:free',
+        description: 'Fast, efficient model for quick fact-checking tasks (Free tier)',
+        defaultTemperature: 0.5,
+        defaultMaxTokens: 2048,
+        defaultTopP: 0.9,
+        defaultSystemPrompt: SYSTEM_PROMPTS.FACTCHECK,
+        capabilities: {
+            contextWindow: 4096,
+            supportsStreaming: true,
+            supportsFunctionCalling: false,
+            supportsVision: false,
+        },
+        tier: 'free',
+        isRecommended: false,
+    },
+    {
+        id: 'openrouter-longcat-flash',
+        displayName: 'Meituan: LongCat Flash Chat',
+        provider: 'openrouter',
+        modelId: 'meituan/longcat-flash-chat:free',
+        description: 'Ultra-fast model with extended context for conversational tasks (Free tier)',
+        defaultTemperature: 0.8,
+        defaultMaxTokens: 4096,
+        defaultTopP: 0.95,
+        defaultSystemPrompt: SYSTEM_PROMPTS.GENERAL,
+        capabilities: {
+            contextWindow: 32768,
+            supportsStreaming: true,
+            supportsFunctionCalling: false,
+            supportsVision: false,
+        },
+        tier: 'free',
+        isRecommended: false,
+    },
+    {
+        id: 'openrouter-gpt-oss-20b',
+        displayName: 'OpenAI: GPT-OSS 20B',
+        provider: 'openrouter',
+        modelId: 'openai/gpt-oss-20b:free',
+        description: 'MoE model with reasoning, function calling, and structured outputs (Free tier)',
+        defaultTemperature: 0.7,
+        defaultMaxTokens: 1024,
+        defaultTopP: 0.9,
+        defaultSystemPrompt: SYSTEM_PROMPTS.GENERAL,
+        capabilities: {
+            contextWindow: 131072,
+            supportsStreaming: true,
+            supportsFunctionCalling: true,
+            supportsVision: false,
+        },
+        tier: 'free',
+        isRecommended: false,
+    },
+    {
+        id: 'openrouter-deepseek-r1t2-chimera',
+        displayName: 'TNG: DeepSeek R1T2 Chimera ⭐',
+        provider: 'openrouter',
+        modelId: 'tngtech/deepseek-r1t2-chimera:free',
+        description: '⭐ Excellent reasoning, 160K+ context, reliable performance (Recommended for verification)',
+        defaultTemperature: 0.3,
+        defaultMaxTokens: 2048,
+        defaultTopP: 0.9,
+        defaultSystemPrompt: SYSTEM_PROMPTS.FACTCHECK,
+        capabilities: {
+            contextWindow: 163840,
+            supportsStreaming: true,
+            supportsFunctionCalling: false,
+            supportsVision: false,
+        },
+        tier: 'free',
+        isRecommended: true,
+    },
+    {
+        id: 'openrouter-glm-4.5-air',
+        displayName: 'Z.AI: GLM 4.5 Air ⭐',
+        provider: 'openrouter',
+        modelId: 'z-ai/glm-4.5-air:free',
+        description: '⭐ Fast, reliable MoE model with agent-centric design (Recommended for intent detection)',
+        defaultTemperature: 0.3,
+        defaultMaxTokens: 1024,
+        defaultTopP: 0.9,
+        defaultSystemPrompt: SYSTEM_PROMPTS.FACTCHECK,
+        capabilities: {
+            contextWindow: 131072,
+            supportsStreaming: true,
+            supportsFunctionCalling: true,
+            supportsVision: false,
+        },
+        tier: 'free',
+        isRecommended: true,
+    },
+    {
+        id: 'openrouter-gemma-3-27b',
+        displayName: 'Google: Gemma 3 27B IT ⚠️',
+        provider: 'openrouter',
+        modelId: 'google/gemma-3-27b-it:free',
+        description: '⚠️ Multimodal vision model - Frequently rate-limited, no system message support (Use for image analysis only)',
+        defaultTemperature: 0.3,
+        defaultMaxTokens: 1024,
+        defaultTopP: 0.9,
+        defaultSystemPrompt: SYSTEM_PROMPTS.GENERAL,
+        capabilities: {
+            contextWindow: 131072,
+            supportsStreaming: true,
+            supportsFunctionCalling: true,
+            supportsVision: true,
+        },
+        tier: 'free',
+        isRecommended: false,
+    },
+    {
+        id: 'openrouter-mistral-7b-instruct',
+        displayName: 'Mistral: Mistral 7B Instruct',
+        provider: 'openrouter',
+        modelId: 'mistralai/mistral-7b-instruct:free',
+        description: 'High-performing, industry-standard 7.3B parameter model optimized for speed and context (Free tier)',
+        defaultTemperature: 0.1,
+        defaultMaxTokens: 1024,
+        defaultTopP: 0.9,
+        defaultSystemPrompt: SYSTEM_PROMPTS.FACTCHECK,
+        capabilities: {
+            contextWindow: 32768,
+            supportsStreaming: true,
+            supportsFunctionCalling: false,
+            supportsVision: false,
+        },
+        tier: 'free',
+        isRecommended: false,
+    },
+];
+
+// ============================================================================
+// PROVIDER CONFIGURATIONS
+// ============================================================================
+
+const providers: ProviderConfig[] = [
+    {
+        id: 'openrouter',
+        name: 'OpenRouter',
+        baseUrl: 'https://openrouter.ai/api/v1',
+        requiresAuth: true,
+        models: openRouterModels,
+        metadata: {
+            websiteUrl: 'https://openrouter.ai',
+            docsUrl: 'https://openrouter.ai/docs',
+        },
+    },
+];
+
+// ============================================================================
+// REGISTRY EXPORT
+// ============================================================================
+
+/**
+ * Main model registry - single source of truth
+ */
+export const modelRegistry: ModelRegistry = {
+    providers,
+    defaultProvider: DEFAULT_PROVIDER,
+    defaultModelId: DEFAULT_MODEL_ID,
+};
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Get a provider by ID
+ */
+export function getProvider(providerId: string): ProviderConfig | null {
+    return providers.find((p) => p.id === providerId) || null;
+}
+
+/**
+ * Get a model by ID across all providers
+ */
+export function getModelById(modelId: string): ModelConfig | null {
+    for (const provider of providers) {
+        const model = provider.models.find((m) => m.id === modelId);
+        if (model) return model;
+    }
+    return null;
+}
+
+/**
+ * Get all models for a specific provider
+ */
+export function getModelsByProvider(providerId: string): ModelConfig[] {
+    const provider = getProvider(providerId);
+    return provider?.models || [];
+}
+
+/**
+ * Get the default model configuration
+ */
+export function getDefaultModel(): ModelConfig {
+    const model = getModelById(modelRegistry.defaultModelId);
+    if (!model) {
+        throw new Error(`Default model ${modelRegistry.defaultModelId} not found in registry`);
+    }
+    return model;
+}
+
+/**
+ * Get recommended models across all providers
+ */
+export function getRecommendedModels(): ModelConfig[] {
+    return providers.flatMap((p) => p.models).filter((m) => m.isRecommended);
+}
+
+/**
+ * Validate if a provider/model combination exists
+ */
+export function isValidSelection(providerId: string, modelId: string): boolean {
+    const model = getModelById(modelId);
+    return model !== null && model.provider === providerId;
+}

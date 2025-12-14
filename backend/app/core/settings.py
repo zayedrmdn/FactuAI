@@ -90,8 +90,15 @@ class Settings(BaseModel):
     tavily_api_key: str = os.getenv("TAVILY_API_KEY", "")
     newsapi_api_key: str = os.getenv("NEWSAPI_API_KEY", "")
 
-    # Search config
+    # Evidence cache
     evidence_cache_ttl_seconds: int = _env_int("EVIDENCE_CACHE_TTL_SECONDS", 1800)
+
+    # Rate limiting
+    rate_limit_enabled: bool = _env_bool("RATE_LIMIT_ENABLED", "true")
+    rate_limit_analyze_per_minute: int = _env_int("RATE_LIMIT_ANALYZE_PER_MINUTE", 10)
+    rate_limit_auth_per_minute: int = _env_int("RATE_LIMIT_AUTH_PER_MINUTE", 20)
+    rate_limit_default_per_minute: int = _env_int("RATE_LIMIT_DEFAULT_PER_MINUTE", 60)
+    preflight_checks_enabled: bool = _env_bool("PREFLIGHT_CHECKS_ENABLED", "true")
 
     # Verification config (kept here to avoid importing backend/config.py from feature code)
     token_estimate_ratio: float = float(os.getenv("TOKEN_ESTIMATE_RATIO", "3.0"))

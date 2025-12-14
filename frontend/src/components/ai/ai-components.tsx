@@ -22,10 +22,14 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Label, Input, Slider, Textarea } from '@/components/ui/form-controls';
 import { Badge } from '@/components/ui/primitives';
 import { cn } from '@/lib/utils';
-import { useAIStore, useCurrentModelConfig } from '@/stores/ai-store';
-import { usePipelineModelsStore } from '@/stores/pipeline-models-store';
-import { modelRegistry, getModelById } from '@/config/ai-models';
-import type { PipelineTask } from '@/stores/pipeline-models-store';
+import {
+  useAIStore,
+  useCurrentModelConfig,
+  usePipelineModelsStore,
+  modelRegistry,
+  getModelById,
+} from '@/features/ai-providers';
+import type { PipelineTask } from '@/features/ai-providers';
 
 // ========================================================================================
 // ACTIVE MODEL DISPLAY COMPONENT
@@ -53,7 +57,7 @@ export function ActiveModelDisplay() {
   const taskSelections = { intent, extraction, reasoning, summary };
   const selection = taskSelections[activeTask];
   const model = getModelById(selection.modelId);
-  
+
   // Fallback if model not found (shouldn't happen but prevents crash)
   const modelName = model?.displayName || selection.modelId || 'Unknown Model';
 

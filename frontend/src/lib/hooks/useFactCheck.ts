@@ -4,9 +4,8 @@ import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { validateForFactCheck } from './useInputValidation';
 import { FactCheckResult, FactCheckApiResult, mapApiResultToFactCheckResult } from '@/types/dashboard/factcheck';
-import { usePipelineModelsStore } from '@/stores/pipeline-models-store';
-import type { PipelineTask } from '@/stores/pipeline-models-store';
-import { getModelById } from '@/config/ai-models';
+import { usePipelineModelsStore, getModelById } from '@/features/ai-providers';
+import type { PipelineTask } from '@/features/ai-providers';
 
 const API_URL = 'http://127.0.0.1:8000/api/analyze';
 
@@ -223,7 +222,7 @@ export function useFactCheck() {
     }
 
     // Get AI model selection from store
-    const { useAIStore } = await import('@/stores/ai-store');
+    const { useAIStore } = await import('@/features/ai-providers');
     const { selection } = useAIStore.getState();
     const baseModel = getModelById(selection.modelId);
 

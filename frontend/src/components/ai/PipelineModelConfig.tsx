@@ -11,10 +11,13 @@
 
 import { useState } from 'react';
 import { Settings, Zap, FileText, Brain, RotateCcw, ChevronDown, AlignLeft } from 'lucide-react';
-import { usePipelineModelsStore } from '@/stores/pipeline-models-store';
-import { getModelById, getModelsByProvider, modelRegistry } from '@/config/ai-models';
-import type { PipelineTask } from '@/stores/pipeline-models-store';
-import type { AIProvider } from '@/types/ai';
+import {
+  usePipelineModelsStore,
+  getModelById,
+  getModelsByProvider,
+  modelRegistry,
+} from '@/features/ai-providers';
+import type { PipelineTask, AIProvider } from '@/features/ai-providers';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Select,
