@@ -1,3 +1,5 @@
+import { FactCheckResult } from './factcheck';
+
 export interface APIResponse<T = unknown> {
   success: boolean;
   data?: T;
@@ -21,10 +23,3 @@ export interface FactCheckResponse {
   average_confidence: number;
 }
 
-export interface FactCheckResult {
-  claim: string;
-  verdict: string;
-  confidence: number;
-  evidence: string[];
-  sources: string[];
-}

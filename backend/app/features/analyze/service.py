@@ -38,7 +38,7 @@ class AnalyzeService:
         start = time.perf_counter()
 
         provider = request.provider or self._settings.llm_provider
-        model = select_model(provider, openrouter_model=self._settings.openrouter_model, nvidia_model=self._settings.nvidia_model)
+        model = select_model(provider, openrouter_model=self._settings.openrouter_model)
 
         intent = self._container.intent()
         search = self._container.search()

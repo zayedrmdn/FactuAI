@@ -39,9 +39,8 @@ class Settings(BaseModel):
 
     redis_required: bool = _env_bool("REDIS_REQUIRED", "false")
 
-    llm_provider: str = os.getenv("LLM_PROVIDER", "nvidia")
-    openrouter_model: str = os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3.3-70b-instruct")
-    nvidia_model: str = os.getenv("NVIDIA_MODEL", "meta/llama-3.1-8b-instruct")
+    llm_provider: str = os.getenv("LLM_PROVIDER", "openrouter")
+    openrouter_model: str = os.getenv("OPENROUTER_MODEL", "tngtech/deepseek-r1t2-chimera:free")
 
     # OpenAI-compatible client configuration (OpenRouter, local gateways, etc.)
     llm_api_base_url: str = os.getenv(
@@ -60,6 +59,12 @@ class Settings(BaseModel):
     embedding_dim: int = _env_int("EMBEDDING_DIM", 384)
     learning_confidence_threshold: float = float(os.getenv("LEARNING_CONFIDENCE_THRESHOLD", "0.85"))
     learning_max_evidence: int = _env_int("LEARNING_MAX_EVIDENCE", 8)
+
+    # Intent LLM (Tier 1 - Fast/Cheap model for claim extraction)
+    # If not set, falls back to main LLM_API_* settings
+    intent_llm_api_base_url: str = os.getenv("INTENT_LLM_API_BASE_URL", "")
+    intent_llm_api_key: str = os.getenv("INTENT_LLM_API_KEY", "")
+    intent_llm_model: str = os.getenv("INTENT_LLM_MODEL", "qwen/qwen-2.5-7b-instruct")
 
     # --- Pluggable bindings (OCP-friendly) ---
     search_adapter: str = os.getenv(

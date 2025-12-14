@@ -45,6 +45,9 @@ langchain-openai>=0.1.0
 # Production server
 gunicorn>=21.0.0
 
+# Rate limiting
+slowapi>=0.1.9
+
 # Email services
 resend>=0.8.0
 

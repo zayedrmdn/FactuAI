@@ -1,3 +1,4 @@
+# Full Path: backend/app/features/intent/ports.py
 from __future__ import annotations
 
 from typing import List, Protocol

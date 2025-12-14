@@ -1,4 +1,10 @@
 # Full path: backend/app/features/verification/adapters/openai_compatible.py
+"""
+OpenAI-compatible claim verifier with circuit breaker protection.
+
+This adapter uses LangChain's ChatOpenAI for structured LLM calls.
+Circuit breaker protects against cascading failures when the LLM API is down.
+"""
 from __future__ import annotations
 
 from typing import List
@@ -12,6 +18,11 @@ from langchain_openai import ChatOpenAI
 from app.contracts.types import ClaimVerdict, EvidenceSnippet
 from app.core.logging import get_logger
 from app.core.settings import Settings
+from app.core.circuit_breaker import (
+    circuit_breaker,
+    CircuitOpenError,
+    LLM_CIRCUIT_CONFIG,
+)
 from app.features.verification.ports import ClaimVerifierPort
 
 logger = get_logger(__name__)
@@ -37,7 +48,13 @@ _SYSTEM = (
 
 
 class OpenAICompatibleClaimVerifier(ClaimVerifierPort):
-    """Native async verifier using an OpenAI-compatible chat endpoint."""
+    """Native async verifier using an OpenAI-compatible chat endpoint.
+    
+    Features:
+    - Circuit breaker protection against LLM API failures
+    - Automatic retries with exponential backoff for transient errors
+    - Graceful degradation when circuit is open or LLM fails
+    """
 
     def __init__(self, *, settings: Settings):
         self._settings = settings
@@ -79,6 +96,44 @@ class OpenAICompatibleClaimVerifier(ClaimVerifierPort):
                 evidence=evidence,
             )
 
+        try:
+            return await self._verify_with_circuit_breaker(
+                claim_clean=claim_clean,
+                evidence=evidence,
+                model=model,
+                api_key=api_key,
+                base_url=base_url,
+            )
+        except CircuitOpenError as exc:
+            logger.error(f"[VERIFY] Circuit breaker open: {exc}")
+            return ClaimVerdict(
+                verdict="unverifiable",
+                confidence=0.0,
+                reasoning=f"LLM service temporarily unavailable. Please try again in {int(exc.retry_after)} seconds.",
+                evidence=evidence,
+            )
+        except Exception as exc:
+            # Catch all other exceptions from the circuit breaker wrapper
+            # (these are errors that exhausted retries)
+            logger.warning(f"[VERIFY] LLM call failed after retries: {exc}")
+            return ClaimVerdict(
+                verdict="unverifiable",
+                confidence=0.0,
+                reasoning="LLM call failed. Please try again later.",
+                evidence=evidence,
+            )
+
+    @circuit_breaker("llm_verifier", LLM_CIRCUIT_CONFIG)
+    async def _verify_with_circuit_breaker(
+        self,
+        *,
+        claim_clean: str,
+        evidence: List[EvidenceSnippet],
+        model: str,
+        api_key: str,
+        base_url: str,
+    ) -> ClaimVerdict:
+        """Internal method wrapped with circuit breaker for LLM calls."""
         ev_lines: list[str] = []
         for item in evidence:
             title = (item.get("title") or "").strip()
@@ -117,22 +172,14 @@ class OpenAICompatibleClaimVerifier(ClaimVerifierPort):
 
         chain = prompt | llm | parser
 
-        try:
-            result: _LLMClaimVerdict = await chain.ainvoke(
-                {
-                    "claim": claim_clean,
-                    "evidence": evidence_text,
-                    "format_instructions": parser.get_format_instructions(),
-                }
-            )
-        except Exception as exc:
-            logger.warning(f"[VERIFY] LLM structured output failed: {exc}")
-            return ClaimVerdict(
-                verdict="unverifiable",
-                confidence=0.0,
-                reasoning="LLM call failed.",
-                evidence=evidence,
-            )
+        # Execute the LLM call - exceptions will be caught by circuit breaker
+        result: _LLMClaimVerdict = await chain.ainvoke(
+            {
+                "claim": claim_clean,
+                "evidence": evidence_text,
+                "format_instructions": parser.get_format_instructions(),
+            }
+        )
 
         return ClaimVerdict(
             verdict=result.verdict,

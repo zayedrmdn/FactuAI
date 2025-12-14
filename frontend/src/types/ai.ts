@@ -9,7 +9,7 @@
 /**
  * Supported AI providers
  */
-export type AIProvider = 'openrouter' | 'nvidia';
+export type AIProvider = 'openrouter';
 
 /**
  * Model capabilities and constraints
@@ -102,13 +102,13 @@ export interface AIModelSelection {
   modelId: string;
   /** Current session overrides for model parameters */
   sessionOverrides?:
-    | {
-        temperature?: number;
-        maxTokens?: number;
-        topP?: number;
-        systemPrompt?: string;
-      }
-    | undefined;
+  | {
+    temperature?: number;
+    maxTokens?: number;
+    topP?: number;
+    systemPrompt?: string;
+  }
+  | undefined;
 }
 
 /**

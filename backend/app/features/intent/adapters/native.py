@@ -1,3 +1,4 @@
+# Full Path: backend/app/features/intent/adapters/native.py
 from __future__ import annotations
 
 import re

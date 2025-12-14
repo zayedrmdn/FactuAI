@@ -248,107 +248,7 @@ const openRouterModels: ModelConfig[] = [
   },
 ];
 
-// ============================================================================
-// NVIDIA NIM MODELS
-// ============================================================================
 
-const nvidiaModels: ModelConfig[] = [
-  {
-    id: 'nvidia-llama-3.1-405b',
-    displayName: 'Meta Llama 3.1 405B Instruct',
-    provider: 'nvidia',
-    modelId: 'meta/llama-3.1-405b-instruct',
-    description: 'State-of-the-art large language model for complex reasoning and analysis',
-    defaultTemperature: 0.2,
-    defaultMaxTokens: 1024,
-    defaultTopP: 0.7,
-    defaultSystemPrompt: RESEARCH_SYSTEM_PROMPT,
-    capabilities: {
-      contextWindow: 128000,
-      supportsStreaming: true,
-      supportsFunctionCalling: true,
-      supportsVision: false,
-    },
-    tier: 'premium',
-    isRecommended: true,
-  },
-  {
-    id: 'nvidia-llama-3.1-70b',
-    displayName: 'Meta Llama 3.1 70B Instruct',
-    provider: 'nvidia',
-    modelId: 'meta/llama-3.1-70b-instruct',
-    description: 'Balanced model offering strong performance for most tasks',
-    defaultTemperature: 0.2,
-    defaultMaxTokens: 1024,
-    defaultTopP: 0.7,
-    defaultSystemPrompt: FACTCHECK_SYSTEM_PROMPT,
-    capabilities: {
-      contextWindow: 128000,
-      supportsStreaming: true,
-      supportsFunctionCalling: true,
-      supportsVision: false,
-    },
-    tier: 'high',
-    isRecommended: false,
-  },
-  {
-    id: 'nvidia-llama-3.1-8b',
-    displayName: 'Meta Llama 3.1 8B Instruct',
-    provider: 'nvidia',
-    modelId: 'meta/llama-3.1-8b-instruct',
-    description: 'Lightweight, fast model for quick responses',
-    defaultTemperature: 0.2,
-    defaultMaxTokens: 1024,
-    defaultTopP: 0.7,
-    defaultSystemPrompt: GENERAL_SYSTEM_PROMPT,
-    capabilities: {
-      contextWindow: 128000,
-      supportsStreaming: true,
-      supportsFunctionCalling: false,
-      supportsVision: false,
-    },
-    tier: 'low',
-    isRecommended: false,
-  },
-  {
-    id: 'nvidia-mistral-nemotron',
-    displayName: 'Mistral Nemotron',
-    provider: 'nvidia',
-    modelId: 'mistralai/mistral-nemotron',
-    description: 'Efficient model with strong reasoning capabilities',
-    defaultTemperature: 0.6,
-    defaultMaxTokens: 4096,
-    defaultTopP: 0.7,
-    defaultSystemPrompt: FACTCHECK_SYSTEM_PROMPT,
-    capabilities: {
-      contextWindow: 32768,
-      supportsStreaming: true,
-      supportsFunctionCalling: true,
-      supportsVision: false,
-    },
-    tier: 'medium',
-    isRecommended: false,
-  },
-  {
-    id: 'nvidia-qwen2.5-7b',
-    displayName: 'Qwen 2.5 7B Instruct',
-    provider: 'nvidia',
-    modelId: 'qwen/qwen2.5-7b-instruct',
-    description: 'Fast and efficient model for general tasks (Default)',
-    defaultTemperature: 0.2,
-    defaultMaxTokens: 1024,
-    defaultTopP: 0.7,
-    defaultSystemPrompt: GENERAL_SYSTEM_PROMPT,
-    capabilities: {
-      contextWindow: 32768,
-      supportsStreaming: true,
-      supportsFunctionCalling: true,
-      supportsVision: false,
-    },
-    tier: 'low',
-    isRecommended: true,
-  },
-];
 
 // ============================================================================
 // PROVIDER CONFIGURATIONS
@@ -364,17 +264,6 @@ const providers: ProviderConfig[] = [
     metadata: {
       websiteUrl: 'https://openrouter.ai',
       docsUrl: 'https://openrouter.ai/docs',
-    },
-  },
-  {
-    id: 'nvidia',
-    name: 'NVIDIA NIM',
-    baseUrl: 'https://integrate.api.nvidia.com/v1',
-    requiresAuth: true,
-    models: nvidiaModels,
-    metadata: {
-      websiteUrl: 'https://www.nvidia.com/en-us/ai/',
-      docsUrl: 'https://docs.api.nvidia.com/',
     },
   },
 ];

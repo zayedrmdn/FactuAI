@@ -44,9 +44,8 @@ Core:
 LLM verification (LangChain over OpenAI-compatible endpoints):
 - `LLM_API_BASE_URL` (fallbacks: `OPENAI_BASE_URL`)
 - `LLM_API_KEY` (fallbacks: `OPENROUTER_API_KEY`, `OPENAI_API_KEY`)
-- `LLM_PROVIDER` (e.g. `nvidia`)
+- `LLM_PROVIDER` (currently only `openrouter` is supported)
 - `OPENROUTER_MODEL`
-- `NVIDIA_MODEL`
 
 Notes:
 - The default verifier adapter uses `langchain-openai` (`ChatOpenAI`) with async invocation (`ainvoke`) and strict structured output parsing.

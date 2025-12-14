@@ -1,3 +1,4 @@
+# Full Path: backend/app/core/deps.py
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
@@ -10,6 +11,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.container import Container
 from app.core.settings import get_settings, Settings
 from app.core.db import get_sessionmaker, init_db
+from app.core.logging import get_logger
+from app.core.rate_limit import limiter, configure_redis_storage, rate_limit_exceeded_handler
+from app.core.health import InfrastructureHealthChecker
+
+logger = get_logger(__name__)
 
 
 @asynccontextmanager
@@ -25,10 +31,22 @@ async def lifespan(app):
         redis = from_url(settings.redis_url, decode_responses=True)
         await redis.ping()
         app.state.redis = redis
-    except Exception:
+        logger.info("[REDIS] Connected")
+    except Exception as exc:
         app.state.redis = None
+        logger.info(f"[REDIS] Unavailable: {exc}")
         if settings.redis_required:
             raise
+
+    # Configure rate limiting storage
+    if settings.rate_limit_enabled:
+        if redis is not None:
+            configure_redis_storage(settings.redis_url)
+        else:
+            configure_redis_storage(None)  # Use in-memory storage
+        
+        # Add rate limiter to app state
+        app.state.limiter = limiter
 
     app.state.container = Container(settings=settings, redis=redis)
 
@@ -54,3 +72,17 @@ def get_redis(request: Request) -> Optional[Redis]:
 
 def get_container(request: Request) -> Container:
     return getattr(request.app.state, "container")
+
+
+async def get_health_checker(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> InfrastructureHealthChecker:
+    """
+    FastAPI dependency to get an InfrastructureHealthChecker instance.
+    
+    Use this in route handlers to perform pre-flight infrastructure checks.
+    """
+    settings = get_settings()
+    redis = get_redis(request)
+    return InfrastructureHealthChecker(settings=settings, db=db, redis=redis)

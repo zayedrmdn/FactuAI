@@ -3,10 +3,13 @@ from __future__ import annotations
 from urllib.parse import urlparse
 
 
-def select_model(provider: str, *, openrouter_model: str, nvidia_model: str) -> str:
-    if provider == "openrouter":
-        return openrouter_model
-    return nvidia_model
+def select_model(provider: str, *, openrouter_model: str) -> str:
+    """Select the appropriate model based on provider.
+    
+    Currently only openrouter is supported. This function exists to maintain
+    extensibility for future providers while keeping the code simple.
+    """
+    return openrouter_model
 
 
 def normalize_url(url: str, fallback: str) -> str:

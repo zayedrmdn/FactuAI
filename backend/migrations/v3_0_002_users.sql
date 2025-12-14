@@ -1,3 +1,4 @@
+-- Full Path: backend\migrations\v3_0_002_users.sql
 -- Add users table for authentication
 -- Idempotent migration
 

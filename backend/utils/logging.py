@@ -83,7 +83,7 @@ def log_model_init(logger_instance, provider: str, model_id: str, status: str = 
     
     Args:
         logger_instance: Logger instance to use
-        provider: Provider name (openrouter, nvidia, local)
+        provider: Provider name (e.g., openrouter, local)
         model_id: Model identifier
         status: Initialization status (success, failed, fallback)
     """

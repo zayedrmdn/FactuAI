@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { validateForFactCheck } from './useInputValidation';
-import { FactCheckResult } from '@/types/dashboard/factcheck';
+import { FactCheckResult, FactCheckApiResult, mapApiResultToFactCheckResult } from '@/types/dashboard/factcheck';
 import { usePipelineModelsStore } from '@/stores/pipeline-models-store';
 import type { PipelineTask } from '@/stores/pipeline-models-store';
 import { getModelById } from '@/config/ai-models';
@@ -16,7 +16,7 @@ interface SSEMessage {
   message?: string;
   progress?: number;
   claim_index?: number;
-  result?: FactCheckResult;
+  result?: FactCheckApiResult;  // Backend sends ClaimResult schema (claim_text, verdict, evidence[])
   summary?: string;
 }
 
@@ -73,7 +73,9 @@ function processSSEMessage(
       break;
     case 'result':
       if (data.result) {
-        allResults.push(data.result);
+        // Transform backend API response to frontend-friendly format
+        const mappedResult = mapApiResultToFactCheckResult(data.result);
+        allResults.push(mappedResult);
         setFactResults([...allResults]);
       }
       break;

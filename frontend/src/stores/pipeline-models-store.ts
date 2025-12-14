@@ -37,23 +37,23 @@ export interface PipelineModelsState {
   resetToDefaults: () => void;
 }
 
-// Default model selections - Llama 3.3 70B for reasoning, efficient models for other tasks
+// Default model selections - OpenRouter models for all tasks
 const getDefaultTaskModels = (): Record<PipelineTask, TaskModelSelection> => ({
   intent: {
-    provider: 'nvidia',
-    modelId: 'nvidia-qwen2.5-7b',
+    provider: 'openrouter',
+    modelId: 'openrouter-glm-4.5-air', // Fast MoE model for intent detection
   },
   extraction: {
-    provider: 'nvidia',
-    modelId: 'nvidia-mistral-nemotron',
+    provider: 'openrouter',
+    modelId: 'openrouter-deepseek-r1t2-chimera', // Excellent reasoning for extraction
   },
   reasoning: {
     provider: 'openrouter',
-    modelId: 'openrouter-llama-3.3-70b', // NEW: Llama 3.3 70B for superior verification reasoning
+    modelId: 'openrouter-llama-3.3-70b', // Llama 3.3 70B for superior verification reasoning
   },
   summary: {
-    provider: 'nvidia',
-    modelId: 'nvidia-qwen2.5-7b',
+    provider: 'openrouter',
+    modelId: 'openrouter-glm-4.5-air', // Fast MoE model for summaries
   },
 });
 

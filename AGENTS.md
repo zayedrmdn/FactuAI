@@ -99,7 +99,7 @@ Redis:
 LLM verification (OpenAI-compatible):
 - `LLM_API_BASE_URL`
 - `LLM_API_KEY`
-- `LLM_PROVIDER`, `OPENROUTER_MODEL`, `NVIDIA_MODEL`
+- `LLM_PROVIDER`, `OPENROUTER_MODEL`
 
 Embeddings (learning loop):
 - `EMBEDDING_API_BASE_URL`

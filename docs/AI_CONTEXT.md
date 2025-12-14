@@ -52,9 +52,6 @@ Set:
 - `LLM_API_KEY` or `OPENROUTER_API_KEY`
 - `OPENROUTER_MODEL` (default: `meta-llama/llama-3.3-70b-instruct`)
 
-For NVIDIA NIM:
-- `NVIDIA_MODEL` (default: `meta/llama-3.1-8b-instruct`)
-
 ### Continuous Learning
 
 - Triggered after high confidence verifications
