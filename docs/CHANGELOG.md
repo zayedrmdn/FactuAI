@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.0.4] - 2025-12-15
+
+### RAG Retrieval Loop Implementation
+
+The search feature now queries the internal knowledge base (pgvector) alongside external providers.
+
+#### Added
+
+- **RAG Retrieval in Search** - `NativeSearchService` now performs internal similarity search:
+  - Queries `claims` and `evidence` tables using pgvector cosine distance
+  - Runs in **parallel** with external providers (Tavily, NewsAPI) via `asyncio.gather`
+  - Threshold-filtered: only results with distance < `RAG_RETRIEVAL_THRESHOLD` are included
+  - Fail-safe: all errors are caught and logged, never crashes main search
+
+- **`RAG_RETRIEVAL_THRESHOLD`** - New environment variable (default: `0.25`):
+  - Controls cosine distance cutoff for internal results
+  - Lower values = stricter filtering (higher similarity required)
+
+#### Files Modified
+
+- `backend/app/core/settings.py` - Added `rag_retrieval_threshold`
+- `backend/app/features/search/adapters/native.py` - Refactored with `_search_internal()`, parallel execution
+- `backend/tests/test_search_native.py` - Added hit/miss tests for threshold filtering
+
+---
+
 ## [4.0.3] - 2025-12-14
 
 ### Frontend Cleanup & Configuration Finalization

@@ -115,6 +115,7 @@ Embeddings (learning loop):
 - `EMBEDDING_MODEL`
 - `EMBEDDING_DIM`
 - `LEARNING_CONFIDENCE_THRESHOLD`
+- `RAG_RETRIEVAL_THRESHOLD` (cosine distance cutoff for internal search, default 0.25)
 
 Search providers:
 - `SEARCH_PROVIDER_PATHS` (CSV dotted paths)

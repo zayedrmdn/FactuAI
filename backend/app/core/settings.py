@@ -59,12 +59,13 @@ class Settings(BaseModel):
     embedding_dim: int = _env_int("EMBEDDING_DIM", 384)
     learning_confidence_threshold: float = float(os.getenv("LEARNING_CONFIDENCE_THRESHOLD", "0.85"))
     learning_max_evidence: int = _env_int("LEARNING_MAX_EVIDENCE", 8)
+    rag_retrieval_threshold: float = float(os.getenv("RAG_RETRIEVAL_THRESHOLD", "0.25"))
 
     # Intent LLM (Tier 1 - Fast/Cheap model for claim extraction)
     # If not set, falls back to main LLM_API_* settings
     intent_llm_api_base_url: str = os.getenv("INTENT_LLM_API_BASE_URL", "")
     intent_llm_api_key: str = os.getenv("INTENT_LLM_API_KEY", "")
-    intent_llm_model: str = os.getenv("INTENT_LLM_MODEL", "qwen/qwen-2.5-7b-instruct")
+    intent_llm_model: str = os.getenv("INTENT_LLM_MODEL", "tngtech/deepseek-r1t2-chimera:free")
 
     # --- Pluggable bindings (OCP-friendly) ---
     search_adapter: str = os.getenv(
