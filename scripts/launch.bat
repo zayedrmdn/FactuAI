@@ -1,68 +1,56 @@
 @echo off
+setlocal enabledelayedexpansion
 chcp 65001 >nul
+
 REM ─────────────────────────────────────────────────────────────
-REM   launch.bat
-REM   Location: scripts/launch.bat
-REM   
-REM   Usage:
-REM     launch.bat cloud   - Start in Cloud Mode (lightweight, uses APIs)
-REM     launch.bat local   - Start in Local Mode (full ML stack)
-REM     launch.bat         - Defaults to Cloud Mode
+REM   launch.bat - FactuAI Local Development Launcher
 REM
-REM   Virtual Environments:
-REM     .venv-cloud/  - For Cloud Mode (backend/requirements-core.txt)
-REM     .venv-local/  - For Local Mode (backend/requirements-local.txt)
+REM   Usage:
+REM     launch.bat       - Starts backend + frontend (default)
+REM
+REM   Windows:
+REM     - Backend:  uvicorn app.main:app --reload
+REM     - Frontend: pnpm dev
 REM ─────────────────────────────────────────────────────────────
 
-REM Get the project root (parent of scripts folder)
+REM Setup paths
 set "SCRIPT_DIR=%~dp0"
 set "PROJECT_ROOT=%SCRIPT_DIR%.."
+set "BACKEND_DIR=%PROJECT_ROOT%\backend"
+set "FRONTEND_DIR=%PROJECT_ROOT%\frontend"
+set "VENV_DIR=%BACKEND_DIR%\venv"
 
-REM Determine run mode (default: cloud)
-set "RUN_MODE=%1"
-if "%RUN_MODE%"=="" set "RUN_MODE=cloud"
-
+echo.
 echo ═══════════════════════════════════════════════════════════
 echo   FactuAI Launcher
-echo   Mode: %RUN_MODE%
-echo   Project Root: %PROJECT_ROOT%
 echo ═══════════════════════════════════════════════════════════
+echo.
 
-REM Set venv path based on mode
-if "%RUN_MODE%"=="local" (
-    set "VENV_PATH=%PROJECT_ROOT%\.venv-local"
-    set "REQUIREMENTS=%PROJECT_ROOT%\backend\requirements-local.txt"
+REM Check if backend venv exists, create if not
+if not exist "%VENV_DIR%\Scripts\activate.bat" (
+    echo [INFO] Creating backend virtual environment...
+    cd /d "%BACKEND_DIR%"
+    python -m venv venv
+    call "%VENV_DIR%\Scripts\activate.bat"
+    echo [INFO] Installing dependencies...
+    pip install -r requirements-core.txt
+    echo [INFO] Virtual environment ready.
 ) else (
-    set "VENV_PATH=%PROJECT_ROOT%\.venv-cloud"
-    set "REQUIREMENTS=%PROJECT_ROOT%\backend\requirements-core.txt"
-)
-
-REM Check if venv exists, create if not
-if not exist "%VENV_PATH%\Scripts\activate.bat" (
-    echo [INFO] Creating virtual environment at %VENV_PATH%...
-    python -m venv "%VENV_PATH%"
-    echo [INFO] Installing dependencies from %REQUIREMENTS%...
-    call "%VENV_PATH%\Scripts\activate.bat"
-    pip install -r "%REQUIREMENTS%"
-) else (
-    echo [INFO] Using existing venv: %VENV_PATH%
+    echo [INFO] Using existing backend venv
 )
 
 echo.
-echo Starting FactuAI stack...
+echo Starting FactuAI services...
+echo.
 
-REM 1 ▸ Backend
+REM Backend
 start "FactuAI Backend" cmd /k ^
-  "cd /d %PROJECT_ROOT%\backend && call %VENV_PATH%\Scripts\activate.bat && set APP_RUN_MODE=%RUN_MODE% && python app.py"
+  "cd /d %BACKEND_DIR% && call %VENV_DIR%\Scripts\activate.bat && uvicorn app.main:app --reload"
 
-REM 2 ▸ Frontend
+REM Frontend
 start "FactuAI Frontend" cmd /k ^
-  "cd /d %PROJECT_ROOT%\frontend && npm run dev"
+  "cd /d %FRONTEND_DIR% && pnpm dev"
 
-REM 3 ▸ Misc scripts shell
-start "FactuAI Scripts" cmd /k ^
-  "cd /d %PROJECT_ROOT%\scripts && call %VENV_PATH%\Scripts\activate.bat && set APP_RUN_MODE=%RUN_MODE%"
-
+echo [✓] Backend and Frontend started in new windows
 echo.
-echo All windows launched. You can close this launcher now.
-pause >nul
+pause

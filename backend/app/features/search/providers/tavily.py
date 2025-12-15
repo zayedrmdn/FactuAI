@@ -2,8 +2,11 @@
 """
 Tavily Search Provider with circuit breaker protection.
 
-This provider uses the Tavily Search API for web search.
-Circuit breaker protects against cascading failures when the API is experiencing issues.
+Production-Grade Configuration:
+- Auto-parameters enabled for query optimization
+- Social media domains excluded for noise reduction
+- Answer and raw content included for richer data
+- Images/favicons/usage disabled to save bandwidth
 """
 from __future__ import annotations
 
@@ -12,6 +15,7 @@ from typing import List, Optional
 import httpx
 
 from app.contracts.types import EvidenceSnippet
+from app.core.constants import SOCIAL_MEDIA_DOMAINS
 from app.core.logging import get_logger
 from app.core.settings import Settings
 from app.core.circuit_breaker import (
@@ -25,8 +29,14 @@ logger = get_logger(__name__)
 
 
 class TavilySearchProvider(SearchProvider):
-    """Tavily Search API provider with circuit breaker protection."""
+    """Tavily Search API provider with circuit breaker protection.
     
+    Production-grade filtering:
+    - Excludes social media domains (SOCIAL_MEDIA_DOMAINS)
+    - Uses auto_parameters for query optimization
+    - Includes Tavily's AI answer summary
+    """
+
     name = "tavily"
 
     def __init__(self, *, settings: Settings):
@@ -62,21 +72,32 @@ class TavilySearchProvider(SearchProvider):
         max_results: int,
         api_key: str,
     ) -> List[EvidenceSnippet]:
-        """Internal search method wrapped with circuit breaker."""
+        """Internal search method wrapped with circuit breaker.
+        
+        Production-grade Tavily payload configuration.
+        """
         payload = {
             "api_key": api_key,
             "query": query,
-            "max_results": int(max_results),
+            "auto_parameters": True,
             "search_depth": "basic",
-            "include_answer": False,
-            "include_raw_content": False,
+            "max_results": min(int(max_results), 5),
+            "include_answer": True,
+            "include_raw_content": True,
             "include_images": False,
+            "include_image_descriptions": False,
+            "include_favicon": False,
+            "include_usage": False,
+            "exclude_domains": SOCIAL_MEDIA_DOMAINS,
         }
 
         async with httpx.AsyncClient(timeout=20.0) as client:
             resp = await client.post("https://api.tavily.com/search", json=payload)
             resp.raise_for_status()
             data = resp.json()
+
+        # Extract Tavily's AI summary (answer field)
+        ai_overview = (data.get("answer") or "").strip() or None
 
         results = []
         for r in (data.get("results") or [])[: int(max_results)]:
@@ -87,7 +108,10 @@ class TavilySearchProvider(SearchProvider):
                     title=(r.get("title") or None),
                     source_domain="tavily",
                     score=float(r.get("score") or 0.0),
+                    ai_overview=ai_overview,
+                    content=(r.get("raw_content") or "").strip() or None,
                 )
             )
 
         return [r for r in results if r.get("url") and r.get("text")]
+

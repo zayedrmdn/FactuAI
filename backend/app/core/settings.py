@@ -84,7 +84,7 @@ class Settings(BaseModel):
     # Search provider composition (OCP-friendly; add providers by adding new classes, not editing core logic)
     search_provider_paths_csv: str = os.getenv(
         "SEARCH_PROVIDER_PATHS",
-        "app.features.search.providers.tavily.TavilySearchProvider,app.features.search.providers.newsapi.NewsApiSearchProvider",
+        "app.features.search.providers.tavily.TavilySearchProvider",
     )
 
     # Provider credentials (kept in settings to avoid leaking into feature code)

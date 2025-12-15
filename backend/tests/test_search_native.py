@@ -11,8 +11,7 @@ def test_native_search_returns_empty_without_keys():
         tavily_api_key="",
         newsapi_api_key="",
         search_provider_paths_csv=(
-            "app.features.search.providers.tavily.TavilySearchProvider,"
-            "app.features.search.providers.newsapi.NewsApiSearchProvider"
+            "app.features.search.providers.tavily.TavilySearchProvider"
         ),
     )
     search = NativeSearchService(settings=settings, redis=None)

@@ -3,12 +3,14 @@ from __future__ import annotations
 from typing import List, Optional, TypedDict
 
 
-class EvidenceSnippet(TypedDict):
+class EvidenceSnippet(TypedDict, total=False):
     text: str
     url: str
     title: Optional[str]
     source_domain: str
     score: float
+    ai_overview: Optional[str]  # Tavily's AI-generated summary
+    content: Optional[str]  # Full raw content from source
 
 
 class ClaimVerdict(TypedDict):
