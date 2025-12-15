@@ -1,9 +1,9 @@
+// Full Path: src/components/dashboard/SettingsDialog.tsx
 'use client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SunIcon, MoonIcon } from '@heroicons/react/24/outline';
 import { PipelineModelConfig } from '@/features/ai-providers';
-import { SearchProvidersConfig } from '@/components/dashboard/SearchProvidersConfig';
-import { SearchLimitsConfig } from '@/components/dashboard/SearchLimitsConfig';
+import { SearchProvidersConfig, SearchLimitsConfig } from '@/features/search';
 import { Separator } from '@/components/ui/primitives';
 
 interface Prefs {
@@ -53,20 +53,22 @@ export default function SettingsDialog({
                 <div className="flex gap-2">
                   <button
                     onClick={() => toggleTheme(false)}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-md border text-sm transition ${!isDark
+                    className={`flex items-center gap-2 px-3 py-2 rounded-md border text-sm transition ${
+                      !isDark
                         ? 'bg-primary/10 border-primary text-primary'
                         : 'border-input hover:bg-accent hover:text-accent-foreground'
-                      }`}
+                    }`}
                   >
                     <SunIcon className="w-4 h-4" />
                     Light
                   </button>
                   <button
                     onClick={() => toggleTheme(true)}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-md border text-sm transition ${isDark
+                    className={`flex items-center gap-2 px-3 py-2 rounded-md border text-sm transition ${
+                      isDark
                         ? 'bg-primary/10 border-primary text-primary'
                         : 'border-input hover:bg-accent hover:text-accent-foreground'
-                      }`}
+                    }`}
                   >
                     <MoonIcon className="w-4 h-4" />
                     Dark
@@ -82,10 +84,11 @@ export default function SettingsDialog({
                     <button
                       key={opt}
                       onClick={() => savePrefs({ textSize: opt })}
-                      className={`px-3 py-2 rounded-md border text-sm transition ${prefs.textSize === opt
+                      className={`px-3 py-2 rounded-md border text-sm transition ${
+                        prefs.textSize === opt
                           ? 'bg-primary/10 border-primary text-primary'
                           : 'border-input hover:bg-accent hover:text-accent-foreground'
-                        }`}
+                      }`}
                     >
                       {getTextSizeLabel(opt)}
                     </button>

@@ -14,7 +14,7 @@ interface VideoTabProps {
   onVideoProcessed: (text: string, filename?: string, videoUrl?: string) => void;
 }
 
-export default function VideoTab({ onVideoProcessed }: Readonly<VideoTabProps>) {
+export default function VideoInput({ onVideoProcessed }: Readonly<VideoTabProps>) {
   const [videoPreview, setVideoPreview] = useState<VideoPreviewData | null>(null);
 
   const { uploadVideo, isProcessing } = useVideoProcessing({

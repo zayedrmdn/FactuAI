@@ -91,15 +91,15 @@ export default function ClaimCard({
 }: Readonly<ClaimCardProps>) {
   const sourceUrls = Array.isArray(result.sources)
     ? result.sources
-      .map((s) => {
-        if (typeof s === 'string') return s;
-        if (s && typeof s === 'object') {
-          const obj = s as Record<string, unknown>;
-          return String(obj.url || obj.text || obj.title || '');
-        }
-        return '';
-      })
-      .filter((s) => !!s)
+        .map((s) => {
+          if (typeof s === 'string') return s;
+          if (s && typeof s === 'object') {
+            const obj = s as Record<string, unknown>;
+            return String(obj.url || obj.text || obj.title || '');
+          }
+          return '';
+        })
+        .filter((s) => !!s)
     : [];
 
   const config = VERDICT_CONFIG[result.label] ?? VERDICT_CONFIG.unknown;
@@ -129,7 +129,9 @@ export default function ClaimCard({
 
           {result.confidence !== undefined && (
             <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">Confidence</span>
+              <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">
+                Confidence
+              </span>
               <span className="text-xs font-bold text-slate-600 bg-white/50 px-1.5 py-0.5 rounded border border-slate-200/50">
                 {(result.confidence * 100).toFixed(0)}%
               </span>
@@ -164,20 +166,24 @@ export default function ClaimCard({
       <CardContent className="p-6 pt-0 space-y-4">
         {/* Explanation */}
         {result.explanation && (
-          <div className={cn(
-            "rounded-lg bg-slate-50 border border-slate-200 p-4 text-slate-700 leading-relaxed",
-            textSizeClass
-          )}>
+          <div
+            className={cn(
+              'rounded-lg bg-slate-50 border border-slate-200 p-4 text-slate-700 leading-relaxed',
+              textSizeClass
+            )}
+          >
             {result.explanation}
           </div>
         )}
 
         {/* Analysis / Reasoning */}
         {result.reasoning && (
-          <div className={cn(
-            "rounded-lg bg-blue-50/50 border border-blue-100 p-4 text-slate-700 leading-relaxed",
-            textSizeClass
-          )}>
+          <div
+            className={cn(
+              'rounded-lg bg-blue-50/50 border border-blue-100 p-4 text-slate-700 leading-relaxed',
+              textSizeClass
+            )}
+          >
             <h4 className="text-xs font-semibold text-blue-700 uppercase tracking-wider mb-2 flex items-center gap-2">
               <HelpCircle className="h-4 w-4" />
               Analysis
@@ -226,8 +232,8 @@ export default function ClaimCard({
                 ) : (
                   <p className="text-sm text-slate-500">
                     {Array.isArray(result.evidence)
-                      ? result.evidence.map(item => item.text || item).join('. ')
-                      : (result.evidence || 'No detailed evidence available.')}
+                      ? result.evidence.map((item) => item.text || item).join('. ')
+                      : result.evidence || 'No detailed evidence available.'}
                   </p>
                 )}
               </div>

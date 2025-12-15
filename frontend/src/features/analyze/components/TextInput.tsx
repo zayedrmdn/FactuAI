@@ -56,7 +56,7 @@ interface TextTabProps {
   onClear: () => void;
 }
 
-export default function TextTab({ input, setInput, textSize, onClear }: Readonly<TextTabProps>) {
+export default function TextInput({ input, setInput, textSize, onClear }: Readonly<TextTabProps>) {
   const validationResult = validateBasic(input);
   const wordCount = input.trim().split(/\s+/).filter(Boolean).length;
   const showValidationError = input.trim().length > 0 && validationResult.error;

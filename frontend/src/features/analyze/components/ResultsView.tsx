@@ -118,6 +118,21 @@ export default function ResultsView({
     isQAOnly,
   });
 
+  // Calculate stats
+  const stats = results.reduce(
+    (acc, r) => {
+      if (!isQAResult(r)) {
+        const label = r.label || 'unknown';
+        if (['true', 'mostly_true'].includes(label)) acc.trueCount++;
+        else if (['false', 'mostly_false'].includes(label)) acc.falseCount++;
+        else acc.mixedCount++;
+        acc.total++;
+      }
+      return acc;
+    },
+    { total: 0, trueCount: 0, falseCount: 0, mixedCount: 0 }
+  );
+
   const copyFullResults = async () => {
     if (!results.length && !summary) {
       toast.error('No results to copy');
@@ -130,7 +145,9 @@ export default function ResultsView({
     // Header
     sections.push('FACTUAI ANALYSIS REPORT');
     sections.push('=' + '='.repeat(50));
-    sections.push(`Generated: ${updated ? new Date(updated).toLocaleString() : new Date().toLocaleString()}`);
+    sections.push(
+      `Generated: ${updated ? new Date(updated).toLocaleString() : new Date().toLocaleString()}`
+    );
     sections.push('');
 
     // Executive Summary
@@ -146,10 +163,14 @@ export default function ResultsView({
     sections.push('-'.repeat(50));
     sections.push(`Trust Score: ${averageConfidence.toFixed(0)}%`);
     if (aiScore !== null && aiScore !== undefined) {
-      sections.push(`AI Detection: ${aiScore.toFixed(1)}% (${aiScore >= 60 ? 'Likely AI' : 'Likely Human'})`);
+      sections.push(
+        `AI Detection: ${aiScore.toFixed(1)}% (${aiScore >= 60 ? 'Likely AI' : 'Likely Human'})`
+      );
     }
     sections.push(`Total Claims Analyzed: ${stats.total}`);
-    sections.push(`Verified: ${stats.trueCount} | False: ${stats.falseCount} | Unclear: ${stats.mixedCount}`);
+    sections.push(
+      `Verified: ${stats.trueCount} | False: ${stats.falseCount} | Unclear: ${stats.mixedCount}`
+    );
     sections.push('');
 
     // Detailed Findings
@@ -214,52 +235,6 @@ export default function ResultsView({
     }
   };
 
-  /* Copy all results to clipboard - currently unused but kept for future use */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _copyResults = async () => {
-    if (!results.length) {
-      toast.error('No results to copy');
-      return;
-    }
-
-    const text = results
-      .map((r, idx) => {
-        if (isQAResult(r)) {
-          // QAResult branch
-          return [
-            `Q${idx + 1}: ${r.question}`,
-            `Answer: ${r.answer}`,
-            `Confidence: ${(r.confidence * 100).toFixed(1)}%`,
-            `Sources: ${toSourceStrings(r.sources).join(', ')}`,
-          ].join('\n');
-        } else {
-          // FactCheckResult branch
-          let evidenceText = '';
-          if (r.source_quotes && r.source_quotes.length > 0) {
-            evidenceText = r.source_quotes.map((sq) => `"${sq.quote}" - ${sq.source}`).join('\n');
-          } else {
-            evidenceText = Array.isArray(r.evidence) ? r.evidence.join('. ') : r.evidence;
-          }
-          return (
-            `Claim ${idx + 1}: ${r.claim}\n` +
-            `Verdict: ${r.label}\n` +
-            `Confidence: ${(r.confidence * 100).toFixed(1)}%\n` +
-            `Evidence:\n${evidenceText}\n` +
-            `Sources: ${toSourceStrings(r.sources).join(', ')}\n`
-          );
-        }
-      })
-      .join('\n\n');
-
-    try {
-      await navigator.clipboard.writeText(text);
-      toast.success('Results copied to clipboard');
-    } catch (err) {
-      console.error('Copy failed:', err);
-      toast.error('Failed to copy to clipboard');
-    }
-  };
-
   const shareResults = async () => {
     if (!navigator.share) {
       toast.error('Sharing not supported on this device');
@@ -279,21 +254,6 @@ export default function ResultsView({
       }
     }
   };
-
-  // Calculate stats
-  const stats = results.reduce(
-    (acc, r) => {
-      if (!isQAResult(r)) {
-        const label = r.label || 'unknown';
-        if (['true', 'mostly_true'].includes(label)) acc.trueCount++;
-        else if (['false', 'mostly_false'].includes(label)) acc.falseCount++;
-        else acc.mixedCount++;
-        acc.total++;
-      }
-      return acc;
-    },
-    { total: 0, trueCount: 0, falseCount: 0, mixedCount: 0 }
-  );
 
   // Show loading state
   if (loading) {
@@ -366,21 +326,34 @@ export default function ResultsView({
             <div className="flex flex-wrap gap-3">
               {results.map((r, idx) => {
                 if (isQAResult(r)) return null;
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                const config = (VERDICT_CONFIG[r.label?.toLowerCase() || 'unknown'] ?? VERDICT_CONFIG.unknown)!;
+
+                const config = (VERDICT_CONFIG[r.label?.toLowerCase() || 'unknown'] ??
+                  VERDICT_CONFIG.unknown)!;
                 const VerdictIcon = config.icon;
                 return (
-                  <div key={idx} className="flex items-center gap-3 bg-white border border-slate-200 rounded-lg p-2 pr-4 shadow-sm hover:shadow-md transition-shadow">
+                  <div
+                    key={idx}
+                    className="flex items-center gap-3 bg-white border border-slate-200 rounded-lg p-2 pr-4 shadow-sm hover:shadow-md transition-shadow"
+                  >
                     <div className="flex flex-col items-center justify-center w-8 h-8 rounded-md bg-slate-50 text-xs font-bold text-slate-500 border border-slate-100">
                       #{idx + 1}
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Verdict</span>
-                      <div className={cn("flex items-center gap-1.5 font-bold text-sm",
-                        config.variant === 'success' ? "text-emerald-700" :
-                          config.variant === 'destructive' ? "text-rose-700" :
-                            config.variant === 'warning' ? "text-amber-700" : "text-slate-700"
-                      )}>
+                      <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                        Verdict
+                      </span>
+                      <div
+                        className={cn(
+                          'flex items-center gap-1.5 font-bold text-sm',
+                          config.variant === 'success'
+                            ? 'text-emerald-700'
+                            : config.variant === 'destructive'
+                              ? 'text-rose-700'
+                              : config.variant === 'warning'
+                                ? 'text-amber-700'
+                                : 'text-slate-700'
+                        )}
+                      >
                         <VerdictIcon className="h-4 w-4" />
                         {config.label}
                       </div>
@@ -393,13 +366,17 @@ export default function ResultsView({
 
           {/* SECONDARY GRID: Trust Score, Stats, Actions (Demoted/Compacted) */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 border-t border-slate-100">
-
             {/* 1. Trust Score (Demoted to simple stat) */}
             <div className="flex flex-col justify-center space-y-1">
-              <h4 className="text-xs font-medium text-slate-400 uppercase tracking-wider">Confidence Level</h4>
+              <h4 className="text-xs font-medium text-slate-400 uppercase tracking-wider">
+                Confidence Level
+              </h4>
               <div className="flex items-baseline gap-3">
                 <span className="text-3xl font-bold text-slate-700">
-                  {averageConfidence !== undefined && !isNaN(averageConfidence) ? averageConfidence.toFixed(0) : 'N/A'}%
+                  {averageConfidence !== undefined && !isNaN(averageConfidence)
+                    ? averageConfidence.toFixed(0)
+                    : 'N/A'}
+                  %
                 </span>
                 <div className="h-2 w-24 bg-slate-100 rounded-full overflow-hidden">
                   <div
@@ -409,15 +386,15 @@ export default function ResultsView({
                 </div>
               </div>
               {aiScore !== null && aiScore !== undefined && (
-                <p className="text-xs text-slate-400 mt-1">
-                  AI Probability: {aiScore.toFixed(0)}%
-                </p>
+                <p className="text-xs text-slate-400 mt-1">AI Probability: {aiScore.toFixed(0)}%</p>
               )}
             </div>
 
             {/* 2. Analysis Stats (Tightened) */}
             <div className="flex flex-col justify-center space-y-2 md:border-l md:border-slate-100 md:pl-6">
-              <h4 className="text-xs font-medium text-slate-400 uppercase tracking-wider">Breakdown</h4>
+              <h4 className="text-xs font-medium text-slate-400 uppercase tracking-wider">
+                Breakdown
+              </h4>
               <div className="flex gap-4 text-sm">
                 <div className="flex items-center gap-1.5 text-slate-600">
                   <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
@@ -436,7 +413,9 @@ export default function ResultsView({
 
             {/* 3. Quick Actions (Minimalist Toolbar) */}
             <div className="flex flex-col justify-center md:items-end space-y-2 md:border-l md:border-slate-100 md:pl-6">
-              <h4 className="text-xs font-medium text-slate-400 uppercase tracking-wider md:text-right">Tools</h4>
+              <h4 className="text-xs font-medium text-slate-400 uppercase tracking-wider md:text-right">
+                Tools
+              </h4>
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"

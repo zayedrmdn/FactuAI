@@ -1,3 +1,4 @@
+// Full Path: frontend/__tests__/sanity.test.tsx
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 

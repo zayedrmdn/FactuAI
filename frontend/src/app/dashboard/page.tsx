@@ -3,8 +3,7 @@
 
 import { useState } from 'react';
 import SettingsDialog from '@/components/dashboard/SettingsDialog';
-import InputCard from '@/components/dashboard/InputCard';
-import ResultsView from '@/components/dashboard/ResultsView';
+import { InputCard, ResultsView } from '@/features/analyze';
 import HistoryPanel from '@/components/dashboard/HistoryPanel';
 import { useSettings } from '@/lib/hooks/useSettings';
 import { useAppState } from '@/lib/hooks/useAppState';

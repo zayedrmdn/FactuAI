@@ -9,12 +9,18 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { useSearchLimitsStore } from '@/stores/search-limits-store';
-import { useSearchProvidersStore } from '@/stores/search-providers-store';
+import { useSearchLimitsStore } from '../stores/limits';
+import { useSearchProvidersStore } from '../stores/providers';
 import { Hash, RotateCcw } from 'lucide-react';
 import { SEARCH_PROVIDERS } from '@/config/search-providers';
 
-export function SearchLimitsConfig({ compact = false, textSize = 'md' }: { compact?: boolean; textSize?: 'sm' | 'md' | 'lg' }) {
+export function SearchLimitsConfig({
+  compact = false,
+  textSize = 'md',
+}: {
+  compact?: boolean;
+  textSize?: 'sm' | 'md' | 'lg';
+}) {
   const { numGoogle, numNews, numTavily, setNumGoogle, setNumNews, setNumTavily, resetToDefaults } =
     useSearchLimitsStore();
   const { isProviderEnabled } = useSearchProvidersStore();
@@ -36,19 +42,24 @@ export function SearchLimitsConfig({ compact = false, textSize = 'md' }: { compa
   // In a full refactor, the store would also be dynamic (e.g. limits: Record<string, number>)
   const getProviderState = (id: string) => {
     switch (id) {
-      case 'google': return { value: numGoogle, setter: setNumGoogle };
-      case 'newsapi': return { value: numNews, setter: setNumNews };
-      case 'tavily': return { value: numTavily, setter: setNumTavily };
-      default: return null;
+      case 'google':
+        return { value: numGoogle, setter: setNumGoogle };
+      case 'newsapi':
+        return { value: numNews, setter: setNumNews };
+      case 'tavily':
+        return { value: numTavily, setter: setNumTavily };
+      default:
+        return null;
     }
   };
 
-  const handleChange = (setter: (val: number) => void) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value, 10);
-    if (!isNaN(value)) {
-      setter(value);
-    }
-  };
+  const handleChange =
+    (setter: (val: number) => void) => (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = parseInt(e.target.value, 10);
+      if (!isNaN(value)) {
+        setter(value);
+      }
+    };
 
   if (compact) {
     return (
@@ -65,7 +76,7 @@ export function SearchLimitsConfig({ compact = false, textSize = 'md' }: { compa
           </button>
         </div>
         <div className="space-y-2">
-          {SEARCH_PROVIDERS.filter(p => p.hasLimit).map((provider) => {
+          {SEARCH_PROVIDERS.filter((p) => p.hasLimit).map((provider) => {
             const state = getProviderState(provider.id);
             if (!state) return null;
 
@@ -95,7 +106,11 @@ export function SearchLimitsConfig({ compact = false, textSize = 'md' }: { compa
                     disabled={!isEnabled}
                     className={`w-14 rounded-md border border-input bg-background px-2 text-right transition-colors focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 ${inputClass}`}
                   />
-                  <span className={`text-muted-foreground w-8 ${textSize === 'sm' ? 'text-[10px]' : 'text-xs'}`}>max</span>
+                  <span
+                    className={`text-muted-foreground w-8 ${textSize === 'sm' ? 'text-[10px]' : 'text-xs'}`}
+                  >
+                    max
+                  </span>
                 </div>
               </div>
             );
@@ -107,7 +122,7 @@ export function SearchLimitsConfig({ compact = false, textSize = 'md' }: { compa
 
   const content = (
     <div className="space-y-4">
-      {SEARCH_PROVIDERS.filter(p => p.hasLimit).map((provider) => {
+      {SEARCH_PROVIDERS.filter((p) => p.hasLimit).map((provider) => {
         const state = getProviderState(provider.id);
         if (!state) return null; // Skip providers not yet in store (until store is fully dynamic)
 
@@ -176,9 +191,7 @@ export function SearchLimitsConfig({ compact = false, textSize = 'md' }: { compa
           but take longer.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {content}
-      </CardContent>
+      <CardContent className="space-y-4">{content}</CardContent>
     </Card>
   );
 }

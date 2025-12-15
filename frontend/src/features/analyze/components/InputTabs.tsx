@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FileText, Image as ImageIcon, Video } from 'lucide-react';
-import TextTab from './TextInput';
-import ImageTab from './ImageInput';
-import VideoTab from './VideoInput';
+import TextInput from './TextInput';
+import ImageInput from './ImageInput';
+import VideoInput from './VideoInput';
 import { InputType, TextSize } from '@/types/dashboard/ui';
 import { cn } from '@/lib/utils';
 
@@ -81,12 +81,12 @@ export default function InputTabs({
           transition={{ duration: 0.2 }}
         >
           {activeTab === 'text' && (
-            <TextTab input={input} setInput={setInput} textSize={textSize} onClear={onClear} />
+            <TextInput input={input} setInput={setInput} textSize={textSize} onClear={onClear} />
           )}
 
-          {activeTab === 'image' && <ImageTab onImageProcessed={onImageProcessed} />}
+          {activeTab === 'image' && <ImageInput onImageProcessed={onImageProcessed} />}
 
-          {activeTab === 'video' && <VideoTab onVideoProcessed={onVideoProcessed} />}
+          {activeTab === 'video' && <VideoInput onVideoProcessed={onVideoProcessed} />}
         </motion.div>
       </div>
     </div>

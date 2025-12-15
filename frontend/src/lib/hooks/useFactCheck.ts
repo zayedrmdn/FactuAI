@@ -3,104 +3,14 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { validateForFactCheck } from './useInputValidation';
-import { FactCheckResult, FactCheckApiResult, mapApiResultToFactCheckResult } from '@/types/dashboard/factcheck';
+import {
+  FactCheckResult,
+  FactCheckApiResult,
+  mapApiResultToFactCheckResult,
+} from '@/types/dashboard/factcheck';
 import { usePipelineModelsStore, getModelById } from '@/features/ai-providers';
-import type { PipelineTask } from '@/features/ai-providers';
 
 const API_URL = 'http://127.0.0.1:8000/api/analyze';
-
-// Type for SSE data messages
-interface SSEMessage {
-  type: 'phase' | 'result' | 'summary' | 'complete' | 'error';
-  message?: string;
-  progress?: number;
-  claim_index?: number;
-  result?: FactCheckApiResult;  // Backend sends ClaimResult schema (claim_text, verdict, evidence[])
-  summary?: string;
-}
-
-// Type for progress state setters
-interface ProgressSetters {
-  setLoadingPhase: (phase: string) => void;
-  setProgress: (progress: number) => void;
-  setCurrentClaim: (claim: number) => void;
-  setFactResults: React.Dispatch<React.SetStateAction<FactCheckResult[]>>;
-  setSummary: (summary: string) => void;
-}
-
-/** Process a single SSE message and update state accordingly */
-function processSSEMessage(
-  data: SSEMessage,
-  allResults: FactCheckResult[],
-  setters: ProgressSetters
-): void {
-  const { setLoadingPhase, setProgress, setCurrentClaim, setFactResults, setSummary } = setters;
-
-  switch (data.type) {
-    case 'phase':
-      setLoadingPhase(data.message ?? '');
-      setProgress(data.progress ?? 0);
-      if (data.claim_index !== undefined) {
-        setCurrentClaim(data.claim_index + 1);
-      }
-
-      // Update active task based on loading phase
-      const phase = (data.message ?? '').toLowerCase();
-      let activeTask: PipelineTask | null = null;
-
-      if (
-        phase.includes('intent') ||
-        phase.includes('classifying') ||
-        phase.includes('detecting')
-      ) {
-        activeTask = 'intent';
-      } else if (phase.includes('extract') || phase.includes('claim')) {
-        activeTask = 'extraction';
-      } else if (
-        phase.includes('verif') ||
-        phase.includes('verifying') ||
-        phase.includes('search') ||
-        phase.includes('evidence') ||
-        phase.includes('ranking')
-      ) {
-        activeTask = 'reasoning';
-      }
-
-      if (activeTask) {
-        usePipelineModelsStore.getState().setActiveTask(activeTask);
-      }
-      break;
-    case 'result':
-      if (data.result) {
-        // Transform backend API response to frontend-friendly format
-        const mappedResult = mapApiResultToFactCheckResult(data.result);
-        allResults.push(mappedResult);
-        setFactResults([...allResults]);
-      }
-      break;
-    case 'summary':
-      if (data.summary) {
-        setSummary(data.summary);
-      }
-      break;
-    case 'complete':
-      setProgress(100);
-      setLoadingPhase('Complete!');
-      usePipelineModelsStore.getState().setActiveTask(null);
-      break;
-    case 'error':
-      usePipelineModelsStore.getState().setActiveTask(null);
-      throw new Error(data.message ?? 'Server error');
-  }
-}
-
-/** Parse SSE line and extract JSON data */
-function parseSSELine(line: string): SSEMessage | null {
-  if (!line.trim() || !line.startsWith('data: ')) {
-    return null;
-  }
-  return JSON.parse(line.slice(6)) as SSEMessage;
-}
 
 export function useFactCheck() {
   const [input, setInput] = useState('');
@@ -121,9 +31,11 @@ export function useFactCheck() {
   const avgConfidence =
     factResults.length > 0
       ? (factResults.reduce((sum, r) => {
-        const conf = typeof r.confidence === 'number' ? r.confidence : 0;
-        return sum + conf;
-      }, 0) / factResults.length) * 100
+          const conf = typeof r.confidence === 'number' ? r.confidence : 0;
+          return sum + conf;
+        }, 0) /
+          factResults.length) *
+        100
       : 0;
 
   /** Reset all state to initial values */
@@ -156,44 +68,6 @@ export function useFactCheck() {
     setLoading(null);
     setAbortController(null);
   }, []);
-
-  /** Process the SSE stream from the server */
-  const processStream = useCallback(
-    async (
-      reader: ReadableStreamDefaultReader<Uint8Array>,
-      controller: AbortController,
-      setters: ProgressSetters
-    ): Promise<FactCheckResult[]> => {
-      const decoder = new TextDecoder();
-      let buffer = '';
-      const allResults: FactCheckResult[] = [];
-
-      while (true) {
-        if (controller.signal.aborted) {
-          console.log('Request was cancelled by user');
-          reader.cancel();
-          return allResults;
-        }
-
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() ?? '';
-
-        for (const line of lines) {
-          const data = parseSSELine(line);
-          if (data) {
-            processSSEMessage(data, allResults, setters);
-          }
-        }
-      }
-
-      return allResults;
-    },
-    []
-  );
 
   const handleFactCheck = useCallback(async () => {
     if (!input.trim()) return;
@@ -234,11 +108,11 @@ export function useFactCheck() {
     const reasoningModel = getModelById(pipelineModels.reasoning.modelId);
 
     // Get search providers configuration
-    const { useSearchProvidersStore } = await import('@/stores/search-providers-store');
+    const { useSearchProvidersStore } = await import('@/features/search');
     const enabledSearchProviders = useSearchProvidersStore.getState().getEnabledProviders();
 
     // Get search limits configuration
-    const { useSearchLimitsStore } = await import('@/stores/search-limits-store');
+    const { useSearchLimitsStore } = await import('@/features/search');
     const { numGoogle, numNews, numTavily } = useSearchLimitsStore.getState();
 
     // Compute effective model config with session overrides
@@ -299,7 +173,14 @@ export function useFactCheck() {
     console.log('   Temperature:', requestPayload.temperature);
     console.log('   Max Tokens:', requestPayload.max_tokens);
     console.log('   Search Providers:', enabledSearchProviders.join(', '));
-    console.log('   Search Limits: Google =', numGoogle, '| NewsAPI =', numNews, '| Tavily =', numTavily);
+    console.log(
+      '   Search Limits: Google =',
+      numGoogle,
+      '| NewsAPI =',
+      numNews,
+      '| Tavily =',
+      numTavily
+    );
     console.log('   Pipeline Models:');
     console.log(
       '     ⚡ Intent:',
@@ -347,7 +228,7 @@ export function useFactCheck() {
       setLoadingPhase('Processing results...');
       setProgress(50);
 
-      const response = await res.json() as {
+      const response = (await res.json()) as {
         request_id: string;
         model_used: string;
         latency_ms: number;
@@ -386,7 +267,7 @@ export function useFactCheck() {
     } finally {
       cleanup();
     }
-  }, [input, resetState, handleValidationError, processStream, resetProgressState, cleanup]);
+  }, [input, resetState, handleValidationError, resetProgressState, cleanup]);
 
   const handleCancel = useCallback(() => {
     if (abortController) {

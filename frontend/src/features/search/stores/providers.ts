@@ -37,11 +37,11 @@ export interface SearchProvidersState {
 /**
  * Default provider configurations from central config
  */
-const defaultProviders: SearchProviderStateItem[] = SEARCH_PROVIDERS.map(p => ({
+const defaultProviders: SearchProviderStateItem[] = SEARCH_PROVIDERS.map((p) => ({
   id: p.id,
   name: p.name,
   description: p.description,
-  enabled: p.defaultEnabled
+  enabled: p.defaultEnabled,
 }));
 
 /**
@@ -64,7 +64,7 @@ const mergeProviders = (
       return {
         ...stored,
         name: defaultProvider.name,
-        description: defaultProvider.description
+        description: defaultProvider.description,
       };
     }
     return defaultProvider; // Add new provider
@@ -81,7 +81,7 @@ export const useSearchProvidersStore = create<SearchProvidersState>()(
 
       toggleProvider: (providerId) => {
         const state = get();
-        
+
         // Check if we can disable this provider (at least one must remain enabled)
         const currentProvider = state.providers.find((p) => p.id === providerId);
         if (!currentProvider) return;

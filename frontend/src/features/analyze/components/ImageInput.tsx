@@ -19,7 +19,7 @@ interface ImageTabProps {
   ) => void;
 }
 
-export default function ImageTab({ onImageProcessed }: Readonly<ImageTabProps>) {
+export default function ImageInput({ onImageProcessed }: Readonly<ImageTabProps>) {
   const [imagePreview, setImagePreview] = useState<ImagePreviewData | null>(null);
   const [imageUrl, setImageUrl] = useState('');
   const [imageUrlLoading, setImageUrlLoading] = useState(false);

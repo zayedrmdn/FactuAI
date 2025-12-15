@@ -10,11 +10,17 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { useSearchProvidersStore } from '@/stores/search-providers-store';
+import { useSearchProvidersStore } from '../stores/providers';
 import { Globe, AlertCircle } from 'lucide-react';
 import { getProviderConfig } from '@/config/search-providers';
 
-export function SearchProvidersConfig({ compact = false, textSize = 'md' }: { compact?: boolean; textSize?: 'sm' | 'md' | 'lg' }) {
+export function SearchProvidersConfig({
+  compact = false,
+  textSize = 'md',
+}: {
+  compact?: boolean;
+  textSize?: 'sm' | 'md' | 'lg';
+}) {
   const { providers, toggleProvider, canDisable } = useSearchProvidersStore();
 
   const labelClass = {
@@ -41,8 +47,8 @@ export function SearchProvidersConfig({ compact = false, textSize = 'md' }: { co
             <div key={provider.id} className="flex items-center justify-between py-1">
               <div className="flex items-center gap-3">
                 <Icon className="h-4 w-4 text-muted-foreground" />
-                <Label 
-                  htmlFor={`provider-${provider.id}`} 
+                <Label
+                  htmlFor={`provider-${provider.id}`}
                   className={`${labelClass} font-medium cursor-pointer`}
                 >
                   {provider.name}
@@ -50,7 +56,11 @@ export function SearchProvidersConfig({ compact = false, textSize = 'md' }: { co
               </div>
               <div className="flex items-center gap-2">
                 {isDisabled && (
-                  <span className={`text-amber-500 font-medium uppercase tracking-wider ${descClass}`}>Required</span>
+                  <span
+                    className={`text-amber-500 font-medium uppercase tracking-wider ${descClass}`}
+                  >
+                    Required
+                  </span>
                 )}
                 <Switch
                   id={`provider-${provider.id}`}
@@ -84,17 +94,21 @@ export function SearchProvidersConfig({ compact = false, textSize = 'md' }: { co
                 <Icon className="h-4 w-4" />
               </div>
               <div className="space-y-1">
-                <Label htmlFor={`provider-${provider.id}`} className={`${labelClass} font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70`}>
+                <Label
+                  htmlFor={`provider-${provider.id}`}
+                  className={`${labelClass} font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70`}
+                >
                   {provider.name}
                 </Label>
-                <p className={`${descClass} text-muted-foreground`}>
-                  {provider.description}
-                </p>
+                <p className={`${descClass} text-muted-foreground`}>{provider.description}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               {isDisabled && (
-                <div className={`flex items-center gap-1 ${descClass} text-amber-500`} title="At least one provider must be enabled">
+                <div
+                  className={`flex items-center gap-1 ${descClass} text-amber-500`}
+                  title="At least one provider must be enabled"
+                >
                   <AlertCircle className="h-3 w-3" />
                   <span className="hidden sm:inline">Required</span>
                 </div>
@@ -123,9 +137,7 @@ export function SearchProvidersConfig({ compact = false, textSize = 'md' }: { co
           Choose which sources to search for evidence. At least one must be enabled.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-3 sm:space-y-4">
-        {content}
-      </CardContent>
+      <CardContent className="space-y-3 sm:space-y-4">{content}</CardContent>
     </Card>
   );
 }

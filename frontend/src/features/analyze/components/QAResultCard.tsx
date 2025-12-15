@@ -55,7 +55,9 @@ export function QAResultCard({
             <Badge variant="secondary" className="mb-2">
               Question {index + 1}
             </Badge>
-            <CardTitle className={cn("font-medium leading-relaxed", titleSizeClass)}>{question}</CardTitle>
+            <CardTitle className={cn('font-medium leading-relaxed', titleSizeClass)}>
+              {question}
+            </CardTitle>
           </div>
           <div className="flex flex-col items-end gap-1 min-w-[100px]">
             <span className="text-xs font-medium text-muted-foreground">Confidence</span>
