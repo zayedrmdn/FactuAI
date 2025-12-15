@@ -28,9 +28,15 @@ DI + config:
 
 Feature slices:
 - `backend/app/features/analyze/`
-- `backend/app/features/intent/`
+- `backend/app/features/intent/` (uses `LLMIntentAdapter` by default)
 - `backend/app/features/search/`
 - `backend/app/features/verification/`
+
+Frontend feature modules:
+- `frontend/src/features/ai-providers/`
+- `frontend/src/features/search/`
+- `frontend/src/features/analyze/`
+- `frontend/src/features/history/`
 
 Migrations:
 - `backend/migrations/*.sql`

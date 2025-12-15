@@ -4,9 +4,15 @@ FactuAI is a full-stack fact-checking system with a **native async FastAPI backe
 
 **Backend highlights**
 - Vertical Slice Architecture (`backend/app/features/*`)
+- Tiered Intelligence (LLM-based Intent Extraction)
 - Pluggable Search Providers (OCP-friendly)
+- Fail Fast Pre-flight Checks (validates LLM connectivity before processing)
 - PostgreSQL + **pgvector** for continuous learning (RAG feedback loop)
 - Redis for caching
+
+**Frontend highlights**
+- Feature-Based Colocation (`frontend/src/features/*`)
+- Feature modules: `ai-providers/`, `search/`, `analyze/`, `history/`
 
 ## Tech Stack
 

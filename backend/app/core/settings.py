@@ -73,7 +73,7 @@ class Settings(BaseModel):
     )
     intent_adapter: str = os.getenv(
         "INTENT_ADAPTER",
-        "app.features.intent.adapters.native.NativeIntentAdapter",
+        "app.features.intent.adapters.llm.LLMIntentAdapter",
     )
     verifier_adapter: str = os.getenv(
         "VERIFIER_ADAPTER",

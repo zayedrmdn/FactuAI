@@ -1,7 +1,7 @@
 ---
 title: FactuAI Constitution
-version: 4.0.0
-last_updated: 2025-12-12
+version: 4.0.5
+last_updated: 2025-12-15
 audience: AI Agents, Developers, Code Contributors
 status: Active Governance Document
 format: Enforceable Markdown
@@ -43,7 +43,20 @@ This file is the single source of truth for **engineering rules**.
 - Do not reintroduce removed legacy stacks (old internal pipeline, old Flask layers, old adapter wrappers).
 - “Pipeline” here refers to the deprecated in-repo orchestration stack, not to standard AI libraries.
 
-### 6) Allowed AI Frameworks (LLM Orchestration)
+### 6) LLM-First Intent Extraction
+
+- Intent extraction (claim parsing) uses `LLMIntentAdapter` by default.
+- The legacy regex-based `NativeIntentAdapter` has been removed.
+- Intent configuration is environment-driven (`INTENT_ADAPTER`, `INTENT_LLM_*` vars).
+
+### 7) Fail Fast Pre-flight Checks
+
+- The `/api/analyze` endpoint must validate infrastructure connectivity **before** expensive operations.
+- Required checks: Database, LLM Provider.
+- If the LLM provider is unreachable, the API returns `503 Service Unavailable` immediately.
+- This is enforced in `backend/app/core/health.py` and `backend/app/features/analyze/router.py`.
+
+### 8) Allowed AI Frameworks (LLM Orchestration)
 
 - Using standard AI orchestration frameworks (e.g., LangChain / LangGraph) is explicitly allowed when:
   - used for prompt templating, LLM invocation, and structured output parsing/validation
@@ -70,7 +83,12 @@ This file is the single source of truth for **engineering rules**.
 ## Frontend Architecture
 
 - **Pages are thin**: Move business logic into `frontend/src/lib/` and hooks.
-- **Feature Modules**: Domain-specific configuration and state lives in `frontend/src/features/*/` (e.g., `ai-providers/`).
-- **Simple Config**: Static configuration (search providers, etc.) lives in `frontend/src/config/`.
+- **Feature-Based Colocation (Mandatory)**: Domain-specific components, hooks, and state *must* live in `frontend/src/features/*/`, not in `components/`.
+  - `frontend/src/features/ai-providers/` (AI config, models, stores)
+  - `frontend/src/features/search/` (search input, providers)
+  - `frontend/src/features/analyze/` (analysis display, results)
+  - `frontend/src/features/history/` (history panel, items)
+- **Static Config**: Static configuration (search providers, etc.) lives in `frontend/src/config/`.
 - **Prefer composition** over prop drilling.
 - **Single entry points**: Feature modules export via barrel `index.ts`.
+- **Prohibition**: Do not place domain logic in `frontend/src/components/`. That directory is reserved for generic, reusable UI primitives only.

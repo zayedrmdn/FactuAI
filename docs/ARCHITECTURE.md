@@ -97,6 +97,8 @@ Backend code lives under `backend/app/` and is organized by feature:
 
 Each feature owns its router + orchestration logic + ports, and may have adapters/persistence.
 
+> **Note**: Intent extraction uses `LLMIntentAdapter` by default (LLM-based claim parsing). The legacy regex-based native adapter has been removed.
+
 ### Shared Infrastructure
 
 Extraction utilities (web scraping, OCR, video transcription) live under `backend/app/infrastructure/extraction/` to avoid cross-feature coupling.
@@ -167,7 +169,24 @@ frontend/src/features/ai-providers/
 └── stores/
     ├── selection.ts  # AI model selection (Zustand)
     └── pipeline.ts   # Pipeline task models (Zustand)
+
+frontend/src/features/search/
+├── index.ts          # Barrel exports
+├── components/       # SearchInput, SearchProviders
+└── hooks/            # useSearch
+
+frontend/src/features/analyze/
+├── index.ts          # Barrel exports
+├── components/       # AnalyzeCard, ResultsDisplay
+└── hooks/            # useAnalyze
+
+frontend/src/features/history/
+├── index.ts          # Barrel exports
+├── components/       # HistoryPanel, HistoryItem
+└── hooks/            # useHistory
 ```
+
+> **Warning**: Domain components *must* live in `frontend/src/features/*/`, NOT in `components/`. See `CONSTITUTION.md` for enforcement.
 
 ### Import Pattern
 

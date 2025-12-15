@@ -54,8 +54,13 @@ Feature slices:
 Shared contracts:
 - `backend/app/contracts/` (cross-feature types only)
 
-Frontend feature modules:
+Frontend feature modules (Feature-Based Colocation):
 - `frontend/src/features/ai-providers/` (AI config, models, stores)
+- `frontend/src/features/search/` (search input, providers)
+- `frontend/src/features/analyze/` (analysis results display)
+- `frontend/src/features/history/` (history panel, items)
+
+> **Warning**: Domain components *must* live in `frontend/src/features/*/`, NOT in `components/`. The `components/` directory is reserved for generic UI primitives only.
 
 Database:
 - `backend/migrations/*.sql` (authoritative schema)

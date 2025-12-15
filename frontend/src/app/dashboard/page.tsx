@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import SettingsDialog from '@/components/dashboard/SettingsDialog';
 import { InputCard, ResultsView } from '@/features/analyze';
-import HistoryPanel from '@/components/dashboard/HistoryPanel';
+import { HistoryPanel } from '@/features/history';
 import { useSettings } from '@/lib/hooks/useSettings';
 import { useAppState } from '@/lib/hooks/useAppState';
 import { RotateCcw, FileText } from 'lucide-react'; // Added icons for better UI

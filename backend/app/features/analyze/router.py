@@ -110,6 +110,14 @@ async def analyze(
                 f"[PREFLIGHT] Embedding service unreachable: {report.embedding_service.error}. "
                 "Continuous learning will be skipped for this request."
             )
+        
+        # LLM provider is required for claim extraction and verification
+        if report.llm_provider.status == InfrastructureStatus.UNHEALTHY:
+            logger.error(f"[PREFLIGHT] LLM provider check failed: {report.llm_provider.error}")
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=f"Service temporarily unavailable: LLM provider unreachable. Please try again later.",
+            )
 
     # === MAIN PROCESSING ===
     # Now that infrastructure is validated, proceed with expensive operations.

@@ -3,7 +3,7 @@
 import { useCallback } from 'react';
 import { toast } from 'sonner';
 import { useFactCheck } from './useFactCheck';
-import { useHistory } from './useHistory';
+import { useHistory } from '@/features/history';
 import { useInputType } from './useInputType';
 import { HistoryItem } from '@/types/dashboard/factcheck';
 
