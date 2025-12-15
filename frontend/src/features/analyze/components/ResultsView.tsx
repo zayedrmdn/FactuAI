@@ -15,9 +15,11 @@ import {
   XCircle,
   HelpCircle,
 } from 'lucide-react';
+import { PipelineStepLoader } from './PipelineStepLoader';
+import { InvestigationTrace } from './InvestigationTrace';
 import { toast } from 'sonner';
 
-import { LoadingAnimation, ErrorState } from '@/components/ui/feedback-states';
+import { ErrorState } from '@/components/ui/feedback-states';
 // Score displays are embedded directly in the component
 import ClaimCard from './ClaimCard';
 import { FactCheckResult, QAResult } from '@/types/dashboard/factcheck';
@@ -91,9 +93,6 @@ export default function ResultsView({
   summary,
   updated,
   loading,
-  loadingPhase = '',
-  progress = 0,
-  currentClaim = 0,
   prefs,
   averageConfidence,
   aiScore,
@@ -105,7 +104,7 @@ export default function ResultsView({
   openSettings,
   error,
   className = '',
-}: Readonly<ResultsViewProps>) {
+}: Readonly<ResultsViewProps>): React.JSX.Element | null {
   // detect pure QA mode
   const isQAOnly = results.length > 0 && results.every((r) => isQAResult(r));
 
@@ -146,7 +145,7 @@ export default function ResultsView({
     sections.push('FACTUAI ANALYSIS REPORT');
     sections.push('=' + '='.repeat(50));
     sections.push(
-      `Generated: ${updated ? new Date(updated).toLocaleString() : new Date().toLocaleString()}`
+      `Generated: ${updated ? new Date(updated).toLocaleString() : new Date().toLocaleString()} `
     );
     sections.push('');
 
@@ -161,15 +160,15 @@ export default function ResultsView({
     // Overall Scores
     sections.push('OVERALL ASSESSMENT');
     sections.push('-'.repeat(50));
-    sections.push(`Trust Score: ${averageConfidence.toFixed(0)}%`);
+    sections.push(`Trust Score: ${averageConfidence.toFixed(0)}% `);
     if (aiScore !== null && aiScore !== undefined) {
       sections.push(
         `AI Detection: ${aiScore.toFixed(1)}% (${aiScore >= 60 ? 'Likely AI' : 'Likely Human'})`
       );
     }
-    sections.push(`Total Claims Analyzed: ${stats.total}`);
+    sections.push(`Total Claims Analyzed: ${stats.total} `);
     sections.push(
-      `Verified: ${stats.trueCount} | False: ${stats.falseCount} | Unclear: ${stats.mixedCount}`
+      `Verified: ${stats.trueCount} | False: ${stats.falseCount} | Unclear: ${stats.mixedCount} `
     );
     sections.push('');
 
@@ -180,20 +179,20 @@ export default function ResultsView({
 
     results.forEach((r, idx) => {
       if (isQAResult(r)) {
-        sections.push(`Q${idx + 1}: ${r.question}`);
-        sections.push(`Answer: ${r.answer}`);
-        sections.push(`Confidence: ${(r.confidence * 100).toFixed(1)}%`);
-        sections.push(`Sources: ${toSourceStrings(r.sources).join(', ')}`);
+        sections.push(`Q${idx + 1}: ${r.question} `);
+        sections.push(`Answer: ${r.answer} `);
+        sections.push(`Confidence: ${(r.confidence * 100).toFixed(1)}% `);
+        sections.push(`Sources: ${toSourceStrings(r.sources).join(', ')} `);
       } else {
-        sections.push(`Claim ${idx + 1}`);
+        sections.push(`Claim ${idx + 1} `);
         sections.push('-'.repeat(50));
-        sections.push(`Statement: ${r.claim}`);
-        sections.push(`Verdict: ${r.label?.toUpperCase() || 'UNKNOWN'}`);
-        sections.push(`Confidence: ${(r.confidence * 100).toFixed(0)}%`);
+        sections.push(`Statement: ${r.claim} `);
+        sections.push(`Verdict: ${r.label?.toUpperCase() || 'UNKNOWN'} `);
+        sections.push(`Confidence: ${(r.confidence * 100).toFixed(0)}% `);
         sections.push('');
 
         if (r.reasoning) {
-          sections.push(`Analysis:`);
+          sections.push(`Analysis: `);
           sections.push(r.reasoning);
           sections.push('');
         }
@@ -201,9 +200,9 @@ export default function ResultsView({
         if (r.source_quotes && r.source_quotes.length > 0) {
           sections.push('Evidence & Analysis');
           r.source_quotes.forEach((sq, i) => {
-            sections.push(`${i + 1}. "${sq.quote}"`);
-            sections.push(`   Source: ${sq.source}`);
-            if (sq.url) sections.push(`   URL: ${sq.url}`);
+            sections.push(`${i + 1}."${sq.quote}"`);
+            sections.push(`   Source: ${sq.source} `);
+            if (sq.url) sections.push(`   URL: ${sq.url} `);
           });
         }
 
@@ -212,7 +211,7 @@ export default function ResultsView({
           sections.push('');
           sections.push('All Sources');
           sourceUrls.forEach((url, i) => {
-            sections.push(`${i + 1}. ${url}`);
+            sections.push(`${i + 1}. ${url} `);
           });
         }
       }
@@ -241,7 +240,7 @@ export default function ResultsView({
       return;
     }
 
-    const text = `FactuAI Results:\n\n${summary}\n\nDetailed results: ${results.length} claims analyzed`;
+    const text = `FactuAI Results: \n\n${summary} \n\nDetailed results: ${results.length} claims analyzed`;
 
     try {
       await navigator.share({
@@ -255,15 +254,23 @@ export default function ResultsView({
     }
   };
 
-  // Show loading state
+  // Full Path: src/features/analyze/components/ResultsView.tsx
+
+  // ... (inside ResultsView component)
+
+  // Show loading state with smart loader
   if (loading) {
     return (
-      <Card className={cn('shadow-sm', className)}>
-        <CardContent className="p-4 md:p-8">
-          <LoadingAnimation phase={loadingPhase} progress={progress} currentClaim={currentClaim} />
+      <Card className={cn('shadow-sm min-h-[400px] flex items-center justify-center', className)}>
+        <CardContent className="p-4 md:p-8 w-full max-w-xl">
+          <PipelineStepLoader />
           {onCancel && (
-            <div className="mt-6 text-center">
-              <Button variant="link" onClick={onCancel} className="text-muted-foreground">
+            <div className="mt-8 text-center">
+              <Button
+                variant="ghost"
+                onClick={onCancel}
+                className="text-muted-foreground hover:text-destructive"
+              >
                 Cancel Analysis
               </Button>
             </div>
@@ -381,7 +388,7 @@ export default function ResultsView({
                 <div className="h-2 w-24 bg-slate-100 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-slate-400 rounded-full"
-                    style={{ width: `${averageConfidence || 0}%` }}
+                    style={{ width: `${averageConfidence || 0}% ` }}
                   />
                 </div>
               </div>
@@ -481,11 +488,20 @@ export default function ResultsView({
           <span className="text-sm text-slate-500">{results.length} Claims Analyzed</span>
         </div>
 
+        {/* Investigation Trace (New) */}
+        {(() => {
+          const first = results[0];
+          if (first && !isQAResult(first) && first.trace) {
+            return <InvestigationTrace trace={first.trace} />;
+          }
+          return null;
+        })()}
+
         <div className="flex flex-col space-y-6">
           {results.map((result, idx) =>
             isQAResult(result) ? (
               <QAResultCard
-                key={`qa-${result.question.slice(0, 50)}-${idx}`}
+                key={`qa - ${result.question.slice(0, 50)} -${idx} `}
                 result={result}
                 index={idx}
                 textSize={prefs.textSize}
@@ -493,7 +509,7 @@ export default function ResultsView({
               />
             ) : (
               <ClaimCard
-                key={`claim-${result.claim.slice(0, 50)}-${idx}`}
+                key={`claim - ${result.claim.slice(0, 50)} -${idx} `}
                 result={result}
                 index={idx}
                 textSize={prefs.textSize}

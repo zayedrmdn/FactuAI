@@ -220,7 +220,11 @@ The frontend follows similar principles to the backend, with feature-centric org
 
 ### Feature Modules
 
-Domain-specific logic is colocated in feature modules under `frontend/src/features/`:
+Domain-specific logic is colocated in feature modules under `frontend/src/features/`.
+
+#### Optimistic UI Patterns
+- **Analysis Pipeline**: The `PipelineStepLoader` component provides immediate visual feedback for the 4-phase process (Intent -> Strategy -> Search -> Verify) using optimistic state transitions, ensuring perceived performance while the backend executes complex chains.
+
 
 ```
 frontend/src/features/ai-providers/

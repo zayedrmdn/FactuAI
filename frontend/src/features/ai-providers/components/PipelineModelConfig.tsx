@@ -10,7 +10,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Settings, Zap, FileText, Brain, RotateCcw, ChevronDown, AlignLeft } from 'lucide-react';
+import { Settings, Brain, RotateCcw, ChevronDown, AlignLeft } from 'lucide-react';
 import {
   usePipelineModelsStore,
   getModelById,
@@ -29,8 +29,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge, Separator } from '@/components/ui/primitives';
 
+// Full Path: src/features/ai-providers/components/PipelineModelConfig.tsx
 const taskConfig: Record<
-  PipelineTask,
+  Extract<PipelineTask, 'reasoning' | 'summary'>,
   {
     label: string;
     description: string;
@@ -38,37 +39,31 @@ const taskConfig: Record<
     color: string;
   }
 > = {
-  intent: {
-    label: 'Intent & Query Detection',
-    description: 'Classify input type and generate search query',
-    icon: Zap,
-    color: 'text-yellow-500',
-  },
-  extraction: {
-    label: 'Claim Extraction',
-    description: 'Extract claims from complex text',
-    icon: FileText,
-    color: 'text-blue-500',
-  },
-  summary: {
-    label: 'Summarization',
-    description: 'Generate executive summary',
-    icon: AlignLeft,
-    color: 'text-green-500',
-  },
   reasoning: {
     label: 'Reasoning & Verification',
-    description: 'Complex fact-checking and verification',
+    description: 'Model used for deep analysis, pivot decisions, and final verdict',
     icon: Brain,
     color: 'text-purple-500',
   },
+  summary: {
+    label: 'Summarization',
+    description: 'Model used for generating the executive summary',
+    icon: AlignLeft,
+    color: 'text-green-500',
+  },
 };
 
-export function PipelineModelConfig({ compact = false, textSize = 'md' }: { compact?: boolean; textSize?: 'sm' | 'md' | 'lg' }) {
+export function PipelineModelConfig({
+  compact = false,
+  textSize = 'md',
+}: {
+  compact?: boolean;
+  textSize?: 'sm' | 'md' | 'lg';
+}) {
   const [isExpanded, setIsExpanded] = useState(!compact);
-  const { intent, extraction, reasoning, summary, setTaskModel, resetToDefaults } = usePipelineModelsStore();
+  const { reasoning, summary, setTaskModel, resetToDefaults } = usePipelineModelsStore();
 
-  const taskSelections = { intent, extraction, reasoning, summary };
+  const taskSelections = { reasoning, summary };
 
   const activeTask = usePipelineModelsStore((state) => state.activeTask);
 
@@ -84,7 +79,7 @@ export function PipelineModelConfig({ compact = false, textSize = 'md' }: { comp
     lg: 'h-9 text-sm',
   }[textSize];
 
-  const renderTaskConfig = (task: PipelineTask) => {
+  const renderTask = (task: 'reasoning' | 'summary') => {
     const config = taskConfig[task];
     const selection = taskSelections[task];
     const currentModel = getModelById(selection.modelId);
@@ -94,7 +89,7 @@ export function PipelineModelConfig({ compact = false, textSize = 'md' }: { comp
 
     if (compact) {
       return (
-        <div key={task} className="py-2 border-b last:border-0">
+        <div key={task} className="py-2 border-b last:border-0 bg-transparent">
           <div className="flex items-center gap-2 mb-2">
             <Icon className={`h-4 w-4 ${config.color}`} />
             <span className={`${labelClass} font-medium`}>{config.label}</span>
@@ -267,7 +262,7 @@ export function PipelineModelConfig({ compact = false, textSize = 'md' }: { comp
           </Button>
         </div>
         <div className="space-y-1 border rounded-md p-3 bg-card">
-          {(Object.keys(taskConfig) as PipelineTask[]).map(renderTaskConfig)}
+          {(['reasoning', 'summary'] as const).map(renderTask)}
         </div>
       </div>
     );
@@ -315,7 +310,7 @@ export function PipelineModelConfig({ compact = false, textSize = 'md' }: { comp
       </CardHeader>
       {isExpanded && (
         <CardContent className="space-y-4 pt-3">
-          {(Object.keys(taskConfig) as PipelineTask[]).map(renderTaskConfig)}
+          {(['reasoning', 'summary'] as const).map(renderTask)}
         </CardContent>
       )}
     </Card>

@@ -119,7 +119,7 @@ Embeddings (learning loop):
 
 Search providers:
 - `SEARCH_PROVIDER_PATHS` (CSV dotted paths)
-- `TAVILY_API_KEY`, `NEWSAPI_API_KEY`
+- `TAVILY_API_KEY`
 
 ## Operating Constraints (from CONSTITUTION.md)
 
@@ -145,6 +145,10 @@ When adding new behavior:
 After editing:
 - Run `pytest` in `backend/`.
 - Avoid introducing new warnings.
+
+## Legacy Code Warning
+
+**Do not re-introduce legacy search providers (Google, NewsAPI) without a full architectural review.** The v2.0 pipeline relies on Tavily's rich metadata and consolidated API; re-adding splintered providers will break the "Pivot Loop" and "Parallel Search" phases.
 
 ## Environment Variable Security Protocol
 

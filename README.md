@@ -15,6 +15,7 @@ FactuAI is a full-stack fact-checking system with a **native async FastAPI backe
 
 **Frontend highlights**
 - Feature-Based Colocation (`frontend/src/features/*`)
+- **Optimistic Pipeline UI** (Visualizes 4-Phase progress: Intent -> Strategy -> Search -> Verify)
 - Feature modules: `ai-providers/`, `search/`, `analyze/`, `history/`
 
 ## Tech Stack

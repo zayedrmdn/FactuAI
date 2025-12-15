@@ -10,10 +10,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { useSearchProvidersStore } from '../stores/providers';
-import { Globe, AlertCircle } from 'lucide-react';
-import { getProviderConfig } from '@/config/search-providers';
+import { Globe } from 'lucide-react';
 
+// Full Path: src/features/search/components/SearchProvidersConfig.tsx
 export function SearchProvidersConfig({
   compact = false,
   textSize = 'md',
@@ -21,8 +20,6 @@ export function SearchProvidersConfig({
   compact?: boolean;
   textSize?: 'sm' | 'md' | 'lg';
 }) {
-  const { providers, toggleProvider, canDisable } = useSearchProvidersStore();
-
   const labelClass = {
     sm: 'text-xs',
     md: 'text-sm',
@@ -38,106 +35,54 @@ export function SearchProvidersConfig({
   if (compact) {
     return (
       <div className="space-y-3">
-        {providers.map((provider) => {
-          const isDisabled = !canDisable(provider.id) && provider.enabled;
-          const config = getProviderConfig(provider.id);
-          const Icon = config?.icon || Globe;
-
-          return (
-            <div key={provider.id} className="flex items-center justify-between py-1">
-              <div className="flex items-center gap-3">
-                <Icon className="h-4 w-4 text-muted-foreground" />
-                <Label
-                  htmlFor={`provider-${provider.id}`}
-                  className={`${labelClass} font-medium cursor-pointer`}
-                >
-                  {provider.name}
-                </Label>
-              </div>
-              <div className="flex items-center gap-2">
-                {isDisabled && (
-                  <span
-                    className={`text-amber-500 font-medium uppercase tracking-wider ${descClass}`}
-                  >
-                    Required
-                  </span>
-                )}
-                <Switch
-                  id={`provider-${provider.id}`}
-                  checked={provider.enabled}
-                  onCheckedChange={() => toggleProvider(provider.id)}
-                  disabled={isDisabled}
-                  className="scale-90 origin-right"
-                />
-              </div>
-            </div>
-          );
-        })}
+        <div className="flex items-center justify-between py-1">
+          <div className="flex items-center gap-3">
+            <Globe className="h-4 w-4 text-primary" />
+            <Label className={`${labelClass} font-medium`}>Smart Web Search</Label>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className={`text-emerald-600 font-medium uppercase tracking-wider ${descClass}`}>
+              Active
+            </span>
+            <Switch checked disabled className="scale-90 origin-right" />
+          </div>
+        </div>
       </div>
     );
   }
-
-  const content = (
-    <div className="space-y-3 sm:space-y-4">
-      {providers.map((provider) => {
-        const isDisabled = !canDisable(provider.id) && provider.enabled;
-        const config = getProviderConfig(provider.id);
-        const Icon = config?.icon || Globe;
-
-        return (
-          <div
-            key={provider.id}
-            className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 rounded-lg border p-3 sm:p-4"
-          >
-            <div className="flex items-start gap-3">
-              <div className="mt-1 rounded-full bg-primary/10 p-2 text-primary">
-                <Icon className="h-4 w-4" />
-              </div>
-              <div className="space-y-1">
-                <Label
-                  htmlFor={`provider-${provider.id}`}
-                  className={`${labelClass} font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70`}
-                >
-                  {provider.name}
-                </Label>
-                <p className={`${descClass} text-muted-foreground`}>{provider.description}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {isDisabled && (
-                <div
-                  className={`flex items-center gap-1 ${descClass} text-amber-500`}
-                  title="At least one provider must be enabled"
-                >
-                  <AlertCircle className="h-3 w-3" />
-                  <span className="hidden sm:inline">Required</span>
-                </div>
-              )}
-              <Switch
-                id={`provider-${provider.id}`}
-                checked={provider.enabled}
-                onCheckedChange={() => toggleProvider(provider.id)}
-                disabled={isDisabled}
-              />
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
 
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center gap-2">
           <Globe className="h-5 w-5 shrink-0" />
-          <CardTitle className="text-base sm:text-lg">Search Providers</CardTitle>
+          <CardTitle className="text-base sm:text-lg">Search Configuration</CardTitle>
         </div>
         <CardDescription className="text-xs sm:text-sm">
-          Choose which sources to search for evidence. At least one must be enabled.
+          The system automatically manages search providers.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-3 sm:space-y-4">{content}</CardContent>
+      <CardContent>
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 rounded-lg border p-3 sm:p-4 bg-slate-50">
+          <div className="flex items-start gap-3">
+            <div className="mt-1 rounded-full bg-primary/10 p-2 text-primary">
+              <Globe className="h-4 w-4" />
+            </div>
+            <div className="space-y-1">
+              <Label className={`${labelClass} font-medium`}>Smart Web Search (Tavily)</Label>
+              <p className={`${descClass} text-muted-foreground`}>
+                Optimized search with strict domain filtering and AI summaries.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className={`flex items-center gap-1 ${descClass} text-emerald-600`}>
+              <span className="hidden sm:inline font-medium">Active</span>
+            </div>
+            <Switch checked disabled />
+          </div>
+        </div>
+      </CardContent>
     </Card>
   );
 }

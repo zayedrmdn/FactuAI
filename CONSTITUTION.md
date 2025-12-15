@@ -1,6 +1,6 @@
 ---
 title: FactuAI Constitution
-version: 5.0.0
+version: 5.1.0
 last_updated: 2025-12-15
 audience: AI Agents, Developers, Code Contributors
 status: Active Governance Document

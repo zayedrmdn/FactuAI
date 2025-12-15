@@ -4,6 +4,16 @@ export interface SourceQuote {
   url: string;
 }
 
+export interface InvestigationTrace {
+  queries: string[];
+  pivot: {
+    triggered: boolean;
+    query?: string;
+    reason?: string;
+  } | null;
+  steps: string[];
+}
+
 /**
  * Evidence item as returned by the backend API.
  * Maps to backend/app/features/analyze/schemas.py:EvidenceItem
@@ -26,6 +36,8 @@ export interface FactCheckApiResult {
   confidence: number;
   reasoning: string;
   evidence: EvidenceItem[];
+  // New backend fields (optional until backend fully deployed)
+  trace?: InvestigationTrace;
 }
 
 /**
@@ -41,6 +53,7 @@ export interface FactCheckResult {
   explanation?: string;
   reasoning?: string;
   source_quotes?: SourceQuote[];
+  trace?: InvestigationTrace;
 }
 
 /**
@@ -69,6 +82,7 @@ export function mapApiResultToFactCheckResult(apiResult: FactCheckApiResult): Fa
     sources,
     reasoning: apiResult.reasoning,
     source_quotes: sourceQuotes,
+    ...(apiResult.trace ? { trace: apiResult.trace } : {}),
   };
 }
 
