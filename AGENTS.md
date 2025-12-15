@@ -49,6 +49,7 @@ Feature slices:
 - `backend/app/features/analyze/`
 - `backend/app/features/intent/`
 - `backend/app/features/search/`
+- `backend/app/features/system/` (config API for frontend)
 - `backend/app/features/verification/`
 
 Shared contracts:

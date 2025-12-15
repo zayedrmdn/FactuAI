@@ -68,7 +68,17 @@ graph TD
 ## API Surface
 
 - `GET /health` (liveness)
+- `GET /api/system/config` (exposes backend config to frontend: default models, feature flags)
 - `POST /api/analyze` (multi-claim analysis)
+
+### Model Override
+
+The frontend can override the backend's default model by sending `model_id` in the analyze request:
+```json
+{ "text": "...", "model_id": "tngtech/deepseek-r1t2-chimera:free" }
+```
+
+If `model_id` is not provided, the backend uses `OPENROUTER_MODEL` from settings.
 
 Request/response schemas are defined in `backend/app/features/analyze/schemas.py`.
 
@@ -147,6 +157,7 @@ Backend code lives under `backend/app/` and is organized by feature:
 - `backend/app/features/analyze/`
 - `backend/app/features/intent/`
 - `backend/app/features/search/`
+- `backend/app/features/system/` (config API for frontend)
 - `backend/app/features/verification/`
 
 Each feature owns its router + orchestration logic + ports, and may have adapters/persistence.

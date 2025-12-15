@@ -9,8 +9,9 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Settings, Brain, RotateCcw, ChevronDown, AlignLeft } from 'lucide-react';
+import { useSystemConfig } from '@/hooks/useSystemConfig';
 import {
   usePipelineModelsStore,
   getModelById,
@@ -61,7 +62,19 @@ export function PipelineModelConfig({
   textSize?: 'sm' | 'md' | 'lg';
 }) {
   const [isExpanded, setIsExpanded] = useState(!compact);
-  const { reasoning, summary, setTaskModel, resetToDefaults } = usePipelineModelsStore();
+  const { reasoning, summary, setTaskModel, resetToDefaults, syncWithBackend } =
+    usePipelineModelsStore();
+  const { config: systemConfig } = useSystemConfig();
+
+  // Sync with backend defaults when config is available
+  useEffect(() => {
+    if (systemConfig?.models) {
+      syncWithBackend({
+        reasoning: systemConfig.models.default_reasoning,
+        intent: systemConfig.models.default_intent,
+      });
+    }
+  }, [systemConfig, syncWithBackend]);
 
   const taskSelections = { reasoning, summary };
 

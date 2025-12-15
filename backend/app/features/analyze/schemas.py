@@ -8,6 +8,7 @@ from pydantic import BaseModel, HttpUrl, UUID4, conint, constr
 class AnalyzeRequest(BaseModel):
     text: constr(min_length=5, max_length=5000)
     provider: Optional[Literal["openrouter"]] = None  # Uses settings.llm_provider
+    model_id: Optional[str] = None  # Frontend model selection (e.g., "tngtech/deepseek-r1t2-chimera:free")
     max_claims: conint(ge=1, le=8) = 3
     enable_web_search: bool = True
     enable_kb: bool = True

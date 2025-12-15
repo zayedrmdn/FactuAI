@@ -3,7 +3,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SunIcon, MoonIcon } from '@heroicons/react/24/outline';
 import { PipelineModelConfig } from '@/features/ai-providers';
-import { SearchProvidersConfig, SearchLimitsConfig } from '@/features/search';
+import { SearchProvidersConfig } from '@/features/search';
 import { Separator } from '@/components/ui/primitives';
 
 interface Prefs {
@@ -111,10 +111,7 @@ export default function SettingsDialog({
           {/* Search Configuration */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Search Configuration</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <SearchProvidersConfig compact textSize={prefs.textSize} />
-              <SearchLimitsConfig compact textSize={prefs.textSize} />
-            </div>
+            <SearchProvidersConfig compact textSize={prefs.textSize} />
           </div>
         </div>
       </DialogContent>

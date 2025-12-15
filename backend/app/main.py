@@ -12,6 +12,7 @@ from app.core.settings import get_settings
 from app.core.rate_limit import limiter, rate_limit_exceeded_handler
 from app.features.analyze.router import router as analyze_router
 from app.features.auth.router import router as auth_router
+from app.features.system.router import router as system_router
 
 app = FastAPI(title="FactuAI API", version="1.0.0", lifespan=lifespan)
 
@@ -31,6 +32,7 @@ app.add_middleware(
 
 app.include_router(analyze_router, prefix="/api")
 app.include_router(auth_router, prefix="/api")
+app.include_router(system_router, prefix="/api")
 
 
 @app.get("/health")

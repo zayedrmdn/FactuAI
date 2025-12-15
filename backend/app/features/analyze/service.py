@@ -61,7 +61,10 @@ class AnalyzeService:
         start = time.perf_counter()
 
         provider = request.provider or self._settings.llm_provider
-        model = select_model(provider, openrouter_model=self._settings.openrouter_model)
+        # Use frontend model selection if provided, otherwise fall back to settings
+        model = request.model_id or select_model(provider, openrouter_model=self._settings.openrouter_model)
+        
+        logger.info(f"[ANALYZE] Using model: {model} (frontend override: {request.model_id is not None})")
 
         intent = self._container.intent()
         search = self._container.search()
