@@ -1,6 +1,6 @@
 ---
 title: FactuAI Constitution
-version: 4.0.5
+version: 5.0.0
 last_updated: 2025-12-15
 audience: AI Agents, Developers, Code Contributors
 status: Active Governance Document
@@ -64,10 +64,25 @@ This file is the single source of truth for **engineering rules**.
   - used async-first (e.g., `ainvoke`) inside the FastAPI runtime
 - This does **not** override other rules (no sync wrappers for core I/O, no cross-feature imports).
 
+### 9) The Pivot Principle (Iterative Research)
+
+- The analysis pipeline must **not** be one-shot.
+- After initial search results are gathered, the system must evaluate if the evidence reveals a **new specific entity** (product, event, concept) that requires follow-up research.
+- This "Pivot Loop" executes **maximum once** per claim (no infinite loops).
+- Implementation: `AnalyzeService._execute_pivot_loop()` uses LLM to detect pivot opportunities.
+
+### 10) Strict Source Filtering (The Gatekeeper)
+
+- All external search results must be filtered against a **Social Media Blocklist** before ingestion.
+- Blocked domains include: Facebook, TikTok, Twitter/X, Reddit, Instagram, YouTube, Medium, Wikipedia.
+- Implementation: `TavilySearchProvider` uses `exclude_domains` with `SOCIAL_MEDIA_DOMAINS` constant.
+- **Rationale**: Social media is a vector for misinformation; we prioritize primary sources and fact-check sites.
+
 ## Continuous Learning (RAG Feedback Loop)
 
 - After **high-confidence** verifications, the backend attempts to store embeddings into pgvector columns.
 - Learning failures must fail safely and be logged.
+- **Data Hygiene**: The knowledge base must be purged when upgrading to new filtering rules to prevent "poisoned" data from corrupting RAG retrieval.
 
 ## Data & Migrations
 

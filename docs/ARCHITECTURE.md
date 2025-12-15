@@ -1,15 +1,69 @@
 # Architecture
 
-## High-Level Flow
+## High-Level Flow: The 4-Phase Analysis Pipeline
 
-A request typically follows this shape:
+FactuAI uses a sophisticated multi-stage pipeline for robust claim verification:
 
-1. **Analyze** feature receives the request (API boundary)
-2. **Intent** extracts structured claim items (what to check)
-3. **Search** gathers evidence from pluggable providers (OCP) **and** internal RAG store (pgvector similarity search) in parallel
-4. **Verification** grades claim(s) using LangChain (`langchain-openai`) over an OpenAI-compatible LLM endpoint (async + structured outputs)
-5. **Persistence** stores claim/evidence/verification results in Postgres
-6. **Continuous Learning** (RAG feedback loop) writes embeddings to pgvector for future retrieval
+```mermaid
+graph TD
+    A[User Input] --> B[Phase 0: Intent Extraction]
+    B --> C[Phase 1: STRATEGIST<br/>Multi-Angle Query Generation]
+    C --> D[Phase 2: PARALLEL SEARCH<br/>Tavily + RAG Memory]
+    D --> E[Phase 3: PIVOT LOOP<br/>Detect New Concepts]
+    E -->|Pivot Needed| F[Follow-up Search]
+    F --> G[Merge Evidence]
+    E -->|No Pivot| G
+    G --> H[Phase 4: VERIFICATION<br/>LLM Synthesis]
+    H --> I[Verdict + Confidence]
+    I --> J[Persistence + Learning]
+```
+
+### Phase 0: Intent Extraction (LLM-Based)
+- **Input**: Raw user text
+- **Process**: `LLMIntentAdapter` extracts structured, verifiable claims
+- **Output**: List of `IntentClaim` objects (claim_text, search_query, verification_question)
+- **Model**: Configurable via `INTENT_LLM_MODEL` (default: fast/cheap model)
+
+### Phase 1: STRATEGIST - Multi-Angle Query Generation
+- **Input**: Single claim
+- **Process**: LLM generates 3 strategic search queries:
+  1. **Factual Query**: Direct fact-checking (primary sources)
+  2. **Hoax Query**: Debunking-focused (fact-check sites, exposés)
+  3. **Scientific Query**: Academic/research angle (studies, expert analysis)
+- **Output**: List of 3 distinct queries
+- **Rationale**: Approaching from multiple angles maximizes evidence quality
+
+### Phase 2: PARALLEL SEARCH - Hybrid External + Internal
+- **External (Tavily)**: 
+  - Executes 3 queries in parallel via `asyncio.gather`
+  - **Strict Filtering**: `exclude_domains` blocks social media (Facebook, TikTok, Reddit, etc.)
+  - Returns: `ai_overview` (Tavily's AI summary) + `content` (full article text) + `text` (snippets)
+- **Internal (RAG Memory)**:
+  - Generates query embedding via Infinity service
+  - Searches `claims` and `evidence` tables using pgvector cosine distance
+  - **Threshold**: Only returns results with similarity > 0.80 (distance < 0.20)
+  - Results prefixed with `[INTERNAL MEMORY]` tag
+- **Merge**: Deduplicates by URL, keeps highest-scoring result per source
+- **Latency**: ~Same as single query (parallel execution)
+
+### Phase 3: PIVOT LOOP - Iterative Research
+- **Input**: Original claim + initial search results
+- **Process**: LLM analyzes evidence to detect if a **new specific entity** (product, event, concept) emerged that requires follow-up research
+- **Decision**: `PivotDecision` (needs_pivot: bool, pivot_query: str, reason: str)
+- **Execution**: If pivot needed, executes **one** additional search and merges results
+- **Safety**: Hard limit of 1 pivot (no infinite loops)
+- **Example**: Claim about "Air Wi-Fi" reveals "Tesla Pi Phone" hoax → pivot search for "Tesla Pi Phone"
+
+### Phase 4: VERIFICATION - LLM Synthesis
+- **Input**: Claim + merged evidence (from all sources)
+- **Process**: LangChain-based LLM call with structured output
+- **Evidence Format**: Prioritizes `ai_overview` and `content` over snippets
+- **Output**: Verdict (true/false/mostly_true/mostly_false/mixed/unverifiable) + confidence + reasoning
+- **Model**: Configurable via `OPENROUTER_MODEL`
+
+### Post-Processing: Persistence + Learning
+- **Persistence**: Stores verification, claims, sources, evidence in Postgres
+- **Continuous Learning**: If confidence ≥ 0.85, asynchronously generates embeddings and stores in pgvector for future RAG retrieval
 
 ## API Surface
 
@@ -123,6 +177,17 @@ This allows replacing implementations without changing feature orchestration cod
 ## Search Providers (Plugin Model)
 
 Search is composed from provider classes listed in `SEARCH_PROVIDER_PATHS`.
+
+**Current Configuration (Production-Grade)**:
+- **Tavily** (sole external provider)
+  - Strict domain filtering via `exclude_domains` (blocks 19 social media domains)
+  - Rich data: `ai_overview`, `content`, `text`
+  - Configuration: `auto_parameters=True`, `include_answer=True`, `include_raw_content=True`
+
+**Internal RAG Provider**:
+- Searches `claims` and `evidence` tables via pgvector
+- Similarity threshold: 0.80 (distance < 0.20)
+- Results tagged with `[INTERNAL MEMORY]`
 
 Add a provider by:
 1. Creating a new provider class in `backend/app/features/search/providers/`

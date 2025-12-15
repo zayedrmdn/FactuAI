@@ -3,11 +3,14 @@
 FactuAI is a full-stack fact-checking system with a **native async FastAPI backend** and a Next.js frontend.
 
 **Backend highlights**
+- **4-Phase Analysis Pipeline** (Strategist → Parallel Search → Pivot → Verification)
+- **Multi-Hop Reasoning** (Pivot Loop detects new concepts and executes follow-up research)
+- **Adversarial Query Generation** (3 multi-angle queries per claim: Factual, Hoax, Scientific)
 - Vertical Slice Architecture (`backend/app/features/*`)
 - Tiered Intelligence (LLM-based Intent Extraction)
-- Pluggable Search Providers (OCP-friendly)
+- **Strict Source Filtering** (Tavily Gatekeeper blocks social media)
 - Fail Fast Pre-flight Checks (validates LLM connectivity before processing)
-- PostgreSQL + **pgvector** for continuous learning (RAG feedback loop)
+- PostgreSQL + **pgvector** for continuous learning (RAG feedback loop with 0.80 similarity threshold)
 - Redis for caching
 
 **Frontend highlights**
