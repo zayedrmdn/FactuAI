@@ -340,22 +340,30 @@ export function useFactCheck() {
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || `Server responded ${res.status}`);
+        throw new Error(data.detail || data.error || `Server responded ${res.status}`);
       }
 
-      const reader = res.body?.getReader();
-      if (!reader) throw new Error('No response stream');
+      // Backend returns JSON AnalyzeResponse with claims array
+      setLoadingPhase('Processing results...');
+      setProgress(50);
 
-      const setters: ProgressSetters = {
-        setLoadingPhase,
-        setProgress,
-        setCurrentClaim,
-        setFactResults,
-        setSummary,
+      const response = await res.json() as {
+        request_id: string;
+        model_used: string;
+        latency_ms: number;
+        claims: FactCheckApiResult[];
       };
 
-      const allResults = await processStream(reader, controller, setters);
+      // Map backend claims to frontend format
+      const allResults: FactCheckResult[] = response.claims.map((claim) =>
+        mapApiResultToFactCheckResult(claim)
+      );
+
+      setProgress(90);
+      setFactResults(allResults);
       setUpdated(new Date().toISOString());
+      setProgress(100);
+      setLoadingPhase('Complete!');
 
       if (allResults.length > 0) {
         toast.success('Fact‑check complete');

@@ -54,6 +54,9 @@ Feature slices:
 Shared contracts:
 - `backend/app/contracts/` (cross-feature types only)
 
+Frontend feature modules:
+- `frontend/src/features/ai-providers/` (AI config, models, stores)
+
 Database:
 - `backend/migrations/*.sql` (authoritative schema)
 

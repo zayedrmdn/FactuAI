@@ -146,3 +146,41 @@ All external I/O is truly async:
 - Redis: redis.asyncio
 
 No sync wrappers or thread bridges for core logic.
+
+## Frontend Architecture
+
+The frontend follows similar principles to the backend, with feature-centric organization.
+
+### Feature Modules
+
+Domain-specific logic is colocated in feature modules under `frontend/src/features/`:
+
+```
+frontend/src/features/ai-providers/
+├── index.ts          # Barrel exports (single entry point)
+├── types.ts          # Type definitions
+├── constants.ts      # Shared constants
+├── registry.ts       # Model/provider registry
+└── stores/
+    ├── selection.ts  # AI model selection (Zustand)
+    └── pipeline.ts   # Pipeline task models (Zustand)
+```
+
+### Import Pattern
+
+```ts
+// All AI provider functionality from single entry point
+import { 
+  useAIStore, 
+  modelRegistry, 
+  getModelById 
+} from '@/features/ai-providers';
+```
+
+### Configuration
+
+- **Feature modules**: `frontend/src/features/*/` (domain-specific)
+- **Static config**: `frontend/src/config/` (simple static data)
+- **Shared hooks**: `frontend/src/lib/hooks/`
+- **Types**: Colocated in feature modules, or `frontend/src/types/` for cross-cutting
+

@@ -67,8 +67,10 @@ This file is the single source of truth for **engineering rules**.
 - Keep normal runs free of new warnings (avoid deprecations).
 - Never commit secrets.
 
-## Frontend (Lightweight Rules)
+## Frontend Architecture
 
-- Keep pages thin; move logic into `frontend/src/lib/` and hooks.
-- Prefer composition over prop drilling.
-- Keep config in `frontend/src/config/`.
+- **Pages are thin**: Move business logic into `frontend/src/lib/` and hooks.
+- **Feature Modules**: Domain-specific configuration and state lives in `frontend/src/features/*/` (e.g., `ai-providers/`).
+- **Simple Config**: Static configuration (search providers, etc.) lives in `frontend/src/config/`.
+- **Prefer composition** over prop drilling.
+- **Single entry points**: Feature modules export via barrel `index.ts`.
