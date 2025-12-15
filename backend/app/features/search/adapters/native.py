@@ -301,10 +301,10 @@ class NativeSearchService(SearchPort):
             similarity = 1.0 - distance  # Convert distance to similarity score
             snippets.append(
                 EvidenceSnippet(
-                    title=f"[RAG Claim] {row.claim_text[:80]}...",
-                    snippet=row.reasoning or row.claim_text,
+                    title=f"[INTERNAL MEMORY] {row.claim_text[:80]}...",
+                    text=row.reasoning or row.claim_text,
                     url=f"internal://claim/{hash(row.claim_text) & 0xFFFFFFFF}",
-                    source="Internal Knowledge Base",
+                    source_domain="internal_memory",
                     score=similarity,
                 )
             )
@@ -348,10 +348,10 @@ class NativeSearchService(SearchPort):
             similarity = 1.0 - distance
             snippets.append(
                 EvidenceSnippet(
-                    title=row.title or f"[RAG Evidence] {row.domain}",
-                    snippet=row.snippet,
+                    title=f"[INTERNAL MEMORY] {row.title or row.domain}",
+                    text=row.snippet,
                     url=row.url,
-                    source=row.domain or "Internal Knowledge Base",
+                    source_domain="internal_memory",
                     score=similarity,
                 )
             )

@@ -17,9 +17,13 @@ from app.core.settings import Settings
 from app.features.analyze._utils import extract_domain, map_verdict, normalize_url, select_model
 from app.features.analyze.prompts import (
     MultiAngleQueries,
+    PivotDecision,
     QUERY_GENERATION_SYSTEM,
     QUERY_GENERATION_HUMAN,
+    PIVOT_CHECK_SYSTEM,
+    PIVOT_CHECK_HUMAN,
     format_evidence_for_verification,
+    format_evidence_summary_for_pivot,
 )
 from app.features.analyze.schemas import AnalyzeRequest
 from app.features.verification.domain import ClaimAnalysis, Evidence
@@ -35,6 +39,7 @@ class AnalyzeService:
     Features:
     - Multi-angle query generation (Factual, Hoax, Scientific)
     - Parallel search execution via asyncio.gather
+    - Pivot Loop: iterative research when evidence reveals new concepts
     - URL deduplication for merged results
     - Rich context consumption (ai_overview, content)
     """
@@ -78,14 +83,14 @@ class AnalyzeService:
             if not claim_text:
                 continue
 
-            # === STRATEGIST: Multi-Angle Query Generation ===
+            # === PHASE 1: STRATEGIST - Multi-Angle Query Generation ===
             queries = await self._generate_multi_queries(
                 claim=claim_text,
                 model=model,
             )
             logger.info(f"[ANALYZE] Generated queries: {queries}")
 
-            # === STRATEGIST: Parallel Search Execution ===
+            # === PHASE 2: PARALLEL SEARCH ===
             evidence_snippets: list[EvidenceSnippet] = []
             if request.enable_web_search and queries:
                 evidence_snippets = await self._search_parallel(
@@ -94,6 +99,20 @@ class AnalyzeService:
                     max_results_per_query=5,
                 )
 
+            # === PHASE 3: PIVOT LOOP - React to New Information ===
+            if request.enable_web_search and evidence_snippets:
+                pivot_evidence = await self._execute_pivot_loop(
+                    claim=claim_text,
+                    original_queries=queries,
+                    evidence=evidence_snippets,
+                    search=search,
+                    model=model,
+                )
+                if pivot_evidence:
+                    # Merge and deduplicate pivot results
+                    evidence_snippets = self._merge_evidence(evidence_snippets, pivot_evidence)
+
+            # === PHASE 4: VERIFICATION ===
             verdict_data = await verifier.verify_claim(
                 claim=claim_text,
                 evidence=evidence_snippets,
@@ -218,6 +237,127 @@ class AnalyzeService:
         # Fallback to claim itself
         return [claim]
 
+    async def _execute_pivot_loop(
+        self,
+        *,
+        claim: str,
+        original_queries: List[str],
+        evidence: List[EvidenceSnippet],
+        search,
+        model: str,
+    ) -> List[EvidenceSnippet]:
+        """Execute the Pivot Loop - check if follow-up search is needed.
+        
+        Returns additional evidence from pivot search, or empty list if no pivot needed.
+        Only executes ONE pivot (no infinite loops).
+        """
+        api_key = (self._settings.llm_api_key or "").strip()
+        base_url = (self._settings.llm_api_base_url or "").strip()
+
+        if not api_key:
+            logger.debug("[PIVOT] Skipped: no LLM key")
+            return []
+
+        try:
+            # Check if pivot is needed
+            pivot_decision = await self._check_pivot_needed(
+                claim=claim,
+                queries=original_queries,
+                evidence=evidence,
+                model=model,
+                api_key=api_key,
+                base_url=base_url,
+            )
+
+            if not pivot_decision.needs_pivot or not pivot_decision.pivot_query:
+                logger.info(f"[PIVOT] Skipped: {pivot_decision.reason}")
+                return []
+
+            # Execute pivot search
+            pivot_query = pivot_decision.pivot_query.strip()
+            logger.info(f"[PIVOT] Triggered: \"{pivot_query}\" - {pivot_decision.reason}")
+
+            pivot_results = await search.hybrid_search(
+                query=pivot_query,
+                max_results=5,
+                providers=None,
+                verification_question=None,
+            )
+
+            logger.info(f"[PIVOT] Found {len(pivot_results)} additional results")
+            return pivot_results
+
+        except Exception as exc:
+            logger.warning(f"[PIVOT] Failed: {exc}")
+            return []
+
+    async def _check_pivot_needed(
+        self,
+        *,
+        claim: str,
+        queries: List[str],
+        evidence: List[EvidenceSnippet],
+        model: str,
+        api_key: str,
+        base_url: str,
+    ) -> PivotDecision:
+        """Ask LLM if pivot search is needed based on initial evidence."""
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", PIVOT_CHECK_SYSTEM),
+            ("human", PIVOT_CHECK_HUMAN),
+        ])
+
+        try:
+            llm = ChatOpenAI(
+                model=model,
+                temperature=0.1,  # Low temperature for consistent decisions
+                api_key=api_key,
+                base_url=base_url or None,
+            )
+        except TypeError:
+            llm = ChatOpenAI(
+                model=model,
+                temperature=0.1,
+                openai_api_key=api_key,
+                openai_api_base=base_url or None,
+            )
+
+        structured_llm = llm.with_structured_output(PivotDecision)
+        chain = prompt | structured_llm
+
+        evidence_summary = format_evidence_summary_for_pivot(evidence)
+        queries_str = ", ".join(f'"{q}"' for q in queries)
+
+        result: PivotDecision = await chain.ainvoke({
+            "claim": claim,
+            "queries": queries_str,
+            "evidence_summary": evidence_summary,
+        })
+
+        return result
+
+    def _merge_evidence(
+        self,
+        original: List[EvidenceSnippet],
+        pivot: List[EvidenceSnippet],
+    ) -> List[EvidenceSnippet]:
+        """Merge original and pivot evidence, deduplicating by URL."""
+        best_by_url: dict[str, EvidenceSnippet] = {}
+
+        for snippet in original + pivot:
+            url = (snippet.get("url") or "").strip()
+            if not url:
+                continue
+            existing = best_by_url.get(url)
+            if existing is None or float(snippet.get("score", 0.0)) > float(existing.get("score", 0.0)):
+                best_by_url[url] = snippet
+
+        return sorted(
+            best_by_url.values(),
+            key=lambda x: float(x.get("score", 0.0)),
+            reverse=True,
+        )
+
     async def _search_parallel(
         self,
         *,
@@ -277,4 +417,5 @@ class AnalyzeService:
         )
 
         return deduplicated
+
 

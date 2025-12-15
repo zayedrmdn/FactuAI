@@ -36,18 +36,18 @@ def test_rag_internal_search_hit():
         embedding_api_base_url="http://fake-embedding-service",
         embedding_api_key="fake-key",
         embedding_model="test-model",
-        rag_retrieval_threshold=0.25,  # Strict threshold
+        rag_retrieval_threshold=0.20,  # Strict threshold (0.80 similarity)
     )
     search = NativeSearchService(settings=settings, redis=None)
 
     # Mock embedding response
     mock_embedding = [0.1] * 384
 
-    # Mock DB row: distance is BELOW threshold (0.15 < 0.25) -> HIT
+    # Mock DB row: distance is BELOW threshold (0.15 < 0.20) -> HIT
     mock_row = MagicMock()
     mock_row.claim_text = "Mars is called the Red Planet"
     mock_row.reasoning = "Mars has iron oxide on its surface giving it a red appearance."
-    mock_row.distance = 0.15  # Close match
+    mock_row.distance = 0.15  # Close match (similarity = 0.85)
 
     async def run():
         with patch("httpx.AsyncClient") as mock_http, \
@@ -88,7 +88,8 @@ def test_rag_internal_search_hit():
             results = await search._search_internal(query="Red Planet", max_results=5)
 
             assert len(results) == 1
-            assert "Mars" in results[0]["title"] or "Mars" in results[0]["snippet"]
+            assert "[INTERNAL MEMORY]" in results[0]["title"]
+            assert "Mars" in results[0]["title"] or "Mars" in results[0]["text"]
             assert results[0]["score"] == 0.85  # 1.0 - 0.15 distance
 
     anyio.run(run)
@@ -106,7 +107,7 @@ def test_rag_internal_search_miss():
         embedding_api_base_url="http://fake-embedding-service",
         embedding_api_key="fake-key",
         embedding_model="test-model",
-        rag_retrieval_threshold=0.25,
+        rag_retrieval_threshold=0.20,  # Strict threshold (0.80 similarity)
     )
     search = NativeSearchService(settings=settings, redis=None)
 

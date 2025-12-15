@@ -3,6 +3,7 @@
 Strategist Pipeline Prompts.
 
 Multi-angle query generation and rich context verification for robust fact-checking.
+Includes Pivot Loop for iterative research when initial results reveal new concepts.
 """
 from __future__ import annotations
 
@@ -56,6 +57,61 @@ QUERY_GENERATION_HUMAN = """\
 Generate 3 multi-angle search queries for the following claim:
 
 Claim: {claim}
+"""
+
+
+# ============================================================================
+# PIVOT LOOP - "React to New Information"
+# ============================================================================
+
+class PivotDecision(BaseModel):
+    """Structured output for pivot loop decision."""
+
+    needs_pivot: bool = Field(
+        description="True if evidence reveals a specific entity/concept that requires additional research."
+    )
+    pivot_query: Optional[str] = Field(
+        default=None,
+        description="Search query for the newly discovered concept (if needs_pivot is True)."
+    )
+    reason: str = Field(
+        description="Brief explanation of why pivot is needed or not needed."
+    )
+
+
+PIVOT_CHECK_SYSTEM = """\
+You are an analytical researcher reviewing initial search results. Your task is to determine if \
+the evidence reveals a NEW specific entity, product, event, or concept that is CENTRAL to \
+understanding the claim but was NOT directly mentioned in the claim itself.
+
+WHEN TO PIVOT (needs_pivot = True):
+- Evidence points to a specific product/announcement that the rumor misrepresents.
+  Example: Claim about "Air Wi-Fi" reveals it's actually about the "Tesla Pi Phone" hoax.
+- Evidence mentions a specific event/date that is crucial but wasn't in original search.
+  Example: Claim about "vaccine danger" reveals a specific retracted study (Wakefield 1998).
+- A proper noun (person, company, product) emerges as the "root cause" of the rumor.
+
+WHEN NOT TO PIVOT (needs_pivot = False):
+- The evidence already directly addresses the claim.
+- The claim is simple factual question (dates, measurements, definitions).
+- No new specific entity is discovered - just general information.
+- The concept mentioned is already covered by the original search queries.
+
+Rules:
+- Be CONSERVATIVE. Only pivot for truly new, specific entities.
+- The pivot_query should be SHORT and SPECIFIC (3-6 words).
+- If unsure, set needs_pivot to False.
+"""
+
+PIVOT_CHECK_HUMAN = """\
+ORIGINAL CLAIM: {claim}
+
+ORIGINAL SEARCH QUERIES USED: {queries}
+
+EVIDENCE FOUND:
+{evidence_summary}
+
+Based on the evidence, is there a NEW specific entity/concept that requires additional research?
 """
 
 
@@ -153,3 +209,21 @@ def format_evidence_for_verification(
     formatted_evidence = "\n".join(evidence_lines) if evidence_lines else "No evidence available."
     
     return ai_overview, formatted_evidence
+
+
+def format_evidence_summary_for_pivot(
+    evidence_items: List[dict],
+    max_items: int = 5,
+) -> str:
+    """Format evidence as a brief summary for pivot decision.
+    
+    Uses titles and snippets only to keep token count low.
+    """
+    lines: List[str] = []
+    for i, item in enumerate(evidence_items[:max_items], 1):
+        title = (item.get("title") or "Untitled").strip()
+        text = (item.get("text") or "").strip()[:300]
+        lines.append(f"{i}. {title}\n   {text}")
+    
+    return "\n\n".join(lines) if lines else "No evidence found."
+
