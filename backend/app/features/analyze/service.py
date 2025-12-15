@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import asyncio
 import time
 import uuid
-from typing import Optional
+from typing import List, Optional
 
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_openai import ChatOpenAI
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,6 +15,12 @@ from app.core.container import Container
 from app.core.logging import get_logger
 from app.core.settings import Settings
 from app.features.analyze._utils import extract_domain, map_verdict, normalize_url, select_model
+from app.features.analyze.prompts import (
+    MultiAngleQueries,
+    QUERY_GENERATION_SYSTEM,
+    QUERY_GENERATION_HUMAN,
+    format_evidence_for_verification,
+)
 from app.features.analyze.schemas import AnalyzeRequest
 from app.features.verification.domain import ClaimAnalysis, Evidence
 from app.features.verification.learning import RagLearningService
@@ -21,6 +30,15 @@ logger = get_logger(__name__)
 
 
 class AnalyzeService:
+    """Strategist Pipeline for robust claim verification.
+    
+    Features:
+    - Multi-angle query generation (Factual, Hoax, Scientific)
+    - Parallel search execution via asyncio.gather
+    - URL deduplication for merged results
+    - Rich context consumption (ai_overview, content)
+    """
+
     def __init__(
         self,
         *,
@@ -60,16 +78,20 @@ class AnalyzeService:
             if not claim_text:
                 continue
 
-            search_query = (item.get("search_query") or claim_text).strip()
-            verification_question = item.get("verification_question")
+            # === STRATEGIST: Multi-Angle Query Generation ===
+            queries = await self._generate_multi_queries(
+                claim=claim_text,
+                model=model,
+            )
+            logger.info(f"[ANALYZE] Generated queries: {queries}")
 
+            # === STRATEGIST: Parallel Search Execution ===
             evidence_snippets: list[EvidenceSnippet] = []
-            if request.enable_web_search:
-                evidence_snippets = await search.hybrid_search(
-                    query=search_query,
-                    max_results=8,
-                    providers=None,
-                    verification_question=verification_question,
+            if request.enable_web_search and queries:
+                evidence_snippets = await self._search_parallel(
+                    queries=queries,
+                    search=search,
+                    max_results_per_query=5,
                 )
 
             verdict_data = await verifier.verify_claim(
@@ -134,3 +156,125 @@ class AnalyzeService:
             logger.info(f"[ANALYZE] Persisted verification_id={verification_id}")
 
         return request_id, model, latency_ms, claim_results
+
+    async def _generate_multi_queries(
+        self,
+        *,
+        claim: str,
+        model: str,
+    ) -> List[str]:
+        """Generate 3 strategic multi-angle search queries using LLM.
+        
+        Returns list of queries: [factual, hoax, scientific]
+        Falls back to claim as single query on failure.
+        """
+        api_key = (self._settings.llm_api_key or "").strip()
+        base_url = (self._settings.llm_api_base_url or "").strip()
+
+        if not api_key:
+            logger.warning("[ANALYZE] No LLM key; falling back to single query")
+            return [claim]
+
+        try:
+            prompt = ChatPromptTemplate.from_messages([
+                ("system", QUERY_GENERATION_SYSTEM),
+                ("human", QUERY_GENERATION_HUMAN),
+            ])
+
+            try:
+                llm = ChatOpenAI(
+                    model=model,
+                    temperature=0.3,
+                    api_key=api_key,
+                    base_url=base_url or None,
+                )
+            except TypeError:
+                llm = ChatOpenAI(
+                    model=model,
+                    temperature=0.3,
+                    openai_api_key=api_key,
+                    openai_api_base=base_url or None,
+                )
+
+            structured_llm = llm.with_structured_output(MultiAngleQueries)
+            chain = prompt | structured_llm
+
+            result: MultiAngleQueries = await chain.ainvoke({"claim": claim})
+
+            queries = [
+                result.factual_query.strip(),
+                result.hoax_query.strip(),
+                result.scientific_query.strip(),
+            ]
+            # Filter empty queries
+            queries = [q for q in queries if q]
+
+            if queries:
+                return queries
+
+        except Exception as exc:
+            logger.warning(f"[ANALYZE] Query generation failed: {exc}")
+
+        # Fallback to claim itself
+        return [claim]
+
+    async def _search_parallel(
+        self,
+        *,
+        queries: List[str],
+        search,
+        max_results_per_query: int = 5,
+    ) -> List[EvidenceSnippet]:
+        """Execute multiple searches in parallel and deduplicate results.
+        
+        Uses asyncio.gather for concurrent execution.
+        Deduplicates by URL, keeping highest-scoring result.
+        """
+        search_start = time.perf_counter()
+
+        # Execute all searches in parallel
+        search_tasks = [
+            search.hybrid_search(
+                query=q,
+                max_results=max_results_per_query,
+                providers=None,
+                verification_question=None,
+            )
+            for q in queries
+        ]
+
+        results = await asyncio.gather(*search_tasks, return_exceptions=True)
+
+        # Merge results
+        all_snippets: List[EvidenceSnippet] = []
+        for i, result in enumerate(results):
+            if isinstance(result, Exception):
+                logger.warning(f"[ANALYZE] Search query {i+1} failed: {result}")
+                continue
+            all_snippets.extend(result)
+
+        # Deduplicate by URL (keep highest score)
+        best_by_url: dict[str, EvidenceSnippet] = {}
+        for snippet in all_snippets:
+            url = (snippet.get("url") or "").strip()
+            if not url:
+                continue
+            existing = best_by_url.get(url)
+            if existing is None or float(snippet.get("score", 0.0)) > float(existing.get("score", 0.0)):
+                best_by_url[url] = snippet
+
+        # Sort by score descending
+        deduplicated = sorted(
+            best_by_url.values(),
+            key=lambda x: float(x.get("score", 0.0)),
+            reverse=True,
+        )
+
+        search_time_ms = int((time.perf_counter() - search_start) * 1000)
+        logger.info(
+            f"[ANALYZE] Parallel search completed in {search_time_ms}ms "
+            f"({len(queries)} queries, {len(all_snippets)} total, {len(deduplicated)} unique)"
+        )
+
+        return deduplicated
+
