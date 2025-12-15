@@ -65,3 +65,7 @@ export {
     type TaskModelSelection,
     type PipelineModelsState,
 } from './stores/pipeline';
+
+// Components
+export { PipelineModelConfig } from './components/PipelineModelConfig';
+export { ActiveModelDisplay, ModelSelector } from './components/ai-components';

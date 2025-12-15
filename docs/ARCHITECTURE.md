@@ -161,6 +161,9 @@ frontend/src/features/ai-providers/
 ├── types.ts          # Type definitions
 ├── constants.ts      # Shared constants
 ├── registry.ts       # Model/provider registry
+├── components/
+│   ├── PipelineModelConfig.tsx   # Pipeline task model configuration UI
+│   └── ai-components.tsx         # ActiveModelDisplay, ModelSelector
 └── stores/
     ├── selection.ts  # AI model selection (Zustand)
     └── pipeline.ts   # Pipeline task models (Zustand)

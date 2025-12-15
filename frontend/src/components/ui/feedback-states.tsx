@@ -1,7 +1,7 @@
 'use client';
 
 import { ArrowPathIcon, ExclamationTriangleIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { ActiveModelDisplay } from '@/components/ai/ai-components';
+import { ActiveModelDisplay } from '@/features/ai-providers';
 
 // ========================================================================================
 // PROCESSING STATUS COMPONENT (Simple inline status)
@@ -115,11 +115,10 @@ export function LoadingAnimation({
           {[0, 1, 2].map((i) => (
             <div
               key={i}
-              className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                progress > i * 33.33
+              className={`w-2 h-2 rounded-full transition-all duration-300 ${progress > i * 33.33
                   ? 'bg-purple-600 dark:bg-purple-400'
                   : 'bg-gray-300 dark:bg-gray-600'
-              }`}
+                }`}
               style={{
                 animationDelay: `${i * 200}ms`,
                 animation: progress > i * 33.33 ? 'pulse 2s infinite' : 'none',
