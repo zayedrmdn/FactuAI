@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { toast } from 'sonner';
 import { Settings, ChevronDown, Check, Sparkles, Zap, FileText, Brain, Cpu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -210,12 +210,10 @@ export function ModelSelector() {
                         <Badge
                           variant="outline"
                           className={cn(
-                            'text-2xs px-1.5 py-0.5',
-                            model.tier === 'free' && 'badge-tier-free',
-                            model.tier === 'low' && 'badge-tier-low',
-                            model.tier === 'medium' && 'badge-tier-medium',
-                            model.tier === 'high' && 'badge-tier-high',
-                            model.tier === 'premium' && 'badge-tier-premium'
+                            'text-2xs px-1.5 py-0.5 capitalize',
+                            model.tier === 'free'
+                              ? 'border-green-500/30 text-green-600 bg-green-500/5'
+                              : 'border-amber-500/30 text-amber-600 bg-amber-500/5'
                           )}
                         >
                           {model.tier}

@@ -99,24 +99,28 @@ class LLMIntentAdapter(ClaimParserPort):
             return []
 
         # Determine which LLM configuration to use
-        # Priority: Intent-specific config > Main LLM config
+        # Priority: Request model (frontend) > Intent-specific config > Main LLM config
         api_base = (self._settings.intent_llm_api_base_url or "").strip()
         api_key = (self._settings.intent_llm_api_key or "").strip()
-        intent_model = (self._settings.intent_llm_model or "").strip()
+        
+        # *** KEY CHANGE: Frontend model takes priority over settings ***
+        # If frontend sends a model, use it. Otherwise, fall back to intent-specific config.
+        request_model = (model or "").strip()
+        settings_model = (self._settings.intent_llm_model or "").strip()
+        intent_model = request_model or settings_model
 
         # Fall back to main LLM config if intent-specific not provided
         if not api_base:
             api_base = (self._settings.llm_api_base_url or "").strip()
         if not api_key:
             api_key = (self._settings.llm_api_key or "").strip()
-        if not intent_model:
-            intent_model = model  # Use the model passed in from request
 
         if not api_key:
             logger.warning("[INTENT-LLM] No API key configured; returning empty claims")
             return []
 
-        logger.info(f"[INTENT-LLM] Using model: {intent_model}")
+        model_source = "frontend" if request_model else "settings"
+        logger.info(f"[INTENT-LLM] Using model: {intent_model} (source: {model_source})")
 
         try:
             return await self._extract_claims(

@@ -1,9 +1,8 @@
-# Full path: backend/app/features/analyze/prompts.py
 """
-Strategist Pipeline Prompts.
+Strategist Pipeline Prompts - Refined Edition.
 
-Multi-angle query generation and rich context verification for robust fact-checking.
-Includes Pivot Loop for iterative research when initial results reveal new concepts.
+Token-optimized prompts for multi-angle query generation and fact verification.
+Maintains full backward compatibility with existing Pydantic models.
 """
 from __future__ import annotations
 
@@ -31,33 +30,23 @@ class MultiAngleQueries(BaseModel):
 
 
 QUERY_GENERATION_SYSTEM = """\
-You are a strategic search query planner for fact-checking. Given a claim, generate 3 distinct search queries that approach the claim from different verification angles.
+Generate 3 distinct search queries to verify claims from different angles. Each query must be 5-10 words and include the core subject.
 
-Your goal is to maximize the chance of finding high-quality evidence by searching from multiple perspectives:
+1. **Factual Query**: Direct search for primary sources (news, official data, statements).
+   Example: "Eiffel Tower official height meters"
 
-1. **Factual Query**: A direct, neutral search to find primary sources (news, official statements, data).
-   - Example: "Eiffel Tower height meters official"
+2. **Hoax Query**: Debunking search with terms: hoax, debunked, false, fact-check, snopes, politifact.
+   Example: "Eiffel Tower height hoax OR debunked"
 
-2. **Hoax Query**: A debunking-focused search to find fact-check articles or exposés.
-   - Include terms like: hoax, debunked, false, fact-check, snopes, politifact
-   - Example: "Eiffel Tower height claim debunked OR hoax OR fact-check"
+3. **Scientific Query**: Academic search with terms: study, research, journal, expert, analysis.
+   Example: "Eiffel Tower height scientific measurement"
 
-3. **Scientific Query**: An academic/research search to find studies or expert analysis.
-   - Include terms like: study, research, scientific, journal, expert, analysis
-   - Example: "Eiffel Tower height scientific measurement study"
-
-Rules:
-- Each query must be distinct and cover a different angle.
-- Queries should be concise (5-10 words).
-- Include the core subject from the claim in all queries.
-- Do NOT include the word "claim" in queries.
-"""
+Rules: Each query targets a different angle. Never include "claim" in queries."""
 
 QUERY_GENERATION_HUMAN = """\
-Generate 3 multi-angle search queries for the following claim:
+Generate 3 multi-angle search queries for this claim:
 
-Claim: {claim}
-"""
+{claim}"""
 
 
 # ============================================================================
@@ -80,101 +69,90 @@ class PivotDecision(BaseModel):
 
 
 PIVOT_CHECK_SYSTEM = """\
-You are an analytical researcher reviewing initial search results. Your task is to determine if \
-the evidence reveals a NEW specific entity, product, event, or concept that is CENTRAL to \
-understanding the claim but was NOT directly mentioned in the claim itself.
+Analyze search results to determine if a NEW specific entity (product, event, person, company) central to the claim requires additional research.
 
-WHEN TO PIVOT (needs_pivot = True):
-- Evidence points to a specific product/announcement that the rumor misrepresents.
-  Example: Claim about "Air Wi-Fi" reveals it's actually about the "Tesla Pi Phone" hoax.
-- Evidence mentions a specific event/date that is crucial but wasn't in original search.
-  Example: Claim about "vaccine danger" reveals a specific retracted study (Wakefield 1998).
-- A proper noun (person, company, product) emerges as the "root cause" of the rumor.
+**Pivot Required (needs_pivot=True):**
+- Evidence reveals specific entity misrepresented by rumor (e.g., "Tesla Pi Phone" hoax)
+- Crucial event/study emerges not in original search (e.g., Wakefield 1998 study)
+- Proper noun appears as "root cause" of rumor
 
-WHEN NOT TO PIVOT (needs_pivot = False):
-- The evidence already directly addresses the claim.
-- The claim is simple factual question (dates, measurements, definitions).
-- No new specific entity is discovered - just general information.
-- The concept mentioned is already covered by the original search queries.
+**No Pivot (needs_pivot=False):**
+- Evidence directly addresses claim
+- Simple factual question (dates, measurements)
+- No new specific entity discovered
+- Concept already covered by original queries
 
-Rules:
-- Be CONSERVATIVE. Only pivot for truly new, specific entities.
-- The pivot_query should be SHORT and SPECIFIC (3-6 words).
-- If unsure, set needs_pivot to False.
-"""
+Be CONSERVATIVE. Only pivot for truly new, specific entities. Pivot query: 3-6 words maximum."""
 
 PIVOT_CHECK_HUMAN = """\
-ORIGINAL CLAIM: {claim}
+CLAIM: {claim}
 
-ORIGINAL SEARCH QUERIES USED: {queries}
+QUERIES USED: {queries}
 
-EVIDENCE FOUND:
+EVIDENCE:
 {evidence_summary}
 
-Based on the evidence, is there a NEW specific entity/concept that requires additional research?
-"""
+Does evidence reveal a NEW specific entity requiring research?"""
 
 
 # ============================================================================
 # VERIFICATION - "Read Deeply"
 # ============================================================================
 
-# Full path: backend/app/features/analyze/prompts.py
-# ... (Keep Imports and Query Generation Classes) ...
-
 VERIFICATION_SYSTEM = """\
-You are a Fact-Checking Logic Engine. Your job is to verify claims by analyzing search results.
+Fact-check claims by analyzing search evidence. Apply logic rules for missing evidence.
 
-### CRITICAL LOGIC: HANDLING MISSING EVIDENCE
-You must distinguish between "Obscure Facts" and "Public Impossibilities."
-1. **The "Silence is Proof" Rule:** If a claim asserts a MAJOR scientific breakthrough, official government action (NASA, FBI), or celebrity event, and the search results contain *no reputable coverage* of it, the claim is **FALSE**.
-   - *Reasoning:* Major events generate major news. The absence of news is proof that the event did not happen.
-2. **The "Scientific Impossibility" Rule:** If a claim violates basic physics/biology (e.g., "Pigeons generate Wi-Fi", "Perpetual motion machine"), and there is no peer-reviewed proof, it is **FALSE**. Do not look for a debunking article; the lack of proof is sufficient.
+**CRITICAL: Missing Evidence Logic**
 
-### INSTRUCTIONS
-1. **Analyze the Claim's Magnitude:** Is this something that would be on CNN/BBC if true?
-2. **Scan the Evidence:** Look for direct confirmation.
-3. **Apply the Negative Filter:** If the claim is "Major" but the evidence is "Tangential" or "Silent," reject the claim.
+1. **"Silence is Proof"**: Major events (scientific breakthroughs, NASA/FBI actions, celebrity news) generate major coverage. If search finds NO reputable coverage, claim is FALSE.
 
-### VERDICT OPTIONS
-- **VERIFIED:** Strong supporting evidence found.
-- **FALSE:** Strong refuting evidence OR "Silence is Proof" (Claim is major, evidence is empty).
-- **UNCLEAR:** Topic is too obscure/personal to be verified. (Use sparingly).
+2. **"Scientific Impossibility"**: Claims violating basic physics/biology (e.g., "pigeons generate Wi-Fi") without peer-reviewed proof are FALSE. Lack of proof is sufficient.
 
-### OUTPUT FORMAT (JSON)
-Confidence must be 0.0 - 1.0.
-{format_instructions}
-"""
+**Process**
+1. Assess claim magnitude: Would this be on CNN/BBC if true?
+2. Scan evidence for direct confirmation
+3. Apply negative filter: Major claim + Silent/Tangential evidence = FALSE
+
+**Verdicts**
+- VERIFIED: Strong supporting evidence
+- FALSE: Strong refutation OR major claim with no evidence
+- UNCLEAR: Obscure/personal topic (use sparingly)
+
+Output JSON with confidence 0.0-1.0:
+{format_instructions}"""
 
 VERIFICATION_HUMAN = """\
 Claim: {claim}
 
-=== AI OVERVIEW (Synthesized Summary) ===
+=== AI OVERVIEW ===
 {ai_overview}
 
-=== EVIDENCE SOURCES ===
-{evidence}
-"""
+=== SOURCES ===
+{evidence}"""
 
+
+# ============================================================================
+# EVIDENCE FORMATTING (Token-Optimized)
+# ============================================================================
 
 def format_evidence_for_verification(
     evidence_items: List[dict],
     max_content_length: int = 2000,
 ) -> tuple[str, str]:
-    """Format evidence items for the verification prompt.
+    """Format evidence for verification prompt (token-optimized).
     
     Returns:
         tuple: (ai_overview, formatted_evidence)
     """
-    # Extract AI overview (take first non-empty one)
-    ai_overview = "No AI overview available."
+    # Extract AI overview
+    ai_overview = "None available."
     for item in evidence_items:
         overview = (item.get("ai_overview") or "").strip()
         if overview:
             ai_overview = overview
             break
     
-    # Format individual evidence items
+    # Format evidence items
     evidence_lines: List[str] = []
     for i, item in enumerate(evidence_items, 1):
         title = (item.get("title") or "Untitled").strip()
@@ -182,31 +160,28 @@ def format_evidence_for_verification(
         source = (item.get("source_domain") or "unknown").strip()
         score = float(item.get("score", 0.0))
         
-        # Prefer full content, fall back to text snippet
+        # Prefer full content, fall back to snippet
         content = (item.get("content") or "").strip()
         text = (item.get("text") or "").strip()
         
         if content and len(content) > 50:
-            # Truncate long content
             body = content[:max_content_length]
             if len(content) > max_content_length:
-                body += "... [truncated]"
-            content_type = "[Full Content]"
+                body += "...[truncated]"
+            tag = "[Full]"
         elif text:
             body = text
-            content_type = "[Snippet]"
+            tag = "[Snippet]"
         else:
-            body = "(No content available)"
-            content_type = "[Empty]"
+            body = "(Empty)"
+            tag = "[Empty]"
         
         evidence_lines.append(
-            f"--- Source {i} ({source}, score: {score:.2f}) {content_type} ---\n"
-            f"Title: {title}\n"
-            f"URL: {url}\n"
-            f"Content:\n{body}\n"
+            f"--- [{i}] {source} (score:{score:.2f}) {tag} ---\n"
+            f"{title}\n{url}\n{body}\n"
         )
     
-    formatted_evidence = "\n".join(evidence_lines) if evidence_lines else "No evidence available."
+    formatted_evidence = "\n".join(evidence_lines) if evidence_lines else "No evidence."
     
     return ai_overview, formatted_evidence
 
@@ -215,15 +190,14 @@ def format_evidence_summary_for_pivot(
     evidence_items: List[dict],
     max_items: int = 5,
 ) -> str:
-    """Format evidence as a brief summary for pivot decision.
+    """Brief evidence summary for pivot decisions (minimal tokens).
     
-    Uses titles and snippets only to keep token count low.
+    Uses titles and truncated snippets only.
     """
     lines: List[str] = []
     for i, item in enumerate(evidence_items[:max_items], 1):
         title = (item.get("title") or "Untitled").strip()
-        text = (item.get("text") or "").strip()[:300]
+        text = (item.get("text") or "").strip()[:250]
         lines.append(f"{i}. {title}\n   {text}")
     
-    return "\n\n".join(lines) if lines else "No evidence found."
-
+    return "\n\n".join(lines) if lines else "No evidence."

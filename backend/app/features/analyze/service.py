@@ -64,7 +64,14 @@ class AnalyzeService:
         # Use frontend model selection if provided, otherwise fall back to settings
         model = request.model_id or select_model(provider, openrouter_model=self._settings.openrouter_model)
         
-        logger.info(f"[ANALYZE] Using model: {model} (frontend override: {request.model_id is not None})")
+        # Extract per-stage models from pipeline_models with fallback to default
+        pm = request.pipeline_models
+        intent_model = (pm.intent.model_id if pm and pm.intent and pm.intent.model_id else None) or model
+        extraction_model = (pm.extraction.model_id if pm and pm.extraction and pm.extraction.model_id else None) or model
+        reasoning_model = (pm.reasoning.model_id if pm and pm.reasoning and pm.reasoning.model_id else None) or model
+        
+        logger.info(f"[ANALYZE] Default model: {model}")
+        logger.info(f"[ANALYZE] Pipeline models - Intent: {intent_model}, Extraction: {extraction_model}, Reasoning: {reasoning_model}")
 
         intent = self._container.intent()
         search = self._container.search()
@@ -74,7 +81,7 @@ class AnalyzeService:
             text=request.text,
             max_claims=request.max_claims,
             provider=provider,
-            model=model,
+            model=intent_model,
         )
         if not intent_items:
             raise ValueError("No claims extracted from input")
@@ -89,7 +96,7 @@ class AnalyzeService:
             # === PHASE 1: STRATEGIST - Multi-Angle Query Generation ===
             queries = await self._generate_multi_queries(
                 claim=claim_text,
-                model=model,
+                model=extraction_model,
             )
             logger.info(f"[ANALYZE] Generated queries: {queries}")
 
@@ -109,7 +116,7 @@ class AnalyzeService:
                     original_queries=queries,
                     evidence=evidence_snippets,
                     search=search,
-                    model=model,
+                    model=extraction_model,
                 )
                 if pivot_evidence:
                     # Merge and deduplicate pivot results
@@ -120,7 +127,7 @@ class AnalyzeService:
                 claim=claim_text,
                 evidence=evidence_snippets,
                 provider=provider,
-                model=model,
+                model=reasoning_model,
             )
 
             evidence: list[Evidence] = []

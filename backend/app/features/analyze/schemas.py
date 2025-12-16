@@ -5,6 +5,21 @@ from typing import List, Literal, Optional
 from pydantic import BaseModel, HttpUrl, UUID4, conint, constr
 
 
+class PipelineModelConfig(BaseModel):
+    """Configuration for a single pipeline stage model."""
+    provider: Optional[str] = None
+    model_id: Optional[str] = None
+    model_display_name: Optional[str] = None
+
+
+class PipelineModels(BaseModel):
+    """Per-stage model configuration for the analysis pipeline."""
+    intent: Optional[PipelineModelConfig] = None
+    extraction: Optional[PipelineModelConfig] = None
+    summary: Optional[PipelineModelConfig] = None
+    reasoning: Optional[PipelineModelConfig] = None
+
+
 class AnalyzeRequest(BaseModel):
     text: constr(min_length=5, max_length=5000)
     provider: Optional[Literal["openrouter"]] = None  # Uses settings.llm_provider
@@ -12,6 +27,7 @@ class AnalyzeRequest(BaseModel):
     max_claims: conint(ge=1, le=8) = 3
     enable_web_search: bool = True
     enable_kb: bool = True
+    pipeline_models: Optional[PipelineModels] = None  # Per-stage model configuration
 
 
 class EvidenceItem(BaseModel):
