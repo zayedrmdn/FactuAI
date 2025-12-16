@@ -10,7 +10,7 @@ import {
 } from '@/types/dashboard/factcheck';
 import { usePipelineModelsStore, getModelById } from '@/features/ai-providers';
 
-const API_URL = 'http://127.0.0.1:8000/api/analyze';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api/analyze';
 
 export function useFactCheck() {
   const [input, setInput] = useState('');
