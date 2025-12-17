@@ -134,13 +134,13 @@ class OpenAICompatibleClaimVerifier(ClaimVerifierPort):
         base_url: str,
     ) -> ClaimVerdict:
         """Internal method wrapped with circuit breaker for LLM calls."""
+        # Format evidence for LLM input (token-optimized: exclude URLs)
         ev_lines: list[str] = []
         for item in evidence:
-            title = (item.get("title") or "").strip()
-            url = (item.get("url") or "").strip()
+            title = (item.get("title") or "Untitled").strip()
             txt = (item.get("text") or "").strip()
-            head = " ".join([p for p in [title, url] if p])
-            ev_lines.append(f"- {head}\n  {txt}".strip())
+            # Only include title + text, not URL (saves ~20-30 tokens per item)
+            ev_lines.append(f"- {title}\n  {txt}".strip())
 
         evidence_text = "\n".join(ev_lines)
 

@@ -83,7 +83,7 @@ class TavilySearchProvider(SearchProvider):
             "search_depth": "basic",
             "max_results": min(int(max_results), 5),
             "include_answer": True,
-            "include_raw_content": True,
+            "include_raw_content": False,  # Disabled to prevent HTML artifacts
             "include_images": False,
             "include_image_descriptions": False,
             "include_favicon": False,
@@ -109,7 +109,7 @@ class TavilySearchProvider(SearchProvider):
                     source_domain="tavily",
                     score=float(r.get("score") or 0.0),
                     ai_overview=ai_overview,
-                    content=(r.get("raw_content") or "").strip() or None,
+                    # 'content' field removed - using only clean 'text' snippets
                 )
             )
 

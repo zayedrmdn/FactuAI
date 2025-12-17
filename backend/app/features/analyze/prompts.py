@@ -160,16 +160,10 @@ def format_evidence_for_verification(
         source = (item.get("source_domain") or "unknown").strip()
         score = float(item.get("score", 0.0))
         
-        # Prefer full content, fall back to snippet
-        content = (item.get("content") or "").strip()
+        # Use only clean text snippets (no raw HTML content)
         text = (item.get("text") or "").strip()
         
-        if content and len(content) > 50:
-            body = content[:max_content_length]
-            if len(content) > max_content_length:
-                body += "...[truncated]"
-            tag = "[Full]"
-        elif text:
+        if text:
             body = text
             tag = "[Snippet]"
         else:

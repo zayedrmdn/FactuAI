@@ -86,72 +86,46 @@ class AnalyzeService:
         if not intent_items:
             raise ValueError("No claims extracted from input")
 
-        claim_results: list[ClaimAnalysis] = []
+        # Filter valid claim texts
+        valid_claims = [
+            (item.get("claim_text") or "").strip()
+            for item in intent_items
+            if (item.get("claim_text") or "").strip()
+        ]
 
-        for item in intent_items:
-            claim_text = (item.get("claim_text") or "").strip()
-            if not claim_text:
-                continue
+        if not valid_claims:
+            raise ValueError("No valid claims extracted from input")
 
-            # === PHASE 1: STRATEGIST - Multi-Angle Query Generation ===
-            queries = await self._generate_multi_queries(
-                claim=claim_text,
-                model=extraction_model,
-            )
-            logger.info(f"[ANALYZE] Generated queries: {queries}")
-
-            # === PHASE 2: PARALLEL SEARCH ===
-            evidence_snippets: list[EvidenceSnippet] = []
-            if request.enable_web_search and queries:
-                evidence_snippets = await self._search_parallel(
-                    queries=queries,
-                    search=search,
-                    max_results_per_query=5,
-                )
-
-            # === PHASE 3: PIVOT LOOP - React to New Information ===
-            if request.enable_web_search and evidence_snippets:
-                pivot_evidence = await self._execute_pivot_loop(
-                    claim=claim_text,
-                    original_queries=queries,
-                    evidence=evidence_snippets,
-                    search=search,
-                    model=extraction_model,
-                )
-                if pivot_evidence:
-                    # Merge and deduplicate pivot results
-                    evidence_snippets = self._merge_evidence(evidence_snippets, pivot_evidence)
-
-            # === PHASE 4: VERIFICATION ===
-            verdict_data = await verifier.verify_claim(
-                claim=claim_text,
-                evidence=evidence_snippets,
+        # === PARALLEL CLAIM PROCESSING ===
+        # Process all claims concurrently for maximum performance
+        parallel_start = time.perf_counter()
+        
+        tasks = [
+            self._process_single_claim(
+                claim_text=claim_text,
+                extraction_model=extraction_model,
+                reasoning_model=reasoning_model,
                 provider=provider,
-                model=reasoning_model,
+                enable_web_search=request.enable_web_search,
+                search=search,
+                verifier=verifier,
             )
+            for claim_text in valid_claims
+        ]
 
-            evidence: list[Evidence] = []
-            for ev in verdict_data.get("evidence", []):
-                url = normalize_url(ev.get("url", ""), "https://example.com/evidence")
-                evidence.append(
-                    Evidence(
-                        snippet=ev.get("text", ""),
-                        source_url=url,
-                        source_title=ev.get("title"),
-                        source_domain=ev.get("source_domain") or ev.get("source") or extract_domain(url),
-                        relevance_score=float(ev.get("score", 0.0)),
-                    )
-                )
+        # Execute with error isolation - one failing claim won't crash others
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        parallel_ms = int((time.perf_counter() - parallel_start) * 1000)
+        logger.info(f"[PERFORMANCE] Parallel execution finished in {parallel_ms}ms ({len(valid_claims)} claims)")
 
-            claim_results.append(
-                ClaimAnalysis(
-                    claim_text=claim_text,
-                    verdict=map_verdict(verdict_data.get("verdict")),
-                    confidence=float(verdict_data.get("confidence", 0.0)),
-                    reasoning=verdict_data.get("reasoning", ""),
-                    evidence=evidence,
-                )
-            )
+        # Aggregate results, handling failures gracefully
+        claim_results: list[ClaimAnalysis] = []
+        for i, result in enumerate(results):
+            if isinstance(result, Exception):
+                logger.warning(f"[ANALYZE] Claim {i+1} failed: {result}")
+                continue
+            claim_results.append(result)
 
         request_id = uuid.uuid4()
         latency_ms = int((time.perf_counter() - start) * 1000)
@@ -185,6 +159,81 @@ class AnalyzeService:
             logger.info(f"[ANALYZE] Persisted verification_id={verification_id}")
 
         return request_id, model, latency_ms, claim_results
+
+    async def _process_single_claim(
+        self,
+        *,
+        claim_text: str,
+        extraction_model: str,
+        reasoning_model: str,
+        provider: str,
+        enable_web_search: bool,
+        search,
+        verifier,
+    ) -> ClaimAnalysis:
+        """Process a single claim through all verification phases.
+        
+        This method is designed to be called in parallel via asyncio.gather.
+        Each claim is processed independently with its own query generation,
+        search, pivot, and verification phases.
+        """
+        # === PHASE 1: STRATEGIST - Multi-Angle Query Generation ===
+        queries = await self._generate_multi_queries(
+            claim=claim_text,
+            model=extraction_model,
+        )
+        logger.info(f"[ANALYZE] Generated queries for '{claim_text[:50]}...': {queries}")
+
+        # === PHASE 2: PARALLEL SEARCH ===
+        evidence_snippets: list[EvidenceSnippet] = []
+        if enable_web_search and queries:
+            evidence_snippets = await self._search_parallel(
+                queries=queries,
+                search=search,
+                max_results_per_query=5,
+            )
+
+        # === PHASE 3: PIVOT LOOP - React to New Information ===
+        if enable_web_search and evidence_snippets:
+            pivot_evidence = await self._execute_pivot_loop(
+                claim=claim_text,
+                original_queries=queries,
+                evidence=evidence_snippets,
+                search=search,
+                model=extraction_model,
+            )
+            if pivot_evidence:
+                # Merge and deduplicate pivot results
+                evidence_snippets = self._merge_evidence(evidence_snippets, pivot_evidence)
+
+        # === PHASE 4: VERIFICATION ===
+        verdict_data = await verifier.verify_claim(
+            claim=claim_text,
+            evidence=evidence_snippets,
+            provider=provider,
+            model=reasoning_model,
+        )
+
+        evidence: list[Evidence] = []
+        for ev in verdict_data.get("evidence", []):
+            url = normalize_url(ev.get("url", ""), "https://example.com/evidence")
+            evidence.append(
+                Evidence(
+                    snippet=ev.get("text", ""),
+                    source_url=url,
+                    source_title=ev.get("title"),
+                    source_domain=ev.get("source_domain") or ev.get("source") or extract_domain(url),
+                    relevance_score=float(ev.get("score", 0.0)),
+                )
+            )
+
+        return ClaimAnalysis(
+            claim_text=claim_text,
+            verdict=map_verdict(verdict_data.get("verdict")),
+            confidence=float(verdict_data.get("confidence", 0.0)),
+            reasoning=verdict_data.get("reasoning", ""),
+            evidence=evidence,
+        )
 
     async def _generate_multi_queries(
         self,
