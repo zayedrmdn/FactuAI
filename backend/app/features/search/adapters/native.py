@@ -299,10 +299,12 @@ class NativeSearchService(SearchPort):
         for row in rows:
             distance = float(row.distance)
             similarity = 1.0 - distance  # Convert distance to similarity score
+            # Truncate reasoning to 500 chars to prevent token bloat
+            reasoning_text = (row.reasoning or row.claim_text or "")[:500]
             snippets.append(
                 EvidenceSnippet(
                     title=f"[INTERNAL MEMORY] {row.claim_text[:80]}...",
-                    text=row.reasoning or row.claim_text,
+                    text=reasoning_text,
                     url=f"internal://claim/{hash(row.claim_text) & 0xFFFFFFFF}",
                     source_domain="internal_memory",
                     score=similarity,

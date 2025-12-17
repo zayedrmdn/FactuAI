@@ -77,12 +77,17 @@ class AnalyzeService:
         search = self._container.search()
         verifier = self._container.verifier()
 
-        intent_items = await intent.parse_and_route(
+        intent_result = await intent.parse_and_route(
             text=request.text,
             max_claims=request.max_claims,
             provider=provider,
             model=intent_model,
         )
+        
+        # Extract claims and global context
+        intent_items = intent_result.get("claims", [])
+        global_context = intent_result.get("global_context", "")
+        
         if not intent_items:
             raise ValueError("No claims extracted from input")
 
@@ -103,6 +108,7 @@ class AnalyzeService:
         tasks = [
             self._process_single_claim(
                 claim_text=claim_text,
+                global_context=global_context,  # Pass shared context
                 extraction_model=extraction_model,
                 reasoning_model=reasoning_model,
                 provider=provider,
@@ -164,6 +170,7 @@ class AnalyzeService:
         self,
         *,
         claim_text: str,
+        global_context: str,
         extraction_model: str,
         reasoning_model: str,
         provider: str,
@@ -176,10 +183,15 @@ class AnalyzeService:
         This method is designed to be called in parallel via asyncio.gather.
         Each claim is processed independently with its own query generation,
         search, pivot, and verification phases.
+        
+        Args:
+            claim_text: The claim to verify.
+            global_context: Shared context (entities, locations) from all claims.
         """
         # === PHASE 1: STRATEGIST - Multi-Angle Query Generation ===
         queries = await self._generate_multi_queries(
             claim=claim_text,
+            context=global_context,  # Pass context for better queries
             model=extraction_model,
         )
         logger.info(f"[ANALYZE] Generated queries for '{claim_text[:50]}...': {queries}")
@@ -239,9 +251,15 @@ class AnalyzeService:
         self,
         *,
         claim: str,
+        context: str,
         model: str,
     ) -> List[str]:
         """Generate 3 strategic multi-angle search queries using LLM.
+        
+        Args:
+            claim: The claim to generate queries for.
+            context: Global context (entities, locations) shared across claims.
+            model: LLM model to use for generation.
         
         Returns list of queries: [factual, hoax, scientific]
         Falls back to claim as single query on failure.
@@ -277,7 +295,10 @@ class AnalyzeService:
             structured_llm = llm.with_structured_output(MultiAngleQueries)
             chain = prompt | structured_llm
 
-            result: MultiAngleQueries = await chain.ainvoke({"claim": claim})
+            result: MultiAngleQueries = await chain.ainvoke({
+                "claim": claim,
+                "context": context,
+            })
 
             queries = [
                 result.factual_query.strip(),

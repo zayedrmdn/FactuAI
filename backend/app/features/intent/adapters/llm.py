@@ -19,7 +19,7 @@ from pydantic import BaseModel, Field
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 
-from app.contracts.types import IntentClaim
+from app.contracts.types import IntentClaim, IntentResult
 from app.core.logging import get_logger
 from app.core.settings import Settings
 from app.features.intent.ports import ClaimParserPort
@@ -45,6 +45,10 @@ class _ClaimOutput(BaseModel):
 class _ClaimListOutput(BaseModel):
     """Structured output for the full list of extracted claims."""
 
+    global_context: str = Field(
+        default="",
+        description="Key entities, locations, events, and background shared across all claims. Used to ground search queries.",
+    )
     claims: List[_ClaimOutput] = Field(
         default_factory=list,
         description="List of distinct, verifiable factual claims extracted from the text.",
@@ -63,6 +67,9 @@ Rules:
 5. Generate a verification question that can be answered with yes/no.
 6. Do NOT extract duplicate or overlapping claims.
 7. If no verifiable claims exist, return an empty list.
+8. **IMPORTANT**: Extract a global_context summarizing key entities (people, organizations), \
+locations, events, and background information shared across all claims. This context helps \
+ground search queries. Example: "South Kalimantan, Governor Muhidin, helicopter crash site"
 
 Examples of GOOD claims:
 - "The Eiffel Tower is 330 meters tall."
@@ -93,10 +100,10 @@ class LLMIntentAdapter(ClaimParserPort):
         max_claims: int,
         provider: str,
         model: str,
-    ) -> List[IntentClaim]:
+    ) -> IntentResult:
         text_clean = (text or "").strip()
         if not text_clean:
-            return []
+            return IntentResult(global_context="", claims=[])
 
         # Determine which LLM configuration to use
         # Priority: Request model (frontend) > Intent-specific config > Main LLM config
@@ -117,7 +124,7 @@ class LLMIntentAdapter(ClaimParserPort):
 
         if not api_key:
             logger.warning("[INTENT-LLM] No API key configured; returning empty claims")
-            return []
+            return IntentResult(global_context="", claims=[])
 
         model_source = "frontend" if request_model else "settings"
         logger.info(f"[INTENT-LLM] Using model: {intent_model} (source: {model_source})")
@@ -132,8 +139,8 @@ class LLMIntentAdapter(ClaimParserPort):
             )
         except Exception as exc:
             logger.error(f"[INTENT-LLM] Extraction failed: {exc}")
-            # Graceful degradation: return empty list on failure
-            return []
+            # Graceful degradation: return empty result on failure
+            return IntentResult(global_context="", claims=[])
 
     async def _extract_claims(
         self,
@@ -143,7 +150,7 @@ class LLMIntentAdapter(ClaimParserPort):
         model: str,
         api_key: str,
         api_base: str,
-    ) -> List[IntentClaim]:
+    ) -> IntentResult:
         """Extract claims using LLM with structured output."""
         prompt = ChatPromptTemplate.from_messages(
             [
@@ -193,5 +200,6 @@ class LLMIntentAdapter(ClaimParserPort):
                 )
             )
 
-        logger.info(f"[INTENT-LLM] Extracted {len(items)} claim(s)")
-        return items
+        global_context = (result.global_context or "").strip()
+        logger.info(f"[INTENT-LLM] Extracted {len(items)} claim(s), context: '{global_context[:80]}...'" if global_context else f"[INTENT-LLM] Extracted {len(items)} claim(s)")
+        return IntentResult(global_context=global_context, claims=items)

@@ -46,7 +46,9 @@ Rules: Each query targets a different angle. Never include "claim" in queries.""
 QUERY_GENERATION_HUMAN = """\
 Generate 3 multi-angle search queries for this claim:
 
-{claim}"""
+CLAIM: {claim}
+
+CONTEXT (use to make queries more specific - include relevant entities/locations): {context}"""
 
 
 # ============================================================================

@@ -10,6 +10,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from app.contracts.types import IntentResult
 from app.features.intent.adapters.llm import LLMIntentAdapter, _ClaimListOutput, _ClaimOutput
 
 
@@ -71,26 +72,30 @@ def test_llm_intent_adapter_extracts_claims(mock_settings):
 
     async def run():
         with patch.object(adapter, "_extract_claims", new_callable=AsyncMock) as mock_extract:
-            mock_extract.return_value = [
-                {
-                    "claim_text": "The Eiffel Tower is 330 meters tall.",
-                    "search_query": "Eiffel Tower height meters",
-                    "verification_question": "Is the Eiffel Tower 330 meters tall?",
-                },
-                {
-                    "claim_text": "Apple was founded in 1976.",
-                    "search_query": "Apple company founded year",
-                    "verification_question": "Was Apple founded in 1976?",
-                },
-            ]
+            mock_extract.return_value = IntentResult(
+                global_context="Eiffel Tower, Apple, company history",
+                claims=[
+                    {
+                        "claim_text": "The Eiffel Tower is 330 meters tall.",
+                        "search_query": "Eiffel Tower height meters",
+                        "verification_question": "Is the Eiffel Tower 330 meters tall?",
+                    },
+                    {
+                        "claim_text": "Apple was founded in 1976.",
+                        "search_query": "Apple company founded year",
+                        "verification_question": "Was Apple founded in 1976?",
+                    },
+                ]
+            )
 
-            items = await adapter.parse_and_route(
+            result = await adapter.parse_and_route(
                 text="The Eiffel Tower is 330 meters tall. Apple was founded in 1976.",
                 max_claims=5,
                 provider="openrouter",
                 model="test-model",
             )
 
+            items = result.get("claims", [])
             assert len(items) == 2
             assert items[0]["claim_text"] == "The Eiffel Tower is 330 meters tall."
             assert items[0]["search_query"] == "Eiffel Tower height meters"
@@ -104,21 +109,21 @@ def test_llm_intent_adapter_handles_empty_input(mock_settings):
     adapter = LLMIntentAdapter(settings=mock_settings)
 
     async def run():
-        items = await adapter.parse_and_route(
+        result = await adapter.parse_and_route(
             text="",
             max_claims=5,
             provider="openrouter",
             model="test-model",
         )
-        assert items == []
+        assert result.get("claims") == []
 
-        items = await adapter.parse_and_route(
+        result = await adapter.parse_and_route(
             text="   ",
             max_claims=5,
             provider="openrouter",
             model="test-model",
         )
-        assert items == []
+        assert result.get("claims") == []
 
     anyio.run(run)
 
@@ -128,13 +133,13 @@ def test_llm_intent_adapter_handles_no_api_key(mock_settings_no_key):
     adapter = LLMIntentAdapter(settings=mock_settings_no_key)
 
     async def run():
-        items = await adapter.parse_and_route(
+        result = await adapter.parse_and_route(
             text="The sky is blue.",
             max_claims=5,
             provider="openrouter",
             model="test-model",
         )
-        assert items == []
+        assert result.get("claims") == []
 
     anyio.run(run)
 
@@ -145,7 +150,7 @@ def test_llm_intent_adapter_falls_back_to_main_config(mock_settings_no_intent_co
 
     async def run():
         with patch.object(adapter, "_extract_claims", new_callable=AsyncMock) as mock_extract:
-            mock_extract.return_value = []
+            mock_extract.return_value = IntentResult(global_context="", claims=[])
 
             await adapter.parse_and_route(
                 text="Test claim.",
@@ -170,13 +175,15 @@ def test_llm_intent_adapter_respects_max_claims(mock_settings):
 
     async def run():
         with patch.object(adapter, "_extract_claims", new_callable=AsyncMock) as mock_extract:
-            # Mock returns exactly 3 claims (as would be limited by max_claims in _extract_claims)
-            mock_extract.return_value = [
-                {"claim_text": f"Claim {i}", "search_query": f"query {i}", "verification_question": None}
-                for i in range(3)
-            ]
+            mock_extract.return_value = IntentResult(
+                global_context="test",
+                claims=[
+                    {"claim_text": f"Claim {i}", "search_query": f"query {i}", "verification_question": None}
+                    for i in range(3)
+                ]
+            )
 
-            items = await adapter.parse_and_route(
+            result = await adapter.parse_and_route(
                 text="Many claims here.",
                 max_claims=3,
                 provider="openrouter",
@@ -188,6 +195,7 @@ def test_llm_intent_adapter_respects_max_claims(mock_settings):
             assert call_kwargs["max_claims"] == 3
 
             # And the result should have at most 3 items
+            items = result.get("claims", [])
             assert len(items) == 3
 
     anyio.run(run)
@@ -201,14 +209,14 @@ def test_llm_intent_adapter_handles_llm_error(mock_settings):
         with patch.object(adapter, "_extract_claims", new_callable=AsyncMock) as mock_extract:
             mock_extract.side_effect = Exception("LLM API error")
 
-            items = await adapter.parse_and_route(
+            result = await adapter.parse_and_route(
                 text="Some text to analyze.",
                 max_claims=5,
                 provider="openrouter",
                 model="test-model",
             )
 
-            # Should return empty list on error, not raise
-            assert items == []
+            # Should return empty result on error, not raise
+            assert result.get("claims") == []
 
     anyio.run(run)

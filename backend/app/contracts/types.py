@@ -24,3 +24,9 @@ class IntentClaim(TypedDict):
     claim_text: str
     search_query: str
     verification_question: Optional[str]
+
+
+class IntentResult(TypedDict):
+    """Result from intent extraction including claims and shared context."""
+    global_context: str
+    claims: List[IntentClaim]
