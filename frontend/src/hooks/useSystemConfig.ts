@@ -8,7 +8,9 @@
 
 import { useState, useEffect } from 'react';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+// API Base URL - normalize to remove trailing slash and /api/analyze suffix if present
+const rawApiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_BASE = rawApiBase.replace(/\/$/, '').replace(/\/api\/analyze$/, '');
 
 interface ModelsConfig {
   default_reasoning: string;

@@ -10,7 +10,11 @@ import {
 } from '@/types/dashboard/factcheck';
 import { usePipelineModelsStore, getModelById } from '@/features/ai-providers';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api/analyze';
+// API Base URL (without endpoint path) - used consistently across the app
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+// Remove trailing slash and /api/analyze suffix if present (legacy env var format)
+const normalizedBase = API_BASE.replace(/\/$/, '').replace(/\/api\/analyze$/, '');
+const API_ANALYZE_URL = `${normalizedBase}/api/analyze`;
 
 export function useFactCheck() {
   const [input, setInput] = useState('');
@@ -212,7 +216,7 @@ export function useFactCheck() {
       setLoadingPhase('Extracting claims...');
       setProgress(10);
 
-      const res = await fetch(API_URL, {
+      const res = await fetch(API_ANALYZE_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestPayload),
@@ -221,7 +225,27 @@ export function useFactCheck() {
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.detail || data.error || `Server responded ${res.status}`);
+        const errorMessage = data.detail || data.error || `Server responded ${res.status}`;
+
+        // Handle specific backend error messages with user-friendly responses
+        if (errorMessage.toLowerCase().includes('no claims extracted')) {
+          setFactCheckError(
+            'No verifiable claims could be extracted from your input. Please try with content that contains specific factual statements (e.g., "The Eiffel Tower is 300 meters tall").'
+          );
+          return;
+        }
+        if (errorMessage.toLowerCase().includes('rate limit')) {
+          setFactCheckError('Too many requests. Please wait a moment before trying again.');
+          return;
+        }
+        if (errorMessage.toLowerCase().includes('service unavailable') || res.status === 503) {
+          setFactCheckError(
+            'The fact-checking service is temporarily unavailable. Please try again in a few moments.'
+          );
+          return;
+        }
+
+        throw new Error(errorMessage);
       }
 
       // Backend returns JSON AnalyzeResponse with claims array

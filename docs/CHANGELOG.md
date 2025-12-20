@@ -142,5 +142,5 @@ This release synchronizes the frontend with the new V4 backend architecture.
 ### Migration Steps
 
 1. Clear Next.js cache: `rm -rf frontend/.next`
-2. Restart the dev server: `npm run dev`
+2. Restart the dev server: `pnpm dev`
 3. Ensure backend is running on port 8000: `uvicorn app.main:app --reload`
