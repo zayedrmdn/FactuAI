@@ -1,10 +1,10 @@
-# AGENTS.md (Single Source of Truth for AI Coders)
+# AI Agent Onboarding Guide
 
 This file is the **primary onboarding context** for AI coding agents working in this repo.
 
 If anything here conflicts with other docs, follow in this order:
-1) `CONSTITUTION.md` (rules)
-2) `docs/*` (architecture + setup)
+1) [constitution.md](constitution.md) (engineering rules)
+2) [docs/*](../00-start-here.md) (architecture + setup)
 3) code (reality)
 
 ## Repo Purpose
@@ -30,6 +30,7 @@ Backend:
 
 Frontend:
 - Next.js (App Router), TypeScript, Tailwind
+- Package manager: **pnpm** (NOT npm)
 
 Infra:
 - docker-compose (Postgres+pgvector + Redis)
@@ -43,7 +44,7 @@ Entry points:
 Configuration:
 - `backend/app/core/settings.py` (all env vars)
 - `docker-compose.yml` (local infra ports)
-- `.env.example` (template)
+- `backend/.env.example` (template)
 
 Feature slices:
 - `backend/app/features/analyze/`
@@ -57,7 +58,7 @@ Shared contracts:
 
 Frontend feature modules (Feature-Based Colocation):
 - `frontend/src/features/ai-providers/` (AI config, models, stores)
-- `frontend/src/features/search/` (search input, providers)
+- ` frontend/src/features/search/` (search input, providers)
 - `frontend/src/features/analyze/` (analysis results display)
 - `frontend/src/features/history/` (history panel, items)
 
@@ -65,6 +66,12 @@ Frontend feature modules (Feature-Based Colocation):
 
 Database:
 - `backend/migrations/*.sql` (authoritative schema)
+
+Documentation:
+- **Start here:** [docs/00-start-here.md](../00-start-here.md)
+- **Architecture:** [docs/03-architecture/overview.md](../03-architecture/overview.md)
+- **Pipeline:** [docs/04-pipeline/00-overview.md](../04-pipeline/00-overview.md)
+- **Setup:** [docs/02-setup/quickstart.md](../02-setup/quickstart.md)
 
 ## Local Dev Commands (Windows)
 
@@ -84,6 +91,14 @@ pip install -r requirements-dev.txt
 uvicorn app.main:app --reload
 ```
 
+Run frontend:
+
+```powershell
+cd frontend
+pnpm install
+pnpm dev
+```
+
 Run tests:
 
 ```powershell
@@ -93,6 +108,8 @@ pytest -q
 ```
 
 ## Environment Variables (Common)
+
+**See:** [docs/02-setup/environment-vars.md](../02-setup/environment-vars.md) for full reference.
 
 Database:
 - `DATABASE_URL` (preferred) or `DB_URI`
@@ -122,22 +139,24 @@ Search providers:
 - `SEARCH_PROVIDER_PATHS` (CSV dotted paths)
 - `TAVILY_API_KEY`
 
-## Operating Constraints (from CONSTITUTION.md)
+## Operating Constraints
+
+**See:** [constitution.md](constitution.md) for complete rules.
 
 Hard rules:
 - Backend is **async-first**. No sync wrappers, no thread bridges for core I/O.
 - **Vertical Slice Architecture**. Feature-to-feature imports are forbidden.
 - **OCP + DI**. Extend behavior via new implementations + config, not by editing orchestrators.
 - **No legacy pipeline**. Do not reintroduce removed architecture patterns.
-- Standard AI orchestration libraries (LangChain/LangGraph) are allowed for LLM calls and structured parsing (see `CONSTITUTION.md`).
+- Standard AI orchestration libraries (LangChain/LangGraph) are allowed for LLM calls and structured parsing (see `constitution.md`).
 
-When in doubt, open `CONSTITUTION.md` and follow it.
+When in doubt, open [constitution.md](constitution.md) and follow it.
 
 ## Safe Change Checklist (Agent)
 
 Before editing:
-- Identify the feature slice (don’t create cross-feature coupling).
-- Check `docs/ARCHITECTURE.md` for intended boundaries.
+- Identify the feature slice (don't create cross-feature coupling).
+- Check [docs/03-architecture/overview.md](../03-architecture/overview.md) for intended boundaries.
 
 When adding new behavior:
 - Prefer a new adapter/provider class + DI config.
@@ -164,7 +183,7 @@ This protocol exists to prevent accidental exposure of API keys and secrets in:
 **Allowed Actions:**
 - Read `.env.example` for configuration templates
 - Reference `backend/app/core/settings.py` for default values
-- Check `docs/AI_CONTEXT.md` or `AGENTS.md` for environment variable documentation
+- Check [docs/02-setup/environment-vars.md](../02-setup/environment-vars.md) for environment variable documentation
 - Ask the user to verify their `.env` configuration manually
 
 **Forbidden Actions:**
@@ -173,4 +192,3 @@ This protocol exists to prevent accidental exposure of API keys and secrets in:
 - Attempting to bypass gitignore restrictions for `.env` files
 
 When debugging environment issues, guide the user to check their `.env` manually and report only the relevant variable names (not values) that may be misconfigured.
-
