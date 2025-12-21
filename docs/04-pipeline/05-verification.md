@@ -16,41 +16,104 @@ Synthesize all gathered evidence into a structured verdict with:
 
 ## Verdict Categories
 
-| Verdict | Meaning | Typical Confidence |
+Based on actual implementation in `backend/app/features/verification/adapters/openai_compatible.py`:
+
+| Verdict | Pattern | Typical Confidence |
 |---------|---------|-------------------|
-| `TRUE` | Claim is accurate | 0.85-1.00 |
-| `MOSTLY_TRUE` | Largely accurate with minor caveats | 0.70-0.90 |
-| `MIXED` | Contains both true and false elements | 0.50-0.75 |
-| `MOSTLY_FALSE` | Largely inaccurate but has kernel of truth | 0.70-0.90 |
-| `FALSE` | Claim is inaccurate | 0.85-1.00 |
-| `UNVERIFIABLE` | Insufficient evidence to determine | 0.30-0.60 |
+| `true` | Exact match | 0.85-1.00 |
+| `false` | Exact match | 0.85-1.00 |
+| `mostly_true` | Exact match | 0.70-0.90 |
+| `mostly_false` | Exact match | 0.70-0.90 |
+| `mixed` | Exact match | 0.50-0.75 |
+| `unverifiable` | Default fallback | 0.00-0.60 |
+
+**Validation:** Uses Pydantic regex pattern: `^(true|false|mostly_true|mostly_false|mixed|unverifiable)$`
 
 ---
 
 ## Implementation
 
-### LangChain Structured Output
+### OpenAICompatibleClaimVerifier
 
-**Location:** `backend/app/features/verification/adapters/native.py`
+**Location:** `backend/app/features/verification/adapters/openai_compatible.py`
 
-**Process:**
-1. Combine claim + all evidence (Tavily + RAG + pivot results)
-2. Send to LLM with structured output schema
-3. Parse response into `VerificationResult`
+**Features:**
+- ✅ Circuit breaker protection against LLM API failures
+- ✅ Automatic retries with exponential backoff
+- ✅ Graceful degradation when circuit is open or LLM fails
+- ✅ Token-optimized evidence formatting (excludes URLs)
 
-**Example:**
+### Structured Output (Pydantic)
 
 ```python
-from langchain.output_parsers import PydanticOutputParser
-from pydantic import BaseModel, Field
-
-class VerificationResult(BaseModel):
-    verdict: str = Field(description="TRUE, FALSE, MIXED, etc.")
+class _LLMClaimVerdict(BaseModel):
+    verdict: str = Field(
+        description="One of: true, false, mostly_true, mostly_false, mixed, unverifiable.",
+        pattern=r"^(true|false|mostly_true|mostly_false|mixed|unverifiable)$",
+    )
     confidence: float = Field(ge=0.0, le=1.0)
-    reasoning: str = Field(description="Explanation of verdict")
-    
-# LangChain enforces this schema
-parser = PydanticOutputParser(pydantic_object=VerificationResult)
+    reasoning: str = Field(min_length=1)
+```
+
+**Uses:** `PydanticOutputParser` for structured parsing.
+
+### Actual System Prompt
+
+```python
+_SYSTEM = (
+    "You are a fact-checking AI. Given a claim and evidence snippets, return a structured response. "
+    "Do not include markdown or any extra text outside the required format.\n\n"
+    "Rules:\n"
+    "- If evidence is insufficient, verdict MUST be 'unverifiable'.\n"
+    "- Confidence MUST be between 0.0 and 1.0.\n\n"
+    "{format_instructions}"
+)
+```
+
+**Human Prompt:**
+```
+Claim:
+{claim}
+
+Evidence:
+{evidence}
+```
+
+**Note:** Evidence is token-optimized - only includes title + text, NOT URLs (saves ~20-30 tokens per item).
+
+### Circuit Breaker Protection
+
+```python
+@circuit_breaker("llm_verifier", LLM_CIRCUIT_CONFIG)
+async def _verify_with_circuit_breaker(
+    self,
+    *,
+    claim_clean: str,
+    evidence: List[EvidenceSnippet],
+    model: str,
+    api_key: str,
+    base_url: str,
+) -> ClaimVerdict:
+    # LLM call with automatic retries
+    ...
+```
+
+**Graceful Degradation:**
+- Empty claim → `unverifiable` (confidence: 0.0)
+- No evidence → `unverifiable` (confidence: 0.0)
+- No API key → `unverifiable` ("LLM is not configured")
+- Circuit open → `unverifiable` ("LLM service temporarily unavailable. Please try again in N seconds.")
+- Call failed → `unverifiable` ("LLM call failed. Please try again later.")
+
+### Temperature & Model
+
+```python
+llm = ChatOpenAI(
+    model=model,  # From request or OPENROUTER_MODEL
+    temperature=0.2,  # Low but not zero (allows slight creativity)
+    api_key=api_key,
+    base_url=base_url or None,
+)
 ```
 
 ---
@@ -212,9 +275,10 @@ async def test_verify_with_strong_evidence():
 
 ## Code Pointers
 
-- Adapter: `backend/app/features/verification/adapters/native.py`
-- Port interface: `backend/app/features/verification/ports.py`
-- Orchestration: `backend/app/features/analyze/service.py`
+- **Adapter:** `backend/app/features/verification/adapters/openai_compatible.py` (actual implementation)
+- **Port interface:** `backend/app/features/verification/ports.py`
+- **Orchestration:** `backend/app/features/analyze/service.py` (`_process_single_claim()`)
+- **Circuit Breaker:** `backend/app/core/circuit_breaker.py`
 
 ---
 

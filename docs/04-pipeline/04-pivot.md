@@ -99,28 +99,113 @@ if should_pivot and pivots_executed < MAX_PIVOTS:
 
 ## LLM Prompt Structure
 
+**Location:** `backend/app/features/analyze/prompts.py`
+
+### Pydantic Model
+
 ```python
-prompt = f"""
-Analyze this claim and search results:
-
-Claim: "{claim_text}"
-Search Results: {results_summary}
-
-Determine if there's a new specific entity (product, event, person) that requires follow-up research.
-
-Return JSON:
-{{
-  "needs_pivot": bool,
-  "pivot_query": "specific search query" or null,
-  "reason": "explanation"
-}}
-
-Guidelines:
-- Only pivot for SPECIFIC entities (not vague concepts)
-- Entity must be CENTRAL to claim evaluation
-- Entity should NOT have been in original claim
-"""
+class PivotDecision(BaseModel):
+    """Structured output for pivot loop decision."""
+    
+    needs_pivot: bool = Field(
+        description="True if evidence reveals a specific entity/concept that requires additional research."
+    )
+    pivot_query: Optional[str] = Field(
+        default=None,
+        description="Search query for the newly discovered concept (if needs_pivot is True)."
+    )
+    reason: str = Field(
+        description="Brief explanation of why pivot is needed or not needed."
+    )
 ```
+
+### Actual Prompts
+
+**System Prompt:**
+```
+Analyze search results to determine if a NEW specific entity (product, event, person, company) central to the claim requires additional research.
+
+**Pivot Required (needs_pivot=True):**
+- Evidence reveals specific entity misrepresented by rumor (e.g., "Tesla Pi Phone" hoax)
+- Crucial event/study emerges not in original search (e.g., Wakefield 1998 study)
+- Proper noun appears as "root cause" of rumor
+
+**No Pivot (needs_pivot=False):**
+- Evidence directly addresses claim
+- Simple factual question (dates, measurements)
+- No new specific entity discovered
+- Concept already covered by original queries
+
+Be CONSERVATIVE. Only pivot for truly new, specific entities. Pivot query: 3-6 words maximum.
+```
+
+**Human Prompt:**
+```
+CLAIM: {claim}
+
+QUERIES USED: {queries}
+
+EVIDENCE:
+{evidence_summary}
+
+Does evidence reveal a NEW specific entity requiring research?
+```
+
+**Note:** `evidence_summary` uses first 5 results with truncated snippets (250 chars) to save tokens.
+
+---
+
+## Code Implementation
+
+**Location:** `backend/app/features/analyze/service.py`
+
+```python
+async def _execute_pivot_loop(
+    self,
+    *,
+    claim: str,
+    original_queries: List[str],
+    evidence: List[EvidenceSnippet],
+    search,
+    model: str,
+) -> List[EvidenceSnippet]:
+    """Execute the Pivot Loop - check if follow-up search is needed.
+    
+    Returns additional evidence from pivot search, or empty list if no pivot needed.
+    Only executes ONE pivot (no infinite loops).
+    """
+    # Check if pivot is needed using LLM
+    pivot_decision = await self._check_pivot_needed(
+        claim=claim,
+        queries=original_queries,
+        evidence=evidence,
+        model=model,
+        api_key=api_key,
+        base_url=base_url,
+    )
+    
+    if not pivot_decision.needs_pivot or not pivot_decision.pivot_query:
+        logger.info(f"[PIVOT] Skipped: {pivot_decision.reason}")
+        return []
+    
+    # Execute pivot search
+    pivot_query = pivot_decision.pivot_query.strip()
+    logger.info(f"[PIVOT] Triggered: \"{pivot_query}\" - {pivot_decision.reason}")
+    
+    pivot_results = await search.hybrid_search(
+        query=pivot_query,
+        max_results=5,
+        providers=None,
+        verification_question=None,
+    )
+    
+    logger.info(f"[PIVOT] Found {len(pivot_results)} additional results")
+    return pivot_results
+```
+
+**Temperature:** `0.1` (low temperature for consistent pivot decisions)
+
+
 
 ---
 

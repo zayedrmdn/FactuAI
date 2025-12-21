@@ -21,32 +21,124 @@ Extract structured, verifiable claims from unstructured text.
 
 **Process:**
 1. Send user input to LLM with structured output schema
-2. Extract individual claims
+2. Extract individual claims + global context
 3. Generate search query for each claim
-4. Generate verification question
+4. Generate verification question (optional)
 
-**Example:**
+### Structured Output Schema
 
-**Input:**
-```
-"The Great Wall of China is visible from space and it's the only man-made structure you can see from the Moon."
+Uses LangChain `with_structured_output()` for guaranteed schema compliance.
+
+```python
+class _ClaimOutput(BaseModel):
+    """Structured output for a single extracted claim."""
+    
+    claim_text: str = Field(
+        description="The exact factual claim to verify, stated clearly and concisely."
+    )
+    search_query: str = Field(
+        description="A web search query to find evidence for or against this claim."
+    )
+    verification_question: Optional[str] = Field(
+        default=None,
+        description="A yes/no question to determine if the claim is true.",
+    )
+
+class _ClaimListOutput(BaseModel):
+    """Structured output for the full list of extracted claims."""
+    
+    global_context: str = Field(
+        default="",
+        description="Key entities, locations, events, and background shared across all claims. Used to ground search queries.",
+    )
+    claims: List[_ClaimOutput] = Field(
+        default_factory=list,
+        description="List of distinct, verifiable factual claims extracted from the text.",
+    )
 ```
 
-**Output:**
-```json
-[
-  {
-    "claim_text": "The Great Wall of China is visible from space",
-    "search_query": "Great Wall China visible space evidence",
-    "verification_question": "Is the Great Wall of China visible from space?"
-  },
-  {
-    "claim_text": "The Great Wall is the only man-made structure visible from the Moon",
-    "search_query": "structures visible from Moon Great Wall",
-    "verification_question": "Can you see the Great Wall from the Moon?"
-  }
-]
+**Key Feature:** `global_context` extraction - identifies shared entities/locations across all claims to improve search query quality in Phase 1.
+
+### Actual System Prompt
+
 ```
+You are a claim extraction assistant. Your task is to analyze text and extract distinct, verifiable factual claims.
+
+Rules:
+1. Extract only FACTUAL claims that can be verified with evidence (true/false).
+2. Ignore opinions, predictions, questions, and rhetorical statements.
+3. Each claim should be self-contained and understandable without context.
+4. Generate a concise web search query to find evidence for each claim.
+5. Generate a verification question that can be answered with yes/no.
+6. Do NOT extract duplicate or overlapping claims.
+7. If no verifiable claims exist, return an empty list.
+8. **IMPORTANT**: Extract a global_context summarizing key entities (people, organizations), 
+   locations, events, and background information shared across all claims. This context helps 
+   ground search queries. Example: "South Kalimantan, Governor Muhidin, helicopter crash site"
+
+Examples of GOOD claims:
+- "The Eiffel Tower is 330 meters tall."
+- "Apple was founded in 1976."
+- "Water boils at 100°C at sea level."
+
+Examples of BAD claims (do NOT extract):
+- "I think the weather will be nice." (opinion/prediction)
+- "Is Python a good language?" (question)
+- "Everyone knows about climate change." (vague/rhetorical)
+```
+
+### Code Flow
+
+```python
+async def _extract_claims(
+    self,
+    *,
+    text: str,
+    max_claims: int,
+    model: str,
+    api_key: str,
+    api_base: str,
+) -> IntentResult:
+    """Extract claims using LLM with structured output."""
+    
+    llm = ChatOpenAI(
+        model=model,
+        temperature=0.1,  # Low temperature for consistent extraction
+        api_key=api_key,
+        base_url=api_base or None,
+    )
+    
+    # Use with_structured_output for guaranteed schema compliance
+    structured_llm = llm.with_structured_output(_ClaimListOutput)
+    chain = prompt | structured_llm
+    
+    result: _ClaimListOutput = await chain.ainvoke({
+        "text": text,
+        "max_claims": max_claims,
+    })
+    
+    # Convert to IntentResult format
+    global_context = (result.global_context or "").strip()
+    logger.info(f"[INTENT-LLM] Extracted {len(result.claims)} claim(s), context: '{global_context[:80]}...'")
+    
+    return IntentResult(global_context=global_context, claims=items)
+```
+
+**Graceful Degradation:** Returns empty `IntentResult(global_context="", claims=[])` on failure.
+
+### Model Configuration Priority
+
+1. **Frontend override** (if user selects model in UI)
+2. **Intent-specific config** (`INTENT_LLM_MODEL`)
+3. **Main LLM config** (`OPENROUTER_MODEL`)
+
+**Fallback chain** for API keys/URLs:
+```python
+api_key = settings.intent_llm_api_key or settings.llm_api_key
+api_base = settings.intent_llm_api_base_url or settings.llm_api_base_url
+```
+
+
 
 ---
 
