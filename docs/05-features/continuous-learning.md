@@ -176,10 +176,10 @@ asyncio.create_task(learn_from_verification(result))
 
 ```sql
 CREATE INDEX idx_claims_embedding 
-ON claims USING hnsw (claim_embedding vector_cosine_ops);
+ON claims USING ivfflat (claim_embedding vector_cosine_ops) WITH (lists = 100);
 ```
 
-**HNSW Index:** Enables fast similarity search (approximate nearest neighbors)
+**IVFFLAT Index:** Enables fast similarity search (approximate nearest neighbors)
 
 ---
 
@@ -214,8 +214,8 @@ GROUP BY verdict;
 
 ## Code Pointers
 
-- Embedding generation: `backend/app/features/analyze/service.py` (learning logic)
-- RAG retrieval: `backend/app/features/search/adapters/native.py` (`_search_internal()`)
+- Embedding generation: `backend/app/features/verification/learning.py` (`RagLearningService`)
+- RAG retrieval: `backend/app/features/search/adapters/native.py` (internal search)
 - Database schema: See [Database Schema](../03-architecture/database.md)
 
 ---

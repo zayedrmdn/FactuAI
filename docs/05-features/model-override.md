@@ -79,10 +79,17 @@ class AnalyzeRequest(BaseModel):
 
 | Model | Provider | Cost | Speed | Use Case |
 |-------|----------|------|-------|----------|
-| `meta-llama/llama-3.3-70b-instruct` | Meta | Low | Fast | **Default** - Best balance |
-| `meta-llama/llama-3.1-8b-instruct` | Meta | Very Low | Very Fast | Quick checks |
-| `anthropic/claude-3.5-sonnet` | Anthropic | High | Medium | Premium accuracy |
-| `google/gemini-pro` | Google | Medium | Fast | Alternative |
+| `meta-llama/llama-3.3-70b-instruct` | Meta | Low | Fast | **Recommended** - Superior reasoning (131K context) |
+| `tngtech/deepseek-r1t2-chimera:free` | TNG | Free | Fast | **Current Default** - Excellent reasoning (160K+ context) |
+| `z-ai/glm-4.5-air:free` | Z.AI | Free | Very Fast | Recommended for intent detection (MoE, 131K context) |
+| `alibaba/tongyi-deepresearch-30b-a3b:free` | Alibaba | Free | Medium | Deep research with reasoning (128K context) |
+| `allenai/olmo-3-32b-think:free` | AllenAI | Free | Medium | Reasoning-focused model (32K context) |
+| `openai/gpt-oss-120b:free` | OpenAI | Free | Medium | Large open-source (8K context) |
+| `nvidia/nemotron-nano-9b-v2:free` | NVIDIA | Free | Very Fast | Fast, efficient fact-checking (4K context) |
+| `meituan/longcat-flash-chat:free` | Meituan | Free | Ultra Fast | Extended context conversations (32K context) |
+| `openai/gpt-oss-20b:free` | OpenAI | Free | Fast | MoE with function calling (131K context) |
+| `google/gemma-3-27b-it:free` | Google | Free | Fast | Multimodal vision model (131K context) |
+| `mistralai/mistral-7b-instruct:free` | Mistral | Free | Very Fast | Industry-standard 7.3B (32K context) |
 
 ### Model Registry Format
 

@@ -19,7 +19,7 @@ FactuAI uses the **Open/Closed Principle (OCP)**: the system is **open for exten
 
 ### Port Definition
 
-**Location:** `backend/app/features/search/ports.py`
+**Location:** `backend/app/features/search/providers/base.py`
 
 ```python
 from abc import ABC, abstractmethod
@@ -49,8 +49,8 @@ class SearchProvider(ABC):
 ```python
 from typing import List
 import httpx
-from backend.app.features.search.ports import SearchProvider
-from backend.app.contracts.search import SearchResult
+from app.features.search.providers.base import SearchProvider
+from app.contracts.types import EvidenceSnippet
 
 class CustomSearchProvider(SearchProvider):
     def __init__(self, api_key: str):
@@ -76,7 +76,7 @@ class CustomSearchProvider(SearchProvider):
             # Map to SearchResult schema
             results = []
             for item in data.get("results", []):
-                results.append(SearchResult(
+                results.append(EvidenceSnippet(
                     url=item["url"],
                     title=item["title"],
                     snippet=item["snippet"],
@@ -114,7 +114,7 @@ class Settings(BaseSettings):
 
 ```bash
 # Add custom provider to comma-separated list
-SEARCH_PROVIDER_PATHS=backend.app.features.search.providers.tavily.TavilyProvider,backend.app.features.search.providers.custom_provider.CustomSearchProvider
+SEARCH_PROVIDER_PATHS=app.features.search.providers.tavily.TavilySearchProvider,app.features.search.providers.custom_provider.CustomSearchProvider
 
 # Add API key
 CUSTOM_SEARCH_API_KEY=your_api_key_here
@@ -196,7 +196,7 @@ class SerpAPIProvider(SearchProvider):
 
 **Configuration:**
 ```bash
-SEARCH_PROVIDER_PATHS=...,backend.app.features.search.providers.serpapi.SerpAPIProvider
+SEARCH_PROVIDER_PATHS=...,app.features.search.providers.serpapi.SerpAPIProvider
 SERPAPI_API_KEY=your_key
 ```
 
@@ -289,7 +289,7 @@ async def test_custom_provider_search():
 
 ```bash
 # Remove from comma-separated list
-SEARCH_PROVIDER_PATHS=backend.app.features.search.providers.tavily.TavilyProvider
+SEARCH_PROVIDER_PATHS=app.features.search.providers.tavily.TavilySearchProvider
 # (CustomProvider removed)
 ```
 
@@ -299,7 +299,7 @@ SEARCH_PROVIDER_PATHS=backend.app.features.search.providers.tavily.TavilyProvide
 
 ## Code Pointers
 
-- Port interface: `backend/app/features/search/ports.py`
+- Port interface: `backend/app/features/search/providers/base.py`
 - Tavily example: `backend/app/features/search/providers/tavily.py`
 - Container loading: `backend/app/core/container.py`
 - Settings: `backend/app/core/settings.py`

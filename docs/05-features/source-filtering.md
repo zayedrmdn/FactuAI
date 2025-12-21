@@ -14,7 +14,7 @@ Strict filtering of search results to block social media and low-quality sources
 
 ## The Social Media Blocklist
 
-### Blocked Domains (19 total)
+### Blocked Domains (20 total)
 
 ```python
 SOCIAL_MEDIA_DOMAINS = [
@@ -36,6 +36,8 @@ SOCIAL_MEDIA_DOMAINS = [
     "vk.com",
     "weibo.com",
     "telegram.org",
+    "discord.com",
+    "vimeo.com",
     "wikipedia.org"  # User-generated, often disputed
 ]
 ```
@@ -51,14 +53,14 @@ SOCIAL_MEDIA_DOMAINS = [
 **Location:** `backend/app/features/search/providers/tavily.py`
 
 ```python
-from backend.app.features.search.constants import SOCIAL_MEDIA_DOMAINS
+from app.core.constants import SOCIAL_MEDIA_DOMAINS
 
 async def search(self, query: str):
     response = await self.client.search(
         query=query,
         exclude_domains=SOCIAL_MEDIA_DOMAINS,  # ← The gatekeeper
         include_answer=True,
-        include_raw_content=True
+        include_raw_content=False  # Disabled to prevent HTML artifacts
     )
     return response
 ```
@@ -135,7 +137,7 @@ async def search(self, query: str):
 
 ### Adding/Removing Domains
 
-**File:** `backend/app/features/search/constants.py`
+**File:** `backend/app/core/constants.py`
 
 ```python
 SOCIAL_MEDIA_DOMAINS = [
@@ -231,7 +233,7 @@ From [constitution.md](../01-rules/constitution.md):
 
 ## Code Pointers
 
-- Blocklist constant: `backend/app/features/search/constants.py`
+- Blocklist constant: `backend/app/core/constants.py`
 - Tavily implementation: `backend/app/features/search/providers/tavily.py`
 - Constitution rule: [docs/01-rules/constitution.md](../01-rules/constitution.md)
 
