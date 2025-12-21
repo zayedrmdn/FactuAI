@@ -65,11 +65,12 @@ pytest -v
 
 ```
 backend/tests/
-├── conftest.py           # Shared fixtures
-├── test_intent.py        # Intent extraction tests
-├── test_search.py        # Search provider tests
-├── test_verification.py  # Verification adapter tests
-└── test_analyze.py       # Full pipeline tests
+├── conftest.py              # Shared fixtures
+├── test_intent_llm.py       # Intent extraction tests
+├── test_search_native.py    # Search provider tests
+├── test_verifier_native.py  # Verification adapter tests
+├── test_rag_learning.py     # RAG learning tests
+└── integration/             # Integration tests
 ```
 
 ---
@@ -83,7 +84,7 @@ import pytest
 
 @pytest.mark.asyncio
 async def test_extract_claims():
-    from backend.app.features.intent.adapters.llm import LLMIntentAdapter
+    from app.features.intent.adapters.llm import LLMIntentAdapter
     
     adapter = LLMIntentAdapter()
     result = await adapter.extract("The Earth is flat")
@@ -111,7 +112,7 @@ async def db_session():
 # test_database.py
 @pytest.mark.asyncio
 async def test_create_claim(db_session):
-    from backend.app.models import Claim
+    from app.features.verification.persistence.models import Claim
     
     claim = Claim(claim_text="Test claim")
     db_session.add(claim)
@@ -127,12 +128,12 @@ from unittest.mock import AsyncMock, patch
 
 @pytest.mark.asyncio
 async def test_tavily_search():
-    with patch('backend.app.features.search.providers.tavily.TavilyProvider.search') as mock_search:
+    with patch('app.features.search.providers.tavily.TavilySearchProvider.search') as mock_search:
         mock_search.return_value = [
             {"url": "https://example.com", "title": "Test", "snippet": "..."}
         ]
         
-        provider = TavilyProvider(api_key="test")
+        provider = TavilySearchProvider(api_key="test")
         results = await provider.search("test query")
         
         assert len(results) == 1
@@ -148,7 +149,7 @@ async def test_tavily_search():
 ```python
 # tests/test_intent.py
 import pytest
-from backend.app.features.intent.adapters.llm import LLMIntentAdapter
+from app.features.intent.adapters.llm import LLMIntentAdapter
 
 @pytest.mark.asyncio
 async def test_extract_single_claim():
@@ -172,11 +173,11 @@ async def test_extract_multiple_claims():
 ```python
 # tests/test_search.py
 import pytest
-from backend.app.features.search.providers.tavily import TavilyProvider
+from app.features.search.providers.tavily import TavilySearchProvider
 
 @pytest.mark.asyncio
 async def test_tavily_search_blocks_social_media():
-    provider = TavilyProvider(api_key=os.getenv("TAVILY_API_KEY"))
+    provider = TavilySearchProvider(api_key=os.getenv("TAVILY_API_KEY"))
     results = await provider.search("test query")
     
     for result in results:
@@ -189,11 +190,11 @@ async def test_tavily_search_blocks_social_media():
 ```python
 # tests/test_verification.py
 import pytest
-from backend.app.features.verification.adapters.native import NativeVerificationAdapter
+from app.features.verification.adapters.openai_compatible import OpenAICompatibleClaimVerifier
 
 @pytest.mark.asyncio
 async def test_verify_with_strong_evidence():
-    adapter = NativeVerificationAdapter()
+    adapter = OpenAICompatibleClaimVerifier()
     
     claim = "The Earth is round"
     evidence = [

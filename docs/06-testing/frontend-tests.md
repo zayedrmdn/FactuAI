@@ -7,8 +7,11 @@ Using Vitest for testing the FactuAI frontend.
 ## Overview
 
 **Framework:** Vitest  
-**Test Location:** `frontend/src/**/__tests__/`  
+**Test Location:** `frontend/__tests__/` (minimal coverage)  
 **Coverage:** Component tests, hook tests, integration tests
+
+> [!NOTE]
+> **Current State:** The project has minimal test coverage. The test structure and examples shown below represent the **planned/recommended** approach for future test development, not the current implementation.
 
 ---
 
@@ -73,7 +76,10 @@ frontend/src/features/
         └── useSearch.test.ts
 ```
 
-**Pattern:** Tests live in `__tests__/` folder next to the code they test.
+**Pattern:** Tests should live in `__tests__/` folder next to the code they test (planned structure).
+
+> [!WARNING]
+> **Actual Current State:** Only `frontend/__tests__/sanity.test.tsx` exists. The feature-colocated test structure shown above is aspirational and should be implemented as testing coverage expands.
 
 ---
 
