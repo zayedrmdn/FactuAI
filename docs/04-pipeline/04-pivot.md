@@ -205,7 +205,7 @@ async def _execute_pivot_loop(
 
 **Temperature:** `0.1` (low temperature for consistent pivot decisions)
 
-
+**Recommended Model:** Use `openai/gpt-4o-mini` for reliable structured output. Free-tier models may return plain text instead of JSON, causing the pivot to be skipped.
 
 ---
 

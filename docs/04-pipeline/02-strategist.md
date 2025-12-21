@@ -165,6 +165,8 @@ async def _generate_multi_queries(
 - Complexity of claim
 - Context length
 
+**Recommended Model:** Use `openai/gpt-4o-mini` for reliable structured output. Free-tier models may return plain text instead of JSON, triggering fallback to single-query mode.
+
 ---
 
 ## Quality Metrics

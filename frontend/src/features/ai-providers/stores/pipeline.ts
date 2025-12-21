@@ -22,12 +22,17 @@ export interface TaskModelSelection {
   modelId: string;
 }
 
+export type AnalysisMode = 'quick' | 'deep';
+
 export interface PipelineModelsState {
   // Model selections per task
   intent: TaskModelSelection;
   extraction: TaskModelSelection;
   reasoning: TaskModelSelection;
   summary: TaskModelSelection;
+
+  // Analysis mode: "quick" (fast, 1 search) or "deep" (full pipeline)
+  analysisMode: AnalysisMode;
 
   // Currently active task (for UI display)
   activeTask: PipelineTask | null;
@@ -38,6 +43,7 @@ export interface PipelineModelsState {
   // Actions
   setTaskModel: (task: PipelineTask, provider: AIProvider, modelId: string) => void;
   setActiveTask: (task: PipelineTask | null) => void;
+  setAnalysisMode: (mode: AnalysisMode) => void;
   resetToDefaults: () => void;
   syncWithBackend: (backendDefaults: { reasoning?: string; intent?: string }) => void;
 }
@@ -83,6 +89,7 @@ export const usePipelineModelsStore = create<PipelineModelsState>()(
   persist(
     (set, get) => ({
       ...getDefaultTaskModels(),
+      analysisMode: 'deep', // Default to full pipeline
       activeTask: null,
       backendSynced: false,
 
@@ -100,8 +107,12 @@ export const usePipelineModelsStore = create<PipelineModelsState>()(
         set({ activeTask: task });
       },
 
+      setAnalysisMode: (mode) => {
+        set({ analysisMode: mode });
+      },
+
       resetToDefaults: () => {
-        set({ ...getDefaultTaskModels(), backendSynced: false });
+        set({ ...getDefaultTaskModels(), analysisMode: 'deep', backendSynced: false });
       },
 
       syncWithBackend: (backendDefaults) => {

@@ -29,13 +29,13 @@
 
 // Types
 export type {
-    AIProvider,
-    ModelCapabilities,
-    ModelConfig,
-    ProviderConfig,
-    ModelRegistry,
-    AIModelSelection,
-    AIStore,
+  AIProvider,
+  ModelCapabilities,
+  ModelConfig,
+  ProviderConfig,
+  ModelRegistry,
+  AIModelSelection,
+  AIStore,
 } from './types';
 
 // Constants
@@ -43,27 +43,24 @@ export { SYSTEM_PROMPTS, DEFAULT_PROVIDER, DEFAULT_MODEL_ID } from './constants'
 
 // Registry
 export {
-    modelRegistry,
-    getProvider,
-    getModelById,
-    getModelsByProvider,
-    getDefaultModel,
-    getRecommendedModels,
-    isValidSelection,
+  modelRegistry,
+  getProvider,
+  getModelById,
+  getModelsByProvider,
+  getDefaultModel,
+  getRecommendedModels,
+  isValidSelection,
 } from './registry';
 
 // Stores
-export {
-    useAIStore,
-    useCurrentModelConfig,
-    useModelCapability,
-} from './stores/selection';
+export { useAIStore, useCurrentModelConfig, useModelCapability } from './stores/selection';
 
 export {
-    usePipelineModelsStore,
-    type PipelineTask,
-    type TaskModelSelection,
-    type PipelineModelsState,
+  usePipelineModelsStore,
+  type PipelineTask,
+  type TaskModelSelection,
+  type PipelineModelsState,
+  type AnalysisMode,
 } from './stores/pipeline';
 
 // Components

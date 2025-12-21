@@ -30,3 +30,6 @@ export { default as VideoInput } from './components/VideoInput';
 export { default as ResultsView } from './components/ResultsView';
 export { default as ClaimCard } from './components/ClaimCard';
 export { QAResultCard } from './components/QAResultCard';
+
+// Analysis Mode
+export { AnalysisModeToggle } from './components/AnalysisModeToggle';

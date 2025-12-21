@@ -146,6 +146,8 @@ export function useFactCheck() {
       num_google: numGoogle,
       num_news: numNews,
       num_tavily: numTavily,
+      // Analysis mode: "quick" or "deep"
+      analysis_mode: pipelineModels.analysisMode,
       // Pipeline-specific model configuration
       pipeline_models: {
         intent: {

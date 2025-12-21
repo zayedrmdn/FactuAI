@@ -105,6 +105,10 @@ class AnalyzeService:
         # Process all claims concurrently for maximum performance
         parallel_start = time.perf_counter()
         
+        # Analysis mode: "quick" skips strategist and pivot, "deep" runs full pipeline
+        analysis_mode = request.analysis_mode
+        logger.info(f"[ANALYZE] Analysis mode: {analysis_mode}")
+        
         tasks = [
             self._process_single_claim(
                 claim_text=claim_text,
@@ -113,6 +117,7 @@ class AnalyzeService:
                 reasoning_model=reasoning_model,
                 provider=provider,
                 enable_web_search=request.enable_web_search,
+                analysis_mode=analysis_mode,
                 search=search,
                 verifier=verifier,
             )
@@ -175,6 +180,7 @@ class AnalyzeService:
         reasoning_model: str,
         provider: str,
         enable_web_search: bool,
+        analysis_mode: str,
         search,
         verifier,
     ) -> ClaimAnalysis:
@@ -187,36 +193,52 @@ class AnalyzeService:
         Args:
             claim_text: The claim to verify.
             global_context: Shared context (entities, locations) from all claims.
+            analysis_mode: "quick" (1 search, no pivot) or "deep" (full pipeline).
         """
-        # === PHASE 1: STRATEGIST - Multi-Angle Query Generation ===
-        queries = await self._generate_multi_queries(
-            claim=claim_text,
-            context=global_context,  # Pass context for better queries
-            model=extraction_model,
-        )
-        logger.info(f"[ANALYZE] Generated queries for '{claim_text[:50]}...': {queries}")
-
-        # === PHASE 2: PARALLEL SEARCH ===
         evidence_snippets: list[EvidenceSnippet] = []
-        if enable_web_search and queries:
-            evidence_snippets = await self._search_parallel(
-                queries=queries,
-                search=search,
-                max_results_per_query=5,
-            )
-
-        # === PHASE 3: PIVOT LOOP - React to New Information ===
-        if enable_web_search and evidence_snippets:
-            pivot_evidence = await self._execute_pivot_loop(
+        
+        if analysis_mode == "quick":
+            # === QUICK MODE: Single search, no strategist, no pivot ===
+            logger.info(f"[ANALYZE] Quick mode: using claim as query, 15 results")
+            if enable_web_search:
+                # Use claim directly as query, fetch more results
+                evidence_snippets = await search.hybrid_search(
+                    query=claim_text,
+                    max_results=15,
+                    providers=None,
+                    verification_question=None,
+                )
+            queries = [claim_text]  # For logging consistency
+        else:
+            # === DEEP MODE: Full pipeline ===
+            # === PHASE 1: STRATEGIST - Multi-Angle Query Generation ===
+            queries = await self._generate_multi_queries(
                 claim=claim_text,
-                original_queries=queries,
-                evidence=evidence_snippets,
-                search=search,
+                context=global_context,  # Pass context for better queries
                 model=extraction_model,
             )
-            if pivot_evidence:
-                # Merge and deduplicate pivot results
-                evidence_snippets = self._merge_evidence(evidence_snippets, pivot_evidence)
+            logger.info(f"[ANALYZE] Generated queries for '{claim_text[:50]}...': {queries}")
+
+            # === PHASE 2: PARALLEL SEARCH ===
+            if enable_web_search and queries:
+                evidence_snippets = await self._search_parallel(
+                    queries=queries,
+                    search=search,
+                    max_results_per_query=5,
+                )
+
+            # === PHASE 3: PIVOT LOOP - React to New Information ===
+            if enable_web_search and evidence_snippets:
+                pivot_evidence = await self._execute_pivot_loop(
+                    claim=claim_text,
+                    original_queries=queries,
+                    evidence=evidence_snippets,
+                    search=search,
+                    model=extraction_model,
+                )
+                if pivot_evidence:
+                    # Merge and deduplicate pivot results
+                    evidence_snippets = self._merge_evidence(evidence_snippets, pivot_evidence)
 
         # === PHASE 4: VERIFICATION ===
         verdict_data = await verifier.verify_claim(

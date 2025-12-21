@@ -27,6 +27,7 @@ class AnalyzeRequest(BaseModel):
     max_claims: conint(ge=1, le=8) = 3
     enable_web_search: bool = True
     enable_kb: bool = True
+    analysis_mode: Literal["quick", "deep"] = "deep"  # Quick: 1 search, no pivot. Deep: full pipeline.
     pipeline_models: Optional[PipelineModels] = None  # Per-stage model configuration
 
 
