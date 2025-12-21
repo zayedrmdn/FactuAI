@@ -24,21 +24,13 @@ GET /health
 **Response (200 OK):**
 ```json
 {
-  "status": "healthy",
-  "database": "connected",
-  "redis": "connected",
-  "llm_provider": "reachable"
+  "status": "ok"
 }
 ```
 
-**Response (503 Service Unavailable):**
-```json
-{
-  "status": "unhealthy",
-  "database": "disconnected",
-  "llm_provider": "unreachable"
-}
-```
+**Note:** For detailed health checks including database, redis, and embedding service status, use `GET /health/detailed`
+
+
 
 ---
 
@@ -54,8 +46,8 @@ GET /api/system/config
 ```json
 {
   "models": {
-    "default_reasoning": "meta-llama/llama-3.3-70b-instruct",
-    "default_intent": "meta-llama/llama-3.3-70b-instruct",
+    "default_reasoning": "tngtech/deepseek-r1t2-chimera:free",
+    "default_intent": "tngtech/deepseek-r1t2-chimera:free",
     "provider": "openrouter",
     "api_base_url": "https://openrouter.ai/api/v1"
   },
@@ -85,32 +77,34 @@ Content-Type: application/json
 ```json
 {
   "text": "The Earth is flat and vaccines cause autism",
-  "options": {
-    "use_search": true,
-    "verification_enabled": true
-  },
-  "model_id": "meta-llama/llama-3.3-70b-instruct"
+  "model_id": "tngtech/deepseek-r1t2-chimera:free",
+  "max_claims": 3,
+  "enable_web_search": true,
+  "enable_kb": true
 }
 ```
 
 **Request Schema:**
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `text` | string | ✅ Yes | User input to fact-check |
-| `options.use_search` | boolean | No | Enable search phase (default: true) |
-| `options.verification_enabled` | boolean | No | Enable verification (default: true) |
+| `text` | string | ✅ Yes | User input to fact-check (5-5000 chars) |
 | `model_id` | string | No | Override default LLM model |
+| `provider` | string | No | LLM provider (default: "openrouter") |
+| `max_claims` | integer | No | Max claims to extract (1-8, default: 3) |
+| `enable_web_search` | boolean | No | Enable search phase (default: true) |
+| `enable_kb` | boolean | No | Enable knowledge base search (default: true) |
+| `pipeline_models` | object | No | Per-stage model configuration |
 
 **Response (200 OK):**
 ```json
 {
   "request_id": "550e8400-e29b-41d4-a716-446655440000",
-  "model_used": "meta-llama/llama-3.3-70b-instruct",
+  "model_used": "tngtech/deepseek-r1t2-chimera:free",
   "latency_ms": 8742,
   "claims": [
     {
       "claim_text": "The Earth is flat",
-      "verdict": "FALSE",
+      "verdict": "false",
       "confidence": 0.98,
       "reasoning": "Overwhelming scientific evidence confirms Earth is an oblate spheroid...",
       "evidence": [
@@ -118,13 +112,14 @@ Content-Type: application/json
           "snippet": "NASA satellite images show Earth's curvature...",
           "source_url": "https://nasa.gov/...",
           "source_title": "NASA Earth Observatory",
+          "source_domain": "nasa.gov",
           "relevance_score": 0.95
         }
       ]
     },
     {
       "claim_text": "Vaccines cause autism",
-      "verdict": "FALSE",
+      "verdict": "false",
       "confidence": 0.97,
       "reasoning": "Multiple large-scale studies found no causal link...",
       "evidence": [...]
@@ -173,12 +168,13 @@ Content-Type: application/json
 
 ## Rate Limiting
 
-**Status:** Not currently implemented (planned feature)
+**Status:** ✅ Implemented
 
-**Future:**
-- Rate limit: 10 requests/minute per IP
-- Header: `X-RateLimit-Remaining`
-- Response: 429 with `Retry-After` header
+**Current:**
+- Rate limit: 10 requests/minute per IP (configurable)
+- Enforced via `@limiter.limit("10/minute")` decorator
+- Returns 429 when limit exceeded
+- Can be disabled via `RATE_LIMIT_ENABLED=false`
 
 ---
 
@@ -223,7 +219,7 @@ curl -X POST http://127.0.0.1:8000/api/analyze \
   -H "Content-Type: application/json" \
   -d '{
     "text": "The Earth is flat",
-    "model_id": "meta-llama/llama-3.3-70b-instruct"
+    "model_id": "tngtech/deepseek-r1t2-chimera:free"
   }'
 ```
 
@@ -235,7 +231,7 @@ const response = await fetch('http://127.0.0.1:8000/api/analyze', {
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
     text: 'The Earth is flat',
-    model_id: 'meta-llama/llama-3.3-70b-instruct'
+    model_id: 'tngtech/deepseek-r1t2-chimera:free'
   })
 });
 
@@ -253,7 +249,7 @@ async with httpx.AsyncClient() as client:
         'http://127.0.0.1:8000/api/analyze',
         json={
             'text': 'The Earth is flat',
-            'model_id': 'meta-llama/llama-3.3-70b-instruct'
+            'model_id': 'tngtech/deepseek-r1t2-chimera:free'
         }
     )
     data = response.json()

@@ -15,34 +15,38 @@ Pydantic models and TypeScript types for FactuAI API.
 **Purpose:** Request body for `POST /api/analyze`
 
 ```python
-from pydantic import BaseModel, Field
-from typing import Optional, Dict, Any
+from pydantic import BaseModel, constr, conint
+from typing import Optional, Literal
 
-class AnalyzeOptions(BaseModel):
-    use_search: bool = True
-    verification_enabled: bool = True
+class PipelineModelConfig(BaseModel):
+    provider: Optional[str] = None
+    model_id: Optional[str] = None
+    model_display_name: Optional[str] = None
+
+class PipelineModels(BaseModel):
+    intent: Optional[PipelineModelConfig] = None
+    extraction: Optional[PipelineModelConfig] = None
+    summary: Optional[PipelineModelConfig] = None
+    reasoning: Optional[PipelineModelConfig] = None
 
 class AnalyzeRequest(BaseModel):
-    text: str = Field(..., min_length=1, description="User input to fact-check")
-    options: AnalyzeOptions = Field(default_factory=AnalyzeOptions)
-    model_id: Optional[str] = Field(None, description="Override default LLM model")
-    
-    # Optional overrides
-    temperature: Optional[float] = Field(None, ge=0.0, le=2.0)
-    max_tokens: Optional[int] = Field(None, gt=0)
-    top_p: Optional[float] = Field(None, ge=0.0, le=1.0)
+    text: constr(min_length=5, max_length=5000)
+    provider: Optional[Literal["openrouter"]] = None
+    model_id: Optional[str] = None
+    max_claims: conint(ge=1, le=8) = 3
+    enable_web_search: bool = True
+    enable_kb: bool = True
+    pipeline_models: Optional[PipelineModels] = None
 ```
 
 **Example:**
 ```json
 {
   "text": "The Earth is flat",
-  "options": {
-    "use_search": true,
-    "verification_enabled": true
-  },
-  "model_id": "meta-llama/llama-3.3-70b-instruct",
-  "temperature": 0.1
+  "model_id": "tngtech/deepseek-r1t2-chimera:free",
+  "max_claims": 3,
+  "enable_web_search": true,
+  "enable_kb": true
 }
 ```
 
@@ -60,12 +64,13 @@ from uuid import UUID
 class EvidenceItem(BaseModel):
     snippet: str
     source_url: str
-    source_title: str
+    source_title: Optional[str]
+    source_domain: str
     relevance_score: float = Field(ge=0.0, le=1.0)
 
 class ClaimResult(BaseModel):
     claim_text: str
-    verdict: str  # TRUE, FALSE, MIXED, MOSTLY_TRUE, MOSTLY_FALSE, UNVERIFIABLE
+    verdict: Literal["true", "false", "mostly_true", "mostly_false", "mixed", "unverifiable"]
     confidence: float = Field(ge=0.0, le=1.0)
     reasoning: str
     evidence: List[EvidenceItem] = []
@@ -81,12 +86,12 @@ class AnalyzeResponse(BaseModel):
 ```json
 {
   "request_id": "550e8400-e29b-41d4-a716-446655440000",
-  "model_used": "meta-llama/llama-3.3-70b-instruct",
+  "model_used": "tngtech/deepseek-r1t2-chimera:free",
   "latency_ms": 8742,
   "claims": [
     {
       "claim_text": "The Earth is flat",
-      "verdict": "FALSE",
+      "verdict": "false",
       "confidence": 0.98,
       "reasoning": "Scientific consensus confirms...",
       "evidence": [
@@ -94,6 +99,7 @@ class AnalyzeResponse(BaseModel):
           "snippet": "NASA confirms...",
           "source_url": "https://nasa.gov/...",
           "source_title": "NASA",
+          "source_domain": "nasa.gov",
           "relevance_score": 0.95
         }
       ]
@@ -107,15 +113,10 @@ class AnalyzeResponse(BaseModel):
 ### Verdict Types
 
 ```python
-from enum import Enum
+from typing import Literal
 
-class Verdict(str, Enum):
-    TRUE = "TRUE"
-    MOSTLY_TRUE = "MOSTLY_TRUE"
-    MIXED = "MIXED"
-    MOSTLY_FALSE = "MOSTLY_FALSE"
-    FALSE = "FALSE"
-    UNVERIFIABLE = "UNVERIFIABLE"
+# Verdict is a Literal type in actual implementation
+Verdict = Literal["true", "false", "mostly_true", "mostly_false", "mixed", "unverifiable"]
 ```
 
 ---
@@ -139,12 +140,12 @@ export interface EvidenceItem {
 }
 
 export type Verdict = 
-  | 'TRUE' 
-  | 'MOSTLY_TRUE' 
-  | 'MIXED' 
-  | 'MOSTLY_FALSE' 
-  | 'FALSE' 
-  | 'UNVERIFIABLE';
+  | 'true' 
+  | 'mostly_true' 
+  | 'mixed' 
+  | 'mostly_false' 
+  | 'false' 
+  | 'unverifiable';
 
 export interface FactCheckApiResult {
   claim_text: string;
@@ -214,7 +215,7 @@ export interface AnalyzeRequestPayload {
 
 ##Shared Contracts (Backend)
 
-**Location:** `backend/app/contracts/search.py`
+**Location:** `backend/app/contracts/types.py`
 
 ---
 
@@ -226,14 +227,13 @@ export interface AnalyzeRequestPayload {
 from pydantic import BaseModel, Field
 from typing import Optional
 
-class SearchResult(BaseModel):
+class EvidenceSnippet(BaseModel):
+    text: str
     url: str
-    title: str
-    snippet: str
-    relevance_score: float = Field(default=0.5, ge=0.0, le=1.0)
+    title: Optional[str]
+    source_domain: str
+    score: float = Field(default=0.5, ge=0.0, le=1.0)
     ai_overview: Optional[str] = None  # Tavily-specific
-    content: Optional[str] = None      # Full article text
-    source: str = "external"           # or "[INTERNAL MEMORY]"
 ```
 
 ---
@@ -255,9 +255,9 @@ class IntentClaim(BaseModel):
 
 ### Text Input
 
-- **Min length:** 1 character
-- **Max length:** 10,000 characters (recommended)
-- **Empty strings:** Rejected (400 error)
+- **Min length:** 5 characters
+- **Max length:** 5,000 characters (hard limit)
+- **Empty strings:** Rejected (422 validation error)
 
 ### Confidence Scores
 
@@ -292,11 +292,10 @@ pydantic2ts backend/app/features/analyze/schemas.py \
 ```typescript
 const payload: AnalyzeRequestPayload = {
   text: "The Earth is flat",
-  model_id: "meta-llama/llama-3.3-70b-instruct",
-  options: {
-    use_search: true,
-    verification_enabled: true
-  }
+  model_id: "tngtech/deepseek-r1t2-chimera:free",
+  max_claims: 3,
+  enable_web_search: true,
+  enable_kb: true
 };
 
 const response = await fetch('/api/analyze', {
@@ -312,12 +311,12 @@ const response = await fetch('/api/analyze', {
 # Backend creates response
 response = AnalyzeResponse(
     request_id=uuid4(),
-    model_used="meta-llama/llama-3.3-70b-instruct",
+    model_used="tngtech/deepseek-r1t2-chimera:free",
     latency_ms=8742,
     claims=[
         ClaimResult(
             claim_text="The Earth is flat",
-            verdict=Verdict.FALSE,
+            verdict="false",
             confidence=0.98,
             reasoning="...",
             evidence=[...]
