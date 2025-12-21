@@ -29,7 +29,7 @@ Top-level request record for each fact-check analysis.
 | `id` | BIGSERIAL | PK | Auto-incrementing ID |
 | `request_id` | UUID | UNIQUE, NOT NULL | External identifier |
 | `input_text` | TEXT | NOT NULL | User's original input |
-| `model_used` | VARCHAR(255) | | LLM model for verification |
+| `model_used` | TEXT | | LLM model for verification |
 | `latency_ms` | INTEGER | | Total processing time |
 | `verdict` | VARCHAR(50) | | Overall verdict (if single claim) |
 | `confidence` | NUMERIC(3,2) | | Overall confidence (0.00-1.00) |
@@ -63,7 +63,7 @@ One row per extracted claim.
 **pgvector Index:**
 ```sql
 CREATE INDEX idx_claims_embedding 
-ON claims USING hnsw (claim_embedding vector_cosine_ops);
+ON claims USING ivfflat (claim_embedding vector_cosine_ops) WITH (lists = 100);
 ```
 
 ---
@@ -98,7 +98,7 @@ Snippets/quotes from sources tied to claims.
 | `claim_id` | BIGINT | FK → claims(id) | Associated claim |
 | `source_id` | BIGINT | FK → sources(id) | Source reference |
 | `snippet` | TEXT | NOT NULL | Evidence text |
-| `relevance_score` | NUMERIC(3,2) | | Relevance (0.00-1.00) |
+| `relevance_score` | NUMERIC(4,3) | | Relevance (0.000-1.000) |
 | `snippet_embedding` | VECTOR(384) | | pgvector embedding |
 | `captured_at` | TIMESTAMPTZ | DEFAULT NOW() | Timestamp |
 
@@ -116,7 +116,7 @@ This prevents duplicate evidence for the same claim from the same source.
 **pgvector Index:**
 ```sql
 CREATE INDEX idx_evidence_embedding 
-ON evidence USING hnsw (snippet_embedding vector_cosine_ops);
+ON evidence USING ivfflat (snippet_embedding vector_cosine_ops) WITH (lists = 100);
 ```
 
 ---
@@ -180,7 +180,7 @@ erDiagram
 
 - **Dimension:** 384 (BAAI/bge-small-en-v1.5 model)
 - **Distance Metric:** Cosine similarity
-- **Index Type:** HNSW (Hierarchical Navigable Small World)
+- **Index Type:** IVFFLAT (Inverted File with Flat Compression)
 
 ### Creating Vector Columns
 
@@ -195,9 +195,9 @@ CREATE TABLE claims (
     claim_embedding VECTOR(384)
 );
 
--- Create HNSW index for fast similarity search
+-- Create IVFFLAT index for fast similarity search
 CREATE INDEX idx_claims_embedding 
-ON claims USING hnsw (claim_embedding vector_cosine_ops);
+ON claims USING ivfflat (claim_embedding vector_cosine_ops) WITH (lists = 100);
 ```
 
 ### Querying by Similarity
@@ -233,8 +233,8 @@ psql -h localhost -p 5433 -U postgres -d factuai -f backend/migrations/v4_0_001_
 
 ### Migration Files
 
-- `v4_0_001_core.sql` - Core schema (verifications, claims, sources, evidence)
-- `v4_0_002_pgvector.sql` - pgvector extension + indexes
+- `v3_0_001_init.sql` - Core schema (verifications, claims, sources, evidence) + pgvector
+- `v3_0_002_users.sql` - User authentication tables
 - Additional migrations as features are added
 
 ---
@@ -245,7 +245,7 @@ psql -h localhost -p 5433 -U postgres -d factuai -f backend/migrations/v4_0_001_
 
 1. **Foreign keys** always indexed
 2. **Timestamp columns** indexed for time-based queries
-3. **Vector columns** use HNSW indexes (faster than brute force)
+3. **Vector columns** use IVFFLAT indexes (faster than brute force)
 4. **Unique constraints** automatically create indexes
 
 ### Connection Pooling

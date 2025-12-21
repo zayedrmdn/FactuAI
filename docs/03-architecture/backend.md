@@ -21,6 +21,7 @@ backend/app/
 │   │   ├── router.py       # API endpoints
 │   │   ├── service.py      # Business logic
 │   │   └── schemas.py      # Pydantic models
+│   ├── auth/               # Authentication & user management
 │   ├── intent/             # Claim extraction
 │   │   ├── ports.py        # Interface
 │   │   └── adapters/
@@ -29,11 +30,11 @@ backend/app/
 │   │   ├── ports.py
 │   │   └── providers/
 │   │       └── tavily.py
-│   ├── system/            # Config API
+│   ├── system/             # Config API
 │   └── verification/       # Verdict generation
 │       ├── ports.py
 │       └── adapters/
-│           └── native.py
+│           └── openai_compatible.py
 └── infrastructure/         # Shared utilities
     └── extraction/         # Web scraping, OCR, etc.
 ```
@@ -99,24 +100,37 @@ verifier_adapter_path = settings.verifier_adapter
 ```python
 class Settings(BaseSettings):
     # DI bindings
-    intent_adapter: str = "backend.app.features.intent.adapters.llm.LLMIntentAdapter"
-    search_adapter: str = "backend.app.features.search.adapters.native.NativeSearchAdapter"
-    verifier_adapter: str = "backend.app.features.verification.adapters.native.NativeVerificationAdapter"
+    intent_adapter: str = "app.features.intent.adapters.llm.LLMIntentAdapter"
+    search_adapter: str = "app.features.search.adapters.native.NativeSearchService"
+    verifier_adapter: str = "app.features.verification.adapters.openai_compatible.OpenAICompatibleClaimVerifier"
     
     # Search provider paths (comma-separated)
-    search_provider_paths: str = "backend.app.features.search.providers.tavily.TavilyProvider"
+    search_provider_paths: str = "app.features.search.providers.tavily.TavilyProvider"
 ```
+
+**Backend feature slices:**
+- `backend/app/features/analyze/` - API boundary, full orchestration
+- `backend/app/features/auth/` - Authentication and user management
+- `backend/app/features/intent/` - Uses `LLMIntentAdapter` by default
+- `backend/app/features/search/` - Pluggable providers
+- `backend/app/features/verification/` - LangChain-based verdict
+- `backend/app/workers/` - Background task workers
 
 ### Extending via OCP
 
 To add a new search provider:
 
-1. Create provider class in `backend/app/features/search/providers/my_provider.py`
-2. Add dotted path to `SEARCH_PROVIDER_PATHS`:
-   ```bash
-   SEARCH_PROVIDER_PATHS=backend.app.features.search.providers.tavily.TavilyProvider,backend.app.features.search.providers.my_provider.MyProvider
-   ```
-3. No orchestrator changes needed ✅
+1.  Create provider class in `backend/app/features/search/providers/my_provider.py`
+2.  Add dotted path to `SEARCH_PROVIDER_PATHS`:
+    ```bash
+    SEARCH_PROVIDER_PATHS=app.features.search.providers.tavily.TavilyProvider,app.features.search.providers.my_provider.MyProvider
+    ```
+    **Example:**
+    ```python
+    # Add a new search provider without changing orchestration code
+    SEARCH_PROVIDER_PATHS=app.features.search.providers.tavily.TavilyProvider,app.features.search.providers.custom.MyProvider
+    ```
+3.  No orchestrator changes needed ✅
 
 See [../05-features/search-providers.md](../05-features/search-providers.md) for guide.
 

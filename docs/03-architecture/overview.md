@@ -71,6 +71,7 @@ Code is organized by **feature**, not by layer:
 ```
 backend/app/features/
 ├── analyze/       # Orchestrates full fact-check flow
+├── auth/          # Authentication & user management
 ├── intent/        # Claim extraction
 ├── search/        # Search providers (Tavily, RAG)
 ├── system/        # Config API for frontend
@@ -178,6 +179,7 @@ See [frontend.md](frontend.md) for details.
 
 **Backend feature slices:**
 - `backend/app/features/analyze/` - API boundary, full orchestration
+- `backend/app/features/auth/` - Authentication and user management
 - `backend/app/features/intent/` - Uses `LLMIntentAdapter` by default
 - `backend/app/features/search/` - Pluggable providers
 - `backend/app/features/verification/` - LangChain-based verdict
