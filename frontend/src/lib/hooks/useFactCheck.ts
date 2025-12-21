@@ -9,12 +9,9 @@ import {
   mapApiResultToFactCheckResult,
 } from '@/types/dashboard/factcheck';
 import { usePipelineModelsStore, getModelById } from '@/features/ai-providers';
+import { getApiUrl } from '@/lib/apiBase';
 
-// API Base URL (without endpoint path) - used consistently across the app
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
-// Remove trailing slash and /api/analyze suffix if present (legacy env var format)
-const normalizedBase = API_BASE.replace(/\/$/, '').replace(/\/api\/analyze$/, '');
-const API_ANALYZE_URL = `${normalizedBase}/api/analyze`;
+const API_ANALYZE_URL = getApiUrl('analyze');
 
 export function useFactCheck() {
   const [input, setInput] = useState('');
@@ -173,7 +170,7 @@ export function useFactCheck() {
       },
     };
 
-    console.log('📤 [FRONTEND] Sending fact-check request:');
+    console.log('[FRONTEND] Sending fact-check request:');
     console.log('   Provider:', requestPayload.provider);
     console.log('   Model:', requestPayload.model_display_name);
     console.log('   Temperature:', requestPayload.temperature);
@@ -189,22 +186,22 @@ export function useFactCheck() {
     );
     console.log('   Pipeline Models:');
     console.log(
-      '     ⚡ Intent:',
+      '     Intent:',
       requestPayload.pipeline_models.intent.model_display_name,
       `(${requestPayload.pipeline_models.intent.provider})`
     );
     console.log(
-      '     📝 Extraction:',
+      '     Extraction:',
       requestPayload.pipeline_models.extraction.model_display_name,
       `(${requestPayload.pipeline_models.extraction.provider})`
     );
     console.log(
-      '     📋 Summary:',
+      '     Summary:',
       requestPayload.pipeline_models.summary.model_display_name,
       `(${requestPayload.pipeline_models.summary.provider})`
     );
     console.log(
-      '     🧠 Reasoning:',
+      '     Reasoning:',
       requestPayload.pipeline_models.reasoning.model_display_name,
       `(${requestPayload.pipeline_models.reasoning.provider})`
     );

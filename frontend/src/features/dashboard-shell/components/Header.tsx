@@ -11,8 +11,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { X, Menu } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { useUser } from '@/lib/hooks/useUser';
+import { getMediaUrl } from '@/lib/apiBase';
 
 interface HeaderProps {
   readonly collapsed?: boolean;
@@ -28,8 +29,7 @@ export function Header({ onMobileMenuToggle, mobileMenuOpen = false }: Readonly<
   const initials = displayName.slice(0, 2).toUpperCase();
 
   return (
-    <div className="flex h-16 shrink-0 items-center justify-between border-b bg-white px-3 sm:px-4 gap-2 sm:gap-4">
-      {/* Mobile: Hamburger Menu Button */}
+    <div className="flex h-16 shrink-0 items-center justify-between border-b border-border bg-card px-3 sm:px-4 gap-2 sm:gap-4">
       <Button
         variant="ghost"
         size="icon"
@@ -40,14 +40,12 @@ export function Header({ onMobileMenuToggle, mobileMenuOpen = false }: Readonly<
         {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
       </Button>
 
-      {/* Left: Logo/Title (desktop only) */}
       <div className="hidden md:flex items-center gap-2 flex-1">
-        <h1 className="text-lg font-semibold text-slate-900">FactuAI</h1>
+        <h1 className="text-lg font-semibold text-foreground">FactuAI</h1>
       </div>
 
-      {/* Right: User Profile */}
       <div className="flex items-center gap-2 sm:gap-4 shrink-0 ml-auto">
-        <span className="hidden sm:inline text-sm font-medium text-slate-600">
+        <span className="hidden sm:inline text-sm font-medium text-muted-foreground">
           Welcome back, {displayName}
         </span>
 
@@ -56,11 +54,11 @@ export function Header({ onMobileMenuToggle, mobileMenuOpen = false }: Readonly<
             <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
               {user?.profile_picture && !imageError ? (
                 <Image
-                  src={`http://127.0.0.1:8000${user.profile_picture}`}
+                  src={getMediaUrl(user.profile_picture)}
                   alt="Profile"
                   width={36}
                   height={36}
-                  className="h-9 w-9 rounded-full object-cover border border-slate-200"
+                  className="h-9 w-9 rounded-full object-cover border border-border"
                   onError={() => setImageError(true)}
                   unoptimized
                 />

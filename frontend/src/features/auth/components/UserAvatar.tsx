@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useUser } from '@/lib/hooks/useUser';
+import { getMediaUrl } from '@/lib/apiBase';
 
 export default function UserAvatar() {
   const { user } = useUser();
@@ -17,18 +18,18 @@ export default function UserAvatar() {
       {user.profile_picture && !imageError ? (
         /* eslint-disable-next-line @next/next/no-img-element */
         <img
-          src={`http://127.0.0.1:8000${user.profile_picture}`}
+          src={getMediaUrl(user.profile_picture)}
           alt="Profile"
-          className="w-8 h-8 rounded-full object-cover border border-gray-300"
+          className="w-8 h-8 rounded-full object-cover border border-border"
           onError={() => setImageError(true)}
           onLoad={() => setImageError(false)}
         />
       ) : (
-        <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-semibold">
+        <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-semibold">
           {initials}
         </div>
       )}
-      <span className="hidden sm:inline text-sm font-medium text-gray-700 dark:text-gray-300">
+      <span className="hidden sm:inline text-sm font-medium text-muted-foreground">
         {displayName}
       </span>
     </div>

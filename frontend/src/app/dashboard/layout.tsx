@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Sidebar } from '@/components/dashboard/Sidebar';
-import { Header } from '@/components/dashboard/Header';
+import { Sidebar, Header } from '@/features/dashboard-shell';
 
 export default function DashboardLayout({
   children,
@@ -38,7 +37,7 @@ export default function DashboardLayout({
   }, [mobileMenuOpen]);
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-slate-50">
+    <div className="flex h-screen w-full overflow-hidden bg-background">
       {/* Mobile Overlay */}
       {mobileMenuOpen && (
         <div

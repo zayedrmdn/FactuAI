@@ -13,7 +13,16 @@ def select_model(provider: str, *, openrouter_model: str) -> str:
 
 
 def normalize_url(url: str, fallback: str) -> str:
-    if url and url.startswith("http"):
+    """Normalize URL, preserving both HTTP(S) and internal protocol URLs.
+    
+    Args:
+        url: URL to normalize (may be http://, https://, or internal://)
+        fallback: Fallback URL if the input is invalid
+        
+    Returns:
+        The original URL if it's valid (http/https/internal protocol), otherwise fallback
+    """
+    if url and (url.startswith("http") or url.startswith("internal://")):
         return url
     return fallback
 

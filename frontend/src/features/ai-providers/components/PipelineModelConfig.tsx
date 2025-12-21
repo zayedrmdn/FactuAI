@@ -45,25 +45,25 @@ const taskConfig: Record<
     label: 'Intent Detection',
     description: 'Fast model for routing (Factual vs General)',
     icon: Zap,
-    color: 'text-amber-500',
+    color: 'text-warning',
   },
   extraction: {
     label: 'Extraction & Search Pivot',
     description: 'Extracts claims and evaluates search result relevance (Pivot)',
     icon: FileText,
-    color: 'text-blue-500',
+    color: 'text-info',
   },
   reasoning: {
     label: 'Reasoning & Verification',
     description: 'Model used for deep analysis, pivot decisions, and final verdict',
     icon: Brain,
-    color: 'text-purple-500',
+    color: 'text-primary',
   },
   summary: {
     label: 'Summarization',
     description: 'Model used for generating the executive summary',
     icon: AlignLeft,
-    color: 'text-green-500',
+    color: 'text-success',
   },
 };
 
@@ -246,14 +246,14 @@ export function PipelineModelConfig({
                           {model.tier === 'free' ? (
                             <Badge
                               variant="outline"
-                              className="text-[10px] px-1.5 h-5 shrink-0 border-green-500/30 text-green-600 dark:text-green-400 bg-green-500/5"
+                              className="text-[10px] px-1.5 h-5 shrink-0 border-success/30 text-success bg-success/5"
                             >
                               Free
                             </Badge>
                           ) : (
                             <Badge
                               variant="outline"
-                              className="text-[10px] px-1.5 h-5 shrink-0 border-amber-500/30 text-amber-600 dark:text-amber-400 bg-amber-500/5"
+                              className="text-[10px] px-1.5 h-5 shrink-0 border-warning/30 text-warning bg-warning/5"
                             >
                               Paid
                             </Badge>
@@ -283,7 +283,7 @@ export function PipelineModelConfig({
                     </span>
                     {currentModel.tier && (
                       <span className="flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500/40" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-info/40" />
                         <span className="capitalize">{currentModel.tier}</span>
                       </span>
                     )}

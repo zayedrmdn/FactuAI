@@ -1,7 +1,10 @@
 'use client';
 
-import { ArrowPathIcon, ExclamationTriangleIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { AlertTriangle, Loader2, X } from 'lucide-react';
 import { ActiveModelDisplay } from '@/features/ai-providers';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/primitives';
+import { Card, CardContent } from '@/components/ui/card';
 
 // ========================================================================================
 // PROCESSING STATUS COMPONENT (Simple inline status)
@@ -24,17 +27,12 @@ export function ProcessingStatus({
 
   return (
     <div className={`flex items-center gap-2 text-sm text-muted-foreground ${className}`}>
-      <ArrowPathIcon className="w-4 h-4 animate-spin" />
+      <Loader2 className="h-4 w-4 animate-spin" />
       <span>{message}</span>
       {progress !== undefined && (
         <div className="flex-1 max-w-32">
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
-            />
-          </div>
-          <span className="text-xs text-gray-500">{Math.round(progress)}%</span>
+          <Progress value={Math.min(100, Math.max(0, progress))} className="h-2" />
+          <span className="text-xs text-muted-foreground">{Math.round(progress)}%</span>
         </div>
       )}
     </div>
@@ -58,76 +56,36 @@ export function LoadingAnimation({
   currentClaim,
   className = '',
 }: LoadingAnimationProps) {
+  const safeProgress = Math.min(100, Math.max(0, progress));
+
   return (
-    <div
-      className={`relative p-8 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg border border-purple-200 dark:border-purple-700 ${className}`}
-    >
-      <div className="absolute inset-0 bg-gradient-to-r from-purple-400/10 to-blue-400/10 rounded-lg animate-pulse" />
+    <Card className={`border border-border shadow-sm ${className}`}>
+      <CardContent className="p-8">
+        <div className="text-center space-y-6">
+          <div className="flex justify-center">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+          </div>
 
-      <div className="relative z-10 text-center space-y-6">
-        {/* Animated Spinner */}
-        <div className="flex justify-center">
-          <div className="relative w-16 h-16">
-            <div className="absolute inset-0 border-4 border-purple-200 dark:border-purple-800 rounded-full" />
-            <div className="absolute inset-0 border-4 border-purple-600 dark:border-purple-400 rounded-full border-t-transparent animate-spin" />
-            <div
-              className="absolute inset-2 border-2 border-blue-300 dark:border-blue-500 rounded-full border-b-transparent animate-spin"
-              style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}
-            />
+          <div className="space-y-1">
+            <p key={phase} className="text-lg font-medium text-foreground">
+              {phase}
+            </p>
+            {currentClaim !== undefined && currentClaim > 0 && (
+              <p className="text-sm text-muted-foreground">Processing claim {currentClaim}</p>
+            )}
+          </div>
+
+          <div className="flex justify-center">
+            <ActiveModelDisplay />
+          </div>
+
+          <div className="space-y-2">
+            <Progress value={safeProgress} className="h-2" />
+            <p className="text-xs text-muted-foreground">{Math.round(safeProgress)}% complete</p>
           </div>
         </div>
-
-        {/* Phase Text with Animation */}
-        <div className="h-8 flex items-center justify-center">
-          <p
-            key={phase}
-            className="text-lg font-medium text-purple-700 dark:text-purple-300 animate-in slide-in-from-right-3 fade-in duration-500"
-          >
-            {phase}
-          </p>
-        </div>
-
-        {/* Active Model Display */}
-        <div className="flex justify-center">
-          <ActiveModelDisplay />
-        </div>
-
-        {/* Current Claim Info */}
-        {currentClaim !== undefined && currentClaim > 0 && (
-          <p className="text-sm text-muted-foreground animate-in fade-in duration-300">
-            Processing claim {currentClaim}
-          </p>
-        )}
-
-        {/* Progress Bar */}
-        <div className="space-y-2">
-          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-purple-600 to-blue-600 rounded-full transition-all duration-500 ease-out"
-              style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
-            />
-          </div>
-          <p className="text-xs text-muted-foreground">{Math.round(progress)}% complete</p>
-        </div>
-
-        {/* Status Dots */}
-        <div className="flex justify-center space-x-1">
-          {[0, 1, 2].map((i) => (
-            <div
-              key={i}
-              className={`w-2 h-2 rounded-full transition-all duration-300 ${progress > i * 33.33
-                  ? 'bg-purple-600 dark:bg-purple-400'
-                  : 'bg-gray-300 dark:bg-gray-600'
-                }`}
-              style={{
-                animationDelay: `${i * 200}ms`,
-                animation: progress > i * 33.33 ? 'pulse 2s infinite' : 'none',
-              }}
-            />
-          ))}
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -155,51 +113,44 @@ export function ErrorState({
   clearText = 'Clear',
 }: ErrorStateProps) {
   return (
-    <div
-      className={`relative p-8 bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 rounded-lg border border-red-200 dark:border-red-700 animate-in slide-in-from-top duration-500 ${className}`}
+    <Card
+      className={`border border-destructive/20 bg-destructive/5 animate-in slide-in-from-top duration-500 ${className}`}
     >
-      <div className="text-center space-y-6">
-        {/* Error Icon */}
-        <div className="flex justify-center">
-          <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
-            <ExclamationTriangleIcon className="w-8 h-8 text-red-600 dark:text-red-400" />
+      <CardContent className="p-8">
+        <div className="text-center space-y-6">
+          <div className="flex justify-center">
+            <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center">
+              <AlertTriangle className="h-8 w-8 text-destructive" />
+            </div>
           </div>
-        </div>
 
-        {/* Error Content */}
-        <div className="space-y-2">
-          <h3 className="text-lg font-medium text-red-700 dark:text-red-300">{title}</h3>
-          <p className="text-sm text-red-600 dark:text-red-400 max-w-md mx-auto leading-relaxed">
-            {error}
-          </p>
-        </div>
-
-        {/* Action Buttons */}
-        {(onRetry || onClear) && (
-          <div className="flex gap-3 justify-center">
-            {onRetry && (
-              <button
-                onClick={onRetry}
-                className="flex items-center gap-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white px-4 py-2 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-              >
-                <ArrowPathIcon className="w-4 h-4" />
-                {retryText}
-              </button>
-            )}
-
-            {onClear && (
-              <button
-                onClick={onClear}
-                className="flex items-center gap-2 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-200 px-4 py-2 rounded-lg transition-colors border border-red-300 hover:border-red-400 dark:border-red-600 dark:hover:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-              >
-                <XMarkIcon className="w-4 h-4" />
-                {clearText}
-              </button>
-            )}
+          <div className="space-y-2">
+            <h3 className="text-lg font-medium text-foreground">{title}</h3>
+            <p className="text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">
+              {error}
+            </p>
           </div>
-        )}
-      </div>
-    </div>
+
+          {(onRetry || onClear) && (
+            <div className="flex gap-3 justify-center">
+              {onRetry && (
+                <Button onClick={onRetry} variant="destructive" className="gap-2">
+                  <Loader2 className="h-4 w-4" />
+                  {retryText}
+                </Button>
+              )}
+
+              {onClear && (
+                <Button onClick={onClear} variant="outline" className="gap-2">
+                  <X className="h-4 w-4" />
+                  {clearText}
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

@@ -16,6 +16,7 @@ import {
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { ShieldCheck } from 'lucide-react';
+import { getApiUrl } from '@/lib/apiBase';
 
 const schema = z
   .object({
@@ -44,7 +45,7 @@ export default function RegisterPage() {
   const onSubmit = async (data: FormData) => {
     try {
       // Send a POST request to the backend with the registration data
-      const res = await fetch('http://127.0.0.1:8000/api/register', {
+      const res = await fetch(getApiUrl('register'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

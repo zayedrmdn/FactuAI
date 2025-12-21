@@ -212,8 +212,8 @@ export function ModelSelector() {
                           className={cn(
                             'text-2xs px-1.5 py-0.5 capitalize',
                             model.tier === 'free'
-                              ? 'border-green-500/30 text-green-600 bg-green-500/5'
-                              : 'border-amber-500/30 text-amber-600 bg-amber-500/5'
+                              ? 'border-success/30 text-success bg-success/5'
+                              : 'border-warning/30 text-warning bg-warning/5'
                           )}
                         >
                           {model.tier}

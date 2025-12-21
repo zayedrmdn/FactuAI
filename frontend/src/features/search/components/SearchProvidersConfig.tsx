@@ -41,7 +41,7 @@ export function SearchProvidersConfig({
             <Label className={`${labelClass} font-medium`}>Smart Web Search</Label>
           </div>
           <div className="flex items-center gap-2">
-            <span className={`text-emerald-600 font-medium uppercase tracking-wider ${descClass}`}>
+            <span className={`text-success font-medium uppercase tracking-wider ${descClass}`}>
               Active
             </span>
             <Switch checked disabled className="scale-90 origin-right" />
@@ -63,7 +63,7 @@ export function SearchProvidersConfig({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 rounded-lg border p-3 sm:p-4 bg-slate-50">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 rounded-lg border p-3 sm:p-4 bg-muted/30">
           <div className="flex items-start gap-3">
             <div className="mt-1 rounded-full bg-primary/10 p-2 text-primary">
               <Globe className="h-4 w-4" />
@@ -76,7 +76,7 @@ export function SearchProvidersConfig({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <div className={`flex items-center gap-1 ${descClass} text-emerald-600`}>
+            <div className={`flex items-center gap-1 ${descClass} text-success`}>
               <span className="hidden sm:inline font-medium">Active</span>
             </div>
             <Switch checked disabled />

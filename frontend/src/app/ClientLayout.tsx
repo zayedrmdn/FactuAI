@@ -4,9 +4,9 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDownIcon, MoonIcon, SunIcon } from 'lucide-react';
+import { ChevronDownIcon, MoonIcon, Search, SunIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import UserAvatar from '@/components/UserAvatar';
+import { UserAvatar } from '@/features/auth';
 
 /** Helper function to get the main container className */
 function getMainClassName(isHomePage: boolean, onAuthPage: boolean, isDashboard: boolean): string {
@@ -128,17 +128,15 @@ export default function ClientLayout({ children }: Readonly<{ children: React.Re
     <>
       {/* header */}
       {!isHomePage && !isDashboard && (
-        <header className="sticky top-0 z-50 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-md shadow border-b border-gray-200/50 dark:border-gray-700/50">
+        <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-md shadow border-b border-border/50">
           <div className="max-w-7xl mx-auto px-4">
             <div className="flex items-center justify-between h-16">
               {/* Left - Logo */}
               <Link href="/" className="flex items-center gap-3 group">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-all duration-200 shadow-lg">
-                  <span className="font-bold text-white">🔍</span>
+                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center group-hover:scale-110 transition-all duration-200 shadow-sm">
+                  <Search className="w-4 h-4 text-primary-foreground" aria-hidden="true" />
                 </div>
-                <span className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">
-                  FactuAI
-                </span>
+                <span className="text-xl font-bold text-foreground tracking-tight">FactuAI</span>
               </Link>
 
               {/* Right - Grouped Controls */}
@@ -146,7 +144,7 @@ export default function ClientLayout({ children }: Readonly<{ children: React.Re
                 {/* Theme Toggle - Icon Only */}
                 <button
                   onClick={() => toggleTheme(!isDark)}
-                  className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
+                  className="p-2 rounded-lg hover:bg-accent transition-colors duration-200"
                 >
                   <motion.div
                     initial={false}
@@ -158,7 +156,7 @@ export default function ClientLayout({ children }: Readonly<{ children: React.Re
                     transition={{ duration: 0.3 }}
                     className="absolute"
                   >
-                    <MoonIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                    <MoonIcon className="w-5 h-5 text-muted-foreground" />
                   </motion.div>
                   <motion.div
                     initial={false}
@@ -169,7 +167,7 @@ export default function ClientLayout({ children }: Readonly<{ children: React.Re
                     }}
                     transition={{ duration: 0.3 }}
                   >
-                    <SunIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                    <SunIcon className="w-5 h-5 text-muted-foreground" />
                   </motion.div>
                 </button>
 
@@ -178,11 +176,11 @@ export default function ClientLayout({ children }: Readonly<{ children: React.Re
                   <div className="relative">
                     <button
                       onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-                      className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
+                      className="flex items-center gap-2 p-2 rounded-lg hover:bg-accent transition-colors duration-200"
                     >
                       <UserAvatar />
                       <ChevronDownIcon
-                        className={`w-4 h-4 text-gray-600 dark:text-gray-400 transition-transform duration-200 ${
+                        className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${
                           showProfileDropdown ? 'rotate-180' : ''
                         }`}
                       />
@@ -196,23 +194,23 @@ export default function ClientLayout({ children }: Readonly<{ children: React.Re
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -10 }}
                           transition={{ duration: 0.2 }}
-                          className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50"
+                          className="absolute right-0 mt-2 w-48 bg-popover rounded-lg shadow-lg border border-border py-1 z-50"
                         >
-                          <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-                            <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          <div className="px-4 py-2 border-b border-border">
+                            <p className="text-sm font-medium text-foreground">
                               {user.username || user.email}
                             </p>
                           </div>
                           <Link
                             href="/dashboard/profile"
-                            className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                            className="block px-4 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                             onClick={() => setShowProfileDropdown(false)}
                           >
                             Profile Settings
                           </Link>
                           <button
                             onClick={handleLogout}
-                            className="block w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                            className="block w-full text-left px-4 py-2 text-sm text-destructive hover:bg-accent hover:text-accent-foreground"
                           >
                             Sign Out
                           </button>
@@ -241,9 +239,7 @@ export default function ClientLayout({ children }: Readonly<{ children: React.Re
       )}
 
       {/* main content */}
-      <main className={getMainClassName(isHomePage, onAuthPage, isDashboard)}>
-        {children}
-      </main>
+      <main className={getMainClassName(isHomePage, onAuthPage, isDashboard)}>{children}</main>
     </>
   );
 }

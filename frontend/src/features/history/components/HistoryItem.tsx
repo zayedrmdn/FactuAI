@@ -1,13 +1,6 @@
 'use client';
 
-import {
-  DocumentTextIcon,
-  PhotoIcon,
-  VideoCameraIcon,
-  XMarkIcon,
-  ChevronDownIcon,
-  ChevronRightIcon,
-} from '@heroicons/react/24/outline';
+import { ChevronDown, ChevronRight, FileText, Image as ImageIcon, Video, X } from 'lucide-react';
 import { HistoryItem as HistoryItemType } from '@/types/dashboard/factcheck';
 
 interface HistoryItemProps {
@@ -19,24 +12,27 @@ interface HistoryItemProps {
 }
 
 const VERDICT_CONFIG = {
-  true: { label: 'True', color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
-  mostly_true: { label: 'Mostly True', color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
-  false: { label: 'False', color: 'text-rose-600 bg-rose-50 border-rose-200' },
-  mostly_false: { label: 'Mostly False', color: 'text-rose-600 bg-rose-50 border-rose-200' },
-  half_true: { label: 'Half True', color: 'text-amber-600 bg-amber-50 border-amber-200' },
-  barely_true: { label: 'Barely True', color: 'text-amber-600 bg-amber-50 border-amber-200' },
-  unknown: { label: 'Unknown', color: 'text-slate-600 bg-slate-50 border-slate-200' },
+  true: { label: 'True', color: 'text-success bg-success/10 border-success/20' },
+  mostly_true: { label: 'Mostly True', color: 'text-success bg-success/10 border-success/20' },
+  false: { label: 'False', color: 'text-destructive bg-destructive/10 border-destructive/20' },
+  mostly_false: {
+    label: 'Mostly False',
+    color: 'text-destructive bg-destructive/10 border-destructive/20',
+  },
+  half_true: { label: 'Half True', color: 'text-warning bg-warning/10 border-warning/20' },
+  barely_true: { label: 'Barely True', color: 'text-warning bg-warning/10 border-warning/20' },
+  unknown: { label: 'Unknown', color: 'text-muted-foreground bg-muted/40 border-border' },
 };
 
 /** Get the icon box CSS classes based on item type */
 function getIconBoxClasses(type: string): string {
   if (type === 'image') {
-    return 'bg-blue-50 text-blue-600 border-blue-100';
+    return 'bg-primary/10 text-primary border-primary/20';
   }
   if (type === 'video') {
-    return 'bg-purple-50 text-purple-600 border-purple-100';
+    return 'bg-secondary text-secondary-foreground border-border';
   }
-  return 'bg-slate-50 text-slate-600 border-slate-100';
+  return 'bg-muted text-muted-foreground border-border';
 }
 
 export default function HistoryItem({
@@ -49,11 +45,11 @@ export default function HistoryItem({
   const getInputTypeIcon = () => {
     switch (item.type) {
       case 'image':
-        return <PhotoIcon className="w-4 h-4" />;
+        return <ImageIcon className="h-4 w-4" />;
       case 'video':
-        return <VideoCameraIcon className="w-4 h-4" />;
+        return <Video className="h-4 w-4" />;
       default:
-        return <DocumentTextIcon className="w-4 h-4" />;
+        return <FileText className="h-4 w-4" />;
     }
   };
 
@@ -123,9 +119,9 @@ export default function HistoryItem({
           {/* Chevron */}
           <div className="text-muted-foreground/50 shrink-0">
             {isExpanded ? (
-              <ChevronDownIcon className="w-4 h-4" />
+              <ChevronDown className="h-4 w-4" />
             ) : (
-              <ChevronRightIcon className="w-4 h-4" />
+              <ChevronRight className="h-4 w-4" />
             )}
           </div>
         </div>
@@ -165,7 +161,7 @@ export default function HistoryItem({
                 className="bg-destructive/10 text-destructive hover:bg-destructive/20 p-2 rounded-md transition-colors"
                 title="Delete from history"
               >
-                <XMarkIcon className="w-4 h-4" />
+                <X className="h-4 w-4" />
               </button>
             </div>
           </div>

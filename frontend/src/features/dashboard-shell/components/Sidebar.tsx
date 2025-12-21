@@ -3,13 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import {
-  LayoutDashboard,
-  LogOut,
-  ChevronLeft,
-  ChevronRight,
-  ShieldCheck,
-} from 'lucide-react';
+import { ChevronLeft, ChevronRight, LayoutDashboard, LogOut, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -18,7 +12,6 @@ interface SidebarProps {
   readonly onToggle: () => void;
 }
 
-// V4 Backend only supports dashboard - Profile and API Limits are not yet implemented
 const navItems = [
   {
     title: 'Dashboard',
@@ -34,7 +27,6 @@ export function Sidebar({ collapsed, onToggle }: Readonly<SidebarProps>) {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    // Clear the user hook cache to prevent stale data
     import('@/lib/hooks/useUser').then(({ clearUserCache }) => clearUserCache());
     router.push('/');
     globalThis.location.reload();
@@ -49,10 +41,8 @@ export function Sidebar({ collapsed, onToggle }: Readonly<SidebarProps>) {
           'transition-[width] duration-200 ease-in-out'
         )}
       >
-        {/* Logo Area */}
         <div className="flex h-16 shrink-0 items-center border-b border-sidebar-border px-2">
           {collapsed ? (
-            // Collapsed state: Show only toggle button centered
             <Button
               variant="ghost"
               size="icon"
@@ -63,7 +53,6 @@ export function Sidebar({ collapsed, onToggle }: Readonly<SidebarProps>) {
               <ChevronRight className="h-4 w-4" />
             </Button>
           ) : (
-            // Expanded state: Show logo and toggle button
             <>
               <Link
                 href="/dashboard"
@@ -88,7 +77,6 @@ export function Sidebar({ collapsed, onToggle }: Readonly<SidebarProps>) {
           )}
         </div>
 
-        {/* Navigation - grows to fill space */}
         <nav className="flex-1 overflow-y-auto p-2">
           <div className="space-y-1">
             {navItems.map((item) => {
@@ -124,7 +112,6 @@ export function Sidebar({ collapsed, onToggle }: Readonly<SidebarProps>) {
           </div>
         </nav>
 
-        {/* Footer - pinned to bottom */}
         <div className="shrink-0 border-t border-sidebar-border p-2">
           {collapsed ? (
             <Tooltip>

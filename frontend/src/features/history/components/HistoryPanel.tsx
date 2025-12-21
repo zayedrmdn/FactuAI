@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { HistoryItem as HistoryItemType } from '@/types/dashboard/factcheck';
 import HistoryItem from './HistoryItem';
-import { TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { Search, Trash2 } from 'lucide-react';
 
 interface HistoryPanelProps {
   history: HistoryItemType[];
@@ -97,7 +97,7 @@ export default function HistoryPanel({
             onClick={handleClearAll}
             className="flex items-center gap-1.5 text-destructive hover:text-destructive/80 transition-colors"
           >
-            <TrashIcon className="w-3.5 h-3.5" />
+            <Trash2 className="h-3.5 w-3.5" />
             <span>Clear History</span>
           </button>
         </div>
@@ -110,7 +110,7 @@ function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center h-full text-center p-6 opacity-60 min-h-card">
       <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-        <MagnifyingGlassIcon className="w-8 h-8 text-muted-foreground" />
+        <Search className="h-8 w-8 text-muted-foreground" />
       </div>
       <h3 className="text-sm font-semibold text-foreground">No History Yet</h3>
       <p className="text-xs text-muted-foreground mt-1 max-w-44">

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ClipboardIcon, ArrowUpTrayIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { Clipboard, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { franc } from 'franc';
 import { fileToText } from '@/lib/dashboard/fileToText';
@@ -24,25 +24,25 @@ function PasteUploadClear({
       <button
         onClick={onPaste}
         disabled={disabled}
-        className="flex items-center gap-1 px-3 py-1 text-xs border rounded hover:bg-gray-50 disabled:opacity-50"
+        className="flex items-center gap-1 px-3 py-1 text-xs border border-input rounded hover:bg-accent hover:text-accent-foreground disabled:opacity-50 transition-colors"
       >
-        <ClipboardIcon className="w-3 h-3" />
+        <Clipboard className="h-3 w-3" />
         Paste
       </button>
       <button
         onClick={onUpload}
         disabled={disabled}
-        className="flex items-center gap-1 px-3 py-1 text-xs border rounded hover:bg-gray-50 disabled:opacity-50"
+        className="flex items-center gap-1 px-3 py-1 text-xs border border-input rounded hover:bg-accent hover:text-accent-foreground disabled:opacity-50 transition-colors"
       >
-        <ArrowUpTrayIcon className="w-3 h-3" />
+        <Upload className="h-3 w-3" />
         Upload
       </button>
       <button
         onClick={onClear}
         disabled={disabled}
-        className="flex items-center gap-1 px-3 py-1 text-xs border rounded hover:bg-gray-50 disabled:opacity-50"
+        className="flex items-center gap-1 px-3 py-1 text-xs border border-input rounded hover:bg-accent hover:text-accent-foreground disabled:opacity-50 transition-colors"
       >
-        <XMarkIcon className="w-3 h-3" />
+        <X className="h-3 w-3" />
         Clear
       </button>
     </div>
@@ -129,21 +129,21 @@ export default function TextInput({ input, setInput, textSize, onClear }: Readon
           onClear={onClear}
           disabled={validationResult.isValid === false}
         />
-        <div className="text-xs text-gray-500">{wordCount} words</div>
+        <div className="text-xs text-muted-foreground">{wordCount} words</div>
       </div>
 
       <textarea
         value={input}
         onChange={(e) => setInput(e.target.value)}
         placeholder="Enter text to fact-check, or use the buttons above to paste/upload..."
-        className={`w-full h-64 p-4 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${textSizeClass}`}
+        className={`w-full h-64 p-4 border border-input rounded-lg resize-none bg-background text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${textSizeClass}`}
       />
 
       {showValidationError && (
-        <div className="text-sm text-red-600">
+        <div className="text-sm text-destructive">
           <p className="font-medium">{validationResult.error}</p>
           {validationResult.suggestion && (
-            <p className="text-xs text-gray-600 mt-1">{validationResult.suggestion}</p>
+            <p className="text-xs text-muted-foreground mt-1">{validationResult.suggestion}</p>
           )}
         </div>
       )}

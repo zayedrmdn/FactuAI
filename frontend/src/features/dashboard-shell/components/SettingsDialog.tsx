@@ -1,7 +1,8 @@
-// Full Path: src/components/dashboard/SettingsDialog.tsx
 'use client';
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { SunIcon, MoonIcon } from '@heroicons/react/24/outline';
+import { Button } from '@/components/ui/button';
+import { Moon, Sun } from 'lucide-react';
 import { PipelineModelConfig } from '@/features/ai-providers';
 import { SearchProvidersConfig } from '@/features/search';
 import { Separator } from '@/components/ui/primitives';
@@ -19,7 +20,6 @@ interface Props {
   isDark: boolean;
 }
 
-/** Get text size label */
 function getTextSizeLabel(opt: 'sm' | 'md' | 'lg'): string {
   if (opt === 'sm') return 'Small';
   if (opt === 'md') return 'Medium';
@@ -42,56 +42,49 @@ export default function SettingsDialog({
         </DialogHeader>
 
         <div className="space-y-8 py-4">
-          {/* Appearance Section */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Appearance</h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {/* Theme toggle */}
-              <div>
-                <p className="font-medium mb-2 text-sm">Theme</p>
+              <div className="space-y-2">
+                <p className="font-medium text-sm">Theme</p>
                 <div className="flex gap-2">
-                  <button
+                  <Button
+                    type="button"
+                    variant={!isDark ? 'secondary' : 'outline'}
+                    size="sm"
                     onClick={() => toggleTheme(false)}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-md border text-sm transition ${
-                      !isDark
-                        ? 'bg-primary/10 border-primary text-primary'
-                        : 'border-input hover:bg-accent hover:text-accent-foreground'
-                    }`}
+                    className="gap-2"
                   >
-                    <SunIcon className="w-4 h-4" />
+                    <Sun className="h-4 w-4" />
                     Light
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={isDark ? 'secondary' : 'outline'}
+                    size="sm"
                     onClick={() => toggleTheme(true)}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-md border text-sm transition ${
-                      isDark
-                        ? 'bg-primary/10 border-primary text-primary'
-                        : 'border-input hover:bg-accent hover:text-accent-foreground'
-                    }`}
+                    className="gap-2"
                   >
-                    <MoonIcon className="w-4 h-4" />
+                    <Moon className="h-4 w-4" />
                     Dark
-                  </button>
+                  </Button>
                 </div>
               </div>
 
-              {/* Text size */}
-              <div>
-                <p className="font-medium mb-2 text-sm">Text size</p>
-                <div className="flex gap-2">
+              <div className="space-y-2">
+                <p className="font-medium text-sm">Text size</p>
+                <div className="flex flex-wrap gap-2">
                   {(['sm', 'md', 'lg'] as const).map((opt) => (
-                    <button
+                    <Button
                       key={opt}
+                      type="button"
+                      variant={prefs.textSize === opt ? 'secondary' : 'outline'}
+                      size="sm"
                       onClick={() => savePrefs({ textSize: opt })}
-                      className={`px-3 py-2 rounded-md border text-sm transition ${
-                        prefs.textSize === opt
-                          ? 'bg-primary/10 border-primary text-primary'
-                          : 'border-input hover:bg-accent hover:text-accent-foreground'
-                      }`}
                     >
                       {getTextSizeLabel(opt)}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>
@@ -100,7 +93,6 @@ export default function SettingsDialog({
 
           <Separator />
 
-          {/* AI Configuration */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">AI Configuration</h3>
             <PipelineModelConfig compact textSize={prefs.textSize} />
@@ -108,7 +100,6 @@ export default function SettingsDialog({
 
           <Separator />
 
-          {/* Search Configuration */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Search Configuration</h3>
             <SearchProvidersConfig compact textSize={prefs.textSize} />

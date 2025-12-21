@@ -1,7 +1,7 @@
 /* utils/fileToText.ts */
 import { toast } from 'sonner';
 
-// NEW 👇 helper that lazy-loads the pre-bundled pdfjs “webpack” build
+// Helper that lazy-loads the pre-bundled pdfjs “webpack” build
 async function getPdfjs() {
   // this bundle includes the worker, no extra import needed
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -18,7 +18,7 @@ export async function fileToText(file: File): Promise<string> {
   }
 
   if (ext === 'pdf') {
-    const pdfjs = await getPdfjs(); // ⬅️ use helper
+    const pdfjs = await getPdfjs();
     const arrayBuf = await file.arrayBuffer();
 
     const pdf = await pdfjs.getDocument({ data: arrayBuf }).promise;

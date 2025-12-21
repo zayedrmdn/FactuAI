@@ -26,6 +26,7 @@ import { FactCheckResult, QAResult } from '@/types/dashboard/factcheck';
 import { TextSize } from '@/types/dashboard/ui';
 import { QAResultCard } from './QAResultCard';
 import { usePdfExport } from '@/lib/hooks/usePdfExport';
+import { Progress } from '@/components/ui/primitives';
 import { cn } from '@/lib/utils';
 
 type CombinedResult = FactCheckResult | QAResult;
@@ -297,10 +298,10 @@ export default function ResultsView({
       <Card className="border shadow-sm rounded-xl overflow-hidden">
         <CardContent className="p-4 sm:p-6">
           {/* Header Row with Title and Actions */}
-          <div className="flex items-start justify-between mb-6 pb-4 border-b border-slate-100">
+          <div className="flex items-start justify-between mb-6 pb-4 border-b border-border">
             <div className="space-y-1">
-              <h2 className="text-lg sm:text-xl font-semibold text-slate-900">Analysis Results</h2>
-              <p className="text-xs text-slate-500">
+              <h2 className="text-lg sm:text-xl font-semibold text-foreground">Analysis Results</h2>
+              <p className="text-xs text-muted-foreground">
                 Last updated: {updated ? new Date(updated).toLocaleTimeString() : 'Just now'}
               </p>
             </div>
@@ -309,7 +310,7 @@ export default function ResultsView({
                 variant="ghost"
                 size="icon"
                 onClick={openSettings}
-                className="h-8 w-8 text-slate-400 hover:text-slate-700"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground"
               >
                 <Settings className="h-4 w-4" />
               </Button>
@@ -317,7 +318,7 @@ export default function ResultsView({
                 variant="ghost"
                 size="icon"
                 onClick={onClear}
-                className="h-8 w-8 text-slate-400 hover:text-rose-600 hover:bg-rose-50"
+                className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -326,8 +327,8 @@ export default function ResultsView({
 
           {/* HERO SECTION: Claim Verdicts (Promoted) */}
           <div className="mb-8">
-            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-4 flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-slate-400" />
+            <h3 className="text-xs font-bold text-foreground uppercase tracking-wider mb-4 flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
               Verdict Summary
             </h3>
             <div className="flex flex-wrap gap-3">
@@ -340,25 +341,25 @@ export default function ResultsView({
                 return (
                   <div
                     key={idx}
-                    className="flex items-center gap-3 bg-white border border-slate-200 rounded-lg p-2 pr-4 shadow-sm hover:shadow-md transition-shadow"
+                    className="flex items-center gap-3 bg-card border border-border rounded-lg p-2 pr-4 shadow-sm hover:shadow-md transition-shadow"
                   >
-                    <div className="flex flex-col items-center justify-center w-8 h-8 rounded-md bg-slate-50 text-xs font-bold text-slate-500 border border-slate-100">
+                    <div className="flex flex-col items-center justify-center w-8 h-8 rounded-md bg-muted text-xs font-bold text-muted-foreground border border-border">
                       #{idx + 1}
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
                         Verdict
                       </span>
                       <div
                         className={cn(
                           'flex items-center gap-1.5 font-bold text-sm',
                           config.variant === 'success'
-                            ? 'text-emerald-700'
+                            ? 'text-success'
                             : config.variant === 'destructive'
-                              ? 'text-rose-700'
+                              ? 'text-destructive'
                               : config.variant === 'warning'
-                                ? 'text-amber-700'
-                                : 'text-slate-700'
+                                ? 'text-warning'
+                                : 'text-foreground'
                         )}
                       >
                         <VerdictIcon className="h-4 w-4" />
@@ -372,55 +373,52 @@ export default function ResultsView({
           </div>
 
           {/* SECONDARY GRID: Trust Score, Stats, Actions (Demoted/Compacted) */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 border-t border-slate-100">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 border-t border-border">
             {/* 1. Trust Score (Demoted to simple stat) */}
             <div className="flex flex-col justify-center space-y-1">
-              <h4 className="text-xs font-medium text-slate-400 uppercase tracking-wider">
+              <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Confidence Level
               </h4>
               <div className="flex items-baseline gap-3">
-                <span className="text-3xl font-bold text-slate-700">
+                <span className="text-3xl font-bold text-foreground">
                   {averageConfidence !== undefined && !isNaN(averageConfidence)
                     ? averageConfidence.toFixed(0)
                     : 'N/A'}
                   %
                 </span>
-                <div className="h-2 w-24 bg-slate-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-slate-400 rounded-full"
-                    style={{ width: `${averageConfidence || 0}% ` }}
-                  />
-                </div>
+                <Progress value={averageConfidence || 0} className="h-2 w-24" />
               </div>
               {aiScore !== null && aiScore !== undefined && (
-                <p className="text-xs text-slate-400 mt-1">AI Probability: {aiScore.toFixed(0)}%</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  AI Probability: {aiScore.toFixed(0)}%
+                </p>
               )}
             </div>
 
             {/* 2. Analysis Stats (Tightened) */}
-            <div className="flex flex-col justify-center space-y-2 md:border-l md:border-slate-100 md:pl-6">
-              <h4 className="text-xs font-medium text-slate-400 uppercase tracking-wider">
+            <div className="flex flex-col justify-center space-y-2 md:border-l md:border-border md:pl-6">
+              <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Breakdown
               </h4>
               <div className="flex gap-4 text-sm">
-                <div className="flex items-center gap-1.5 text-slate-600">
-                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                <div className="flex items-center gap-1.5 text-foreground">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-success" />
                   <span className="font-medium">{stats.trueCount}</span> Verified
                 </div>
-                <div className="flex items-center gap-1.5 text-slate-600">
-                  <XCircle className="h-3.5 w-3.5 text-rose-500" />
+                <div className="flex items-center gap-1.5 text-foreground">
+                  <XCircle className="h-3.5 w-3.5 text-destructive" />
                   <span className="font-medium">{stats.falseCount}</span> False
                 </div>
-                <div className="flex items-center gap-1.5 text-slate-600">
-                  <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+                <div className="flex items-center gap-1.5 text-foreground">
+                  <AlertTriangle className="h-3.5 w-3.5 text-warning" />
                   <span className="font-medium">{stats.mixedCount}</span> Other
                 </div>
               </div>
             </div>
 
             {/* 3. Quick Actions (Minimalist Toolbar) */}
-            <div className="flex flex-col justify-center md:items-end space-y-2 md:border-l md:border-slate-100 md:pl-6">
-              <h4 className="text-xs font-medium text-slate-400 uppercase tracking-wider md:text-right">
+            <div className="flex flex-col justify-center md:items-end space-y-2 md:border-l md:border-border md:pl-6">
+              <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider md:text-right">
                 Tools
               </h4>
               <div className="flex items-center gap-2">
@@ -455,7 +453,7 @@ export default function ResultsView({
                   variant="default"
                   size="sm"
                   onClick={onRetry}
-                  className="h-8 w-8 p-0 ml-2 bg-slate-900 hover:bg-slate-800"
+                  className="h-8 w-8 p-0 ml-2"
                   title="New Analysis"
                 >
                   <RefreshCw className="h-3.5 w-3.5" />
@@ -468,13 +466,13 @@ export default function ResultsView({
 
       {/* Executive Summary Text Block */}
       {summary && (
-        <Card className="border border-slate-200 shadow-sm rounded-xl bg-white">
+        <Card className="border border-border shadow-sm rounded-xl bg-card">
           <CardContent className="p-6">
-            <h4 className="text-sm font-semibold text-slate-900 mb-3 uppercase tracking-wider flex items-center gap-2">
-              <FileText className="h-4 w-4 text-slate-400" />
+            <h4 className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wider flex items-center gap-2">
+              <FileText className="h-4 w-4 text-muted-foreground" />
               Executive Summary
             </h4>
-            <p className="text-base leading-relaxed text-slate-700 whitespace-pre-wrap break-words">
+            <p className="text-base leading-relaxed text-foreground whitespace-pre-wrap break-words">
               {summary}
             </p>
           </CardContent>
@@ -484,8 +482,8 @@ export default function ResultsView({
       {/* Detailed Results */}
       <div className="space-y-6">
         <div className="flex items-center justify-between px-1">
-          <h3 className="text-lg font-semibold text-slate-900">Detailed Findings</h3>
-          <span className="text-sm text-slate-500">{results.length} Claims Analyzed</span>
+          <h3 className="text-lg font-semibold text-foreground">Detailed Findings</h3>
+          <span className="text-sm text-muted-foreground">{results.length} Claims Analyzed</span>
         </div>
 
         {/* Investigation Trace (New) */}
@@ -505,7 +503,6 @@ export default function ResultsView({
                 result={result}
                 index={idx}
                 textSize={prefs.textSize}
-                animationDelay={idx * 100}
               />
             ) : (
               <ClaimCard
@@ -513,7 +510,6 @@ export default function ResultsView({
                 result={result}
                 index={idx}
                 textSize={prefs.textSize}
-                animationDelay={idx * 100}
               />
             )
           )}

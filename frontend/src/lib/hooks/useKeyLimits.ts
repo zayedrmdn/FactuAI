@@ -9,10 +9,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { KeyLimitsResponse, KeyLimitsError } from '@/types/limits';
+import { getApiUrl } from '@/lib/apiBase';
 
-// API Base URL - normalize to remove trailing slash and /api/analyze suffix if present
-const rawApiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-const API_BASE_URL = rawApiBase.replace(/\/$/, '').replace(/\/api\/analyze$/, '');
 const POLL_INTERVAL = 30000; // 30 seconds
 
 interface UseKeyLimitsResult {
@@ -31,7 +29,7 @@ export function useKeyLimits(): UseKeyLimitsResult {
 
   const fetchLimits = useCallback(async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/limits`);
+      const response = await fetch(getApiUrl('limits'));
 
       if (!response.ok) {
         const errorData: KeyLimitsError = await response.json();

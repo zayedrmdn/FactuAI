@@ -25,9 +25,9 @@ const badgeVariants = cva(
         destructive:
           'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80',
         outline: 'text-foreground',
-        success: 'border-transparent bg-emerald-500 text-white hover:bg-emerald-600',
-        warning: 'border-transparent bg-amber-500 text-white hover:bg-amber-600',
-        info: 'border-transparent bg-blue-500 text-white hover:bg-blue-600',
+        success: 'border-transparent bg-success text-success-foreground hover:bg-success/90',
+        warning: 'border-transparent bg-warning text-warning-foreground hover:bg-warning/90',
+        info: 'border-transparent bg-info text-info-foreground hover:bg-info/90',
       },
     },
     defaultVariants: {
@@ -37,8 +37,7 @@ const badgeVariants = cva(
 );
 
 export interface BadgeProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof badgeVariants> {}
+  extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof badgeVariants> {}
 
 function Badge({ className, variant, ...props }: BadgeProps) {
   return <div className={cn(badgeVariants({ variant }), className)} {...props} />;
@@ -72,22 +71,34 @@ Separator.displayName = SeparatorPrimitive.Root.displayName;
 
 interface ProgressProps extends React.HTMLAttributes<HTMLDivElement> {
   value?: number;
-  indicatorColor?: string;
+  variant?: 'default' | 'success' | 'warning' | 'destructive' | 'info';
 }
 
 const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
-  ({ className, value, indicatorColor, ...props }, ref) => (
+  ({ className, value, variant = 'default', ...props }, ref) => (
     <div
       ref={ref}
       className={cn('relative h-2 w-full overflow-hidden rounded-full bg-secondary', className)}
+      style={
+        {
+          '--progress': `${Math.max(0, Math.min(100, value ?? 0))}%`,
+        } as React.CSSProperties
+      }
       {...props}
     >
       <div
-        className={cn('h-full w-full flex-1 bg-primary transition-all')}
-        style={{
-          transform: `translateX(-${100 - (value || 0)}%)`,
-          backgroundColor: indicatorColor,
-        }}
+        className={cn(
+          'h-full w-[var(--progress)] transition-[width] duration-300 ease-out',
+          variant === 'success'
+            ? 'bg-success'
+            : variant === 'warning'
+              ? 'bg-warning'
+              : variant === 'destructive'
+                ? 'bg-destructive'
+                : variant === 'info'
+                  ? 'bg-info'
+                  : 'bg-primary'
+        )}
       />
     </div>
   )

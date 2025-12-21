@@ -1,10 +1,13 @@
 import { ExtractTextResponse, VideoTextResponse, FactCheckResponse } from '@/types/dashboard/api';
+import { getApiBaseUrl } from '@/lib/apiBase';
 
 class APIService {
-  private readonly baseURL = 'http://127.0.0.1:8000/api';
+  private getBaseUrl(): string {
+    return getApiBaseUrl();
+  }
 
   private async makeRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const response = await fetch(`${this.baseURL}/${endpoint}`, {
+    const response = await fetch(`${this.getBaseUrl()}/${endpoint}`, {
       ...options,
       headers: {
         ...options.headers,
@@ -60,7 +63,7 @@ class APIService {
 
       // Frontend logging for verification (dev mode only)
       if (process.env.NODE_ENV === 'development') {
-        console.log('🚀 [API] Sending factcheck request with model config:');
+        console.log('[API] Sending factcheck request with model config:');
         console.log('   Provider:', modelConfig.provider);
         console.log('   Model:', modelConfig.model_id);
         console.log('   Temperature:', modelConfig.temperature);

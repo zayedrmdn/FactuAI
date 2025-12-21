@@ -1,6 +1,6 @@
 ---
 title: FactuAI Theme Guide
-version: 1.0.0
+version: 1.1.0
 last_updated: 2025-12-21
 audience: AI Agents, Developers, UI/UX Contributors
 status: Active UI Standards
@@ -56,33 +56,56 @@ Centralized UI/UX standards for professional, enterprise-ready interfaces.
 
 ### Accent Colors
 
-| Variable | Color (Light) | Usage |
-|----------|---------------|-------|
-| `--primary` | Indigo 600 | CTAs, links, focus states |
-| `--secondary` | Slate 100 | Secondary buttons |
-| `--destructive` | Red 600 | Delete, errors |
-| `--accent` | Slate 100 | Hover states |
+| Variable | Color (Light) | Tailwind Class | Usage |
+|----------|---------------|----------------|-------|
+| `--primary` | Indigo 600 | `text-primary`, `bg-primary` | CTAs, links, focus states |
+| `--secondary` | Slate 100 | `text-secondary`, `bg-secondary` | Secondary buttons |
+| `--destructive` | Red 600 | `text-destructive`, `bg-destructive` | Delete, errors |
+| `--accent` | Slate 100 | `text-accent`, `bg-accent` | Hover states |
 
-### Verdict Colors
+### Status Colors
 
-| Verdict | Color | Tailwind Class |
-|---------|-------|----------------|
-| TRUE | Green 600 | `text-green-600` |
-| FALSE | Red 600 | `text-red-600` |
-| MOSTLY_TRUE | Lime 600 | `text-lime-600` |
-| MOSTLY_FALSE | Orange 600 | `text-orange-600` |
-| MIXED | Amber 600 | `text-amber-600` |
-| UNVERIFIABLE | Slate 500 | `text-slate-500` |
+| Status | Variable | Tailwind Class | Usage |
+|--------|----------|----------------|-------|
+| Success | `--success` | `text-success`, `bg-success` | Positive outcomes, TRUE verdicts |
+| Warning | `--warning` | `text-warning`, `bg-warning` | Caution, MIXED/MOSTLY_FALSE verdicts |
+| Info | `--info` | `text-info`, `bg-info` | Informational states |
+| Error | `--destructive` | `text-destructive`, `bg-destructive` | Errors, FALSE verdicts |
+
+### Verdict Color Mapping
+
+| Verdict | Recommended Class |
+|---------|-------------------|
+| TRUE | `text-success` |
+| FALSE | `text-destructive` |
+| MOSTLY_TRUE | `text-success` |
+| MOSTLY_FALSE | `text-warning` |
+| MIXED | `text-warning` |
+| UNVERIFIABLE | `text-muted-foreground` |
 
 ### Confidence Score Colors
 
-| Level | Variable | Usage |
-|-------|----------|-------|
-| Very High (90-100%) | `--score-very-high` | Green 600 |
-| High (70-89%) | `--score-high` | Lime 600 |
-| Medium (50-69%) | `--score-medium` | Amber 600 |
-| Low (30-49%) | `--score-low` | Orange 600 |
-| Very Low (0-29%) | `--score-very-low` | Red 600 |
+| Level | Variable | Tailwind Class |
+|-------|----------|----------------|
+| Very High (90-100%) | `--score-very-high` | `text-score-very-high` |
+| High (70-89%) | `--score-high` | `text-score-high` |
+| Medium (50-69%) | `--score-medium` | `text-score-medium` |
+| Low (30-49%) | `--score-low` | `text-score-low` |
+| Very Low (0-29%) | `--score-very-low` | `text-score-very-low` |
+
+### Palette Migration Guide
+
+Replace raw Tailwind palette classes with semantic tokens:
+
+| Avoid | Use Instead |
+|-------|-------------|
+| `text-blue-*`, `bg-blue-*` | `text-primary`, `bg-primary` |
+| `text-gray-*` | `text-muted-foreground` |
+| `bg-gray-*` | `bg-muted` |
+| `border-gray-*` | `border-border` |
+| `text-green-*` | `text-success` |
+| `text-red-*` | `text-destructive` |
+| `text-yellow-*`, `text-amber-*` | `text-warning` |
 
 ---
 
@@ -118,7 +141,7 @@ import { Zap, FlaskConical, Check, X, AlertTriangle } from 'lucide-react';
 | Search | Search | `Search` |
 | Settings | Settings | `Settings` |
 
-### Do Not Use
+### Prohibited
 
 - Emoji icons (no Unicode emoji)
 - Font Awesome (not installed)
@@ -169,6 +192,84 @@ import { Zap, FlaskConical, Check, X, AlertTriangle } from 'lucide-react';
 | High | `badge-tier-high` |
 | Premium | `badge-tier-premium` |
 
+### Form Elements
+
+```tsx
+// Text input
+<Input placeholder="Enter text..." />
+
+// With label
+<div className="space-y-2">
+  <Label htmlFor="email">Email</Label>
+  <Input id="email" type="email" />
+</div>
+
+// Error state
+<Input className="border-destructive" />
+<p className="text-sm text-destructive">Error message</p>
+
+// Textarea
+<Textarea placeholder="Describe your claim..." rows={4} />
+
+// Select
+<Select>
+  <SelectTrigger>
+    <SelectValue placeholder="Choose..." />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="a">Option A</SelectItem>
+    <SelectItem value="b">Option B</SelectItem>
+  </SelectContent>
+</Select>
+```
+
+---
+
+## Responsive Design
+
+### Approach: Mobile-First
+
+Write base styles for mobile, then add responsive modifiers for larger screens.
+
+### Breakpoints
+
+| Prefix | Min Width | Usage |
+|--------|-----------|-------|
+| (none) | 0px | Mobile base |
+| `sm:` | 640px | Large phones, small tablets |
+| `md:` | 768px | Tablets |
+| `lg:` | 1024px | Laptops, small desktops |
+| `xl:` | 1280px | Desktops |
+| `2xl:` | 1536px | Large desktops |
+
+### Common Patterns
+
+```tsx
+// Stack on mobile, row on desktop
+<div className="flex flex-col gap-4 md:flex-row">
+
+// Hide on mobile, show on desktop
+<div className="hidden lg:block">
+
+// Full width on mobile, constrained on desktop
+<div className="w-full max-w-md mx-auto lg:max-w-2xl">
+
+// Responsive text sizing
+<h1 className="text-xl md:text-2xl lg:text-3xl">
+```
+
+### Container Widths
+
+| Class | Max Width | Usage |
+|-------|-----------|-------|
+| `max-w-sm` | 24rem (384px) | Narrow cards, modals |
+| `max-w-md` | 28rem (448px) | Standard cards |
+| `max-w-lg` | 32rem (512px) | Wide cards, forms |
+| `max-w-xl` | 36rem (576px) | Content areas |
+| `max-w-2xl` | 42rem (672px) | Article content |
+| `max-w-4xl` | 56rem (896px) | Wide content |
+| `max-w-6xl` | 72rem (1152px) | Full layouts |
+
 ---
 
 ## Spacing
@@ -213,6 +314,12 @@ All interactive elements must have visible focus indicators:
 - Default transition: `transition-colors duration-200`.
 - Avoid animations longer than 300ms.
 
+### Keyboard Navigation
+
+- All interactive elements must be keyboard-accessible.
+- Use `tabIndex={0}` for custom interactive elements.
+- Follow logical tab order (no `tabIndex > 0`).
+
 ---
 
 ## Animation
@@ -242,21 +349,25 @@ transition-all duration-300      /* Complex animations */
 
 ### Do
 
-1. Use semantic color variables (`--primary`, `--destructive`).
+1. Use semantic color variables (`text-primary`, `bg-destructive`).
 2. Use Lucide icons exclusively.
 3. Follow feature-based colocation (components in `features/`).
 4. Use `cn()` utility for conditional classes.
 5. Use Tailwind utility classes over custom CSS.
-6. Test with both light and dark themes.
+6. Define raw color values only in `frontend/src/app/globals.css`.
+7. Test with both light and dark themes.
+8. Write mobile-first responsive styles.
 
 ### Do Not
 
 1. Use emojis as icons.
-2. Use hard-coded color values (e.g., `#ff0000`).
-3. Place domain components in `src/components/`.
-4. Create inline styles.
-5. Use px values for spacing (use Tailwind scale).
-6. Ignore dark mode compatibility.
+2. Use hard-coded color values (e.g., `#ff0000`) in components.
+3. Use Tailwind palette utilities (`text-blue-600`, `bg-gray-200`) in components.
+4. Place domain components in `src/components/`.
+5. Create inline styles (exception: numeric CSS variables for dynamic values like progress widths).
+6. Use px values for spacing (use Tailwind scale).
+7. Ignore dark mode compatibility.
+8. Use `tabIndex > 0` for navigation order.
 
 ---
 
@@ -276,3 +387,17 @@ frontend/src/
 
 - [Constitution](constitution.md) - Engineering rules
 - [Frontend Architecture](../03-architecture/frontend.md) - Component patterns
+
+---
+
+## Quick Checklist
+
+Use this for code review:
+
+- [ ] Icons: Lucide only
+- [ ] Colors: Semantic tokens only (no `*-blue-600`, `*-gray-200`)
+- [ ] Raw values: Only in `globals.css` tokens
+- [ ] Domain UI: Lives under `src/features/*`
+- [ ] Responsive: Mobile-first with breakpoint modifiers
+- [ ] Dark mode: Works correctly
+- [ ] Accessibility: Focus states visible, keyboard navigable

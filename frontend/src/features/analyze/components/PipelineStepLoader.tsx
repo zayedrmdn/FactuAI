@@ -40,7 +40,7 @@ export function PipelineStepLoader() {
 
       {/* Steps Visualization */}
       <div className="w-full space-y-4">
-        <h3 className="text-center font-medium bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent text-lg">
+        <h3 className="text-center font-medium bg-gradient-to-r from-primary to-info bg-clip-text text-transparent text-lg">
           {currentStep.label}
         </h3>
 

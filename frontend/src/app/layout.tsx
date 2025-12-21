@@ -10,7 +10,8 @@ const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin']
 
 export const metadata = {
   title: 'FactuAI - AI-Powered News Summarization & Fact-Checking',
-  description: 'Cut through misinformation with AI-powered news summarization and fact-checking backed by real evidence.',
+  description:
+    'Cut through misinformation with AI-powered news summarization and fact-checking backed by real evidence.',
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -29,7 +30,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         )}
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 text-gray-900 dark:bg-black dark:text-white`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
         <ClientLayout>{children}</ClientLayout>
         <Toaster />

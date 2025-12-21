@@ -7,10 +7,7 @@
  */
 
 import { useState, useEffect } from 'react';
-
-// API Base URL - normalize to remove trailing slash and /api/analyze suffix if present
-const rawApiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-const API_BASE = rawApiBase.replace(/\/$/, '').replace(/\/api\/analyze$/, '');
+import { getApiUrl } from '@/lib/apiBase';
 
 interface ModelsConfig {
   default_reasoning: string;
@@ -46,7 +43,7 @@ export function useSystemConfig() {
 
     const fetchConfig = async () => {
       try {
-        const res = await fetch(`${API_BASE}/api/system/config`);
+        const res = await fetch(getApiUrl('system/config'));
         if (!res.ok) {
           throw new Error('Failed to fetch system config');
         }

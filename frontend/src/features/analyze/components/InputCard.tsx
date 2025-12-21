@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ShieldCheck, Settings, Loader2, X } from 'lucide-react';
 import { validateBasic } from '@/lib/dashboard/validation';
 import InputTabs from './InputTabs';
+import { AnalysisModeToggle } from './AnalysisModeToggle';
 import { InputType, TextSize } from '@/types/dashboard/ui';
 
 interface InputCardProps {
@@ -148,36 +149,45 @@ export default function InputCard({
         />
 
         {input && (
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Button
-              onClick={onFactCheck}
-              disabled={loading !== null || !validationResult.isValid}
-              className="flex-1 gap-2"
-              size="lg"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {loading === 'summary' ? 'Summarizing...' : 'Fact-checking...'}
-                </>
-              ) : (
-                <>
-                  <ShieldCheck className="h-4 w-4" />
-                  Verify Claim
-                </>
-              )}
-            </Button>
+          <div className="space-y-3">
+            {/* Analysis Mode Toggle */}
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Analysis Mode:</span>
+              <AnalysisModeToggle />
+            </div>
 
-            <Button
-              variant="outline"
-              onClick={handleClear}
-              disabled={loading !== null}
-              size="lg"
-              className="gap-2"
-            >
-              <X className="h-4 w-4" />
-              Clear
-            </Button>
+            {/* Action Buttons */}
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button
+                onClick={onFactCheck}
+                disabled={loading !== null || !validationResult.isValid}
+                className="flex-1 gap-2"
+                size="lg"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    {loading === 'summary' ? 'Summarizing...' : 'Fact-checking...'}
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck className="h-4 w-4" />
+                    Verify Claim
+                  </>
+                )}
+              </Button>
+
+              <Button
+                variant="outline"
+                onClick={handleClear}
+                disabled={loading !== null}
+                size="lg"
+                className="gap-2"
+              >
+                <X className="h-4 w-4" />
+                Clear
+              </Button>
+            </div>
           </div>
         )}
 

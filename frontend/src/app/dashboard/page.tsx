@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import SettingsDialog from '@/components/dashboard/SettingsDialog';
+import { SettingsDialog } from '@/features/dashboard-shell';
 import { InputCard, ResultsView } from '@/features/analyze';
 import { HistoryPanel } from '@/features/history';
 import { useSettings } from '@/lib/hooks/useSettings';

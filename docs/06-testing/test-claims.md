@@ -38,6 +38,8 @@ Simple, well-documented facts that should return clear verdicts.
 | B2 | "Humans have 206 bones in their adult bodies" | TRUE | Basic scientific fact |
 | B3 | "The capital of Australia is Sydney" | FALSE | Geographic fact |
 | B4 | "Einstein won the Nobel Prize for the theory of relativity" | FALSE | Historical nuance (won for photoelectric effect) |
+
+> **Note on B4:** This is a **composite claim** containing two distinct factual assertions: (1) "Einstein won the Nobel Prize" (TRUE), and (2) "Einstein won it for the theory of relativity" (FALSE - he won for the photoelectric effect). The LLM Intent Extraction may correctly split this into 2 separate claims. This is **expected behavior** and demonstrates sophisticated claim parsing. If you want to test a single unified claim, use: "Einstein's Nobel Prize was awarded for his theory of relativity" instead.
 | B5 | "Goldfish have a 3-second memory" | FALSE | Popular myth debunking |
 
 **What to verify:**

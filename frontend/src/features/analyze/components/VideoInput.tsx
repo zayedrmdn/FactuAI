@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { VideoCameraIcon } from '@heroicons/react/24/outline';
+import { Video } from 'lucide-react';
 import { useVideoProcessing } from '@/lib/hooks/useVideoProcessing';
 import { FileDropZone } from '@/components/ui/file-input';
 import { ProcessingStatus } from '@/components/ui/feedback-states';
@@ -48,7 +48,7 @@ export default function VideoInput({ onVideoProcessed }: Readonly<VideoTabProps>
             </div>
             <button
               onClick={handleClearPreview}
-              className="text-xs text-gray-500 hover:text-gray-700"
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
               Clear
             </button>
@@ -69,7 +69,7 @@ export default function VideoInput({ onVideoProcessed }: Readonly<VideoTabProps>
             onFileSelect={uploadVideo}
             accept="video/*"
             isProcessing={isProcessing}
-            icon={VideoCameraIcon}
+            icon={Video}
             title="Drop a video here or click to upload"
             description="Speech will be converted to text using AI speech recognition"
             buttonText="Select Video File"

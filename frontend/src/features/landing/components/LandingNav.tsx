@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ChevronDownIcon, MoonIcon, SunIcon } from 'lucide-react';
-import UserAvatar from '@/components/UserAvatar';
+import { ChevronDownIcon, MoonIcon, Search, SunIcon } from 'lucide-react';
+import { UserAvatar } from '@/features/auth';
 
 export default function LandingNav() {
   const [isDark, setIsDark] = useState(false);
@@ -165,21 +165,20 @@ export default function LandingNav() {
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled
-          ? 'bg-white/95 dark:bg-gray-900/95 backdrop-blur-md shadow-lg border-b border-gray-200/50 dark:border-gray-700/50'
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        isScrolled
+          ? 'bg-background/95 backdrop-blur-md shadow-lg border-b border-border/50'
           : 'bg-transparent'
-        }`}
+      }`}
     >
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Left - Enhanced Logo with Icon */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-all duration-200 shadow-lg">
-              <span className="font-bold text-white">🔍</span>
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center group-hover:scale-110 transition-all duration-200 shadow-sm">
+              <Search className="w-4 h-4 text-primary-foreground" aria-hidden="true" />
             </div>
-            <span className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">
-              FactuAI
-            </span>
+            <span className="text-xl font-bold text-foreground tracking-tight">FactuAI</span>
           </Link>
 
           {/* Center - Navigation Links with Animations (Desktop) */}
@@ -192,10 +191,10 @@ export default function LandingNav() {
               <button
                 key={link.href}
                 onClick={() => scrollToSection(link.href.replace('#', ''))}
-                className="relative text-gray-700 dark:text-gray-300 font-medium text-sm transition-colors duration-200 group"
+                className="relative text-muted-foreground hover:text-foreground font-medium text-sm transition-colors duration-200 group"
               >
                 {link.label}
-                <span className="absolute inset-x-0 -bottom-1 h-0.5 bg-blue-600 dark:bg-blue-400 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-out"></span>
+                <span className="absolute inset-x-0 -bottom-1 h-0.5 bg-primary transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-out"></span>
               </button>
             ))}
           </div>
@@ -205,7 +204,7 @@ export default function LandingNav() {
             {/* Theme Toggle - Icon Only */}
             <button
               onClick={() => toggleTheme(!isDark)}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
+              className="p-2 rounded-lg hover:bg-accent transition-colors duration-200"
             >
               <motion.div
                 initial={false}
@@ -217,7 +216,7 @@ export default function LandingNav() {
                 transition={{ duration: 0.3 }}
                 className="absolute"
               >
-                <MoonIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                <MoonIcon className="w-5 h-5 text-muted-foreground" />
               </motion.div>
               <motion.div
                 initial={false}
@@ -228,7 +227,7 @@ export default function LandingNav() {
                 }}
                 transition={{ duration: 0.3 }}
               >
-                <SunIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                <SunIcon className="w-5 h-5 text-muted-foreground" />
               </motion.div>
             </button>
 
@@ -237,14 +236,14 @@ export default function LandingNav() {
               <div className="hidden md:block relative" data-dropdown>
                 <button
                   onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-                  className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
+                  className="flex items-center gap-2 p-2 rounded-lg hover:bg-accent transition-colors duration-200"
                 >
                   <UserAvatar />
                   <motion.div
                     animate={{ rotate: showProfileDropdown ? 180 : 0 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <ChevronDownIcon className="w-4 h-4 text-gray-500" />
+                    <ChevronDownIcon className="w-4 h-4 text-muted-foreground" />
                   </motion.div>
                 </button>
 
@@ -256,31 +255,31 @@ export default function LandingNav() {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -10, scale: 0.95 }}
                       transition={{ duration: 0.2 }}
-                      className="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-1"
+                      className="absolute top-full right-0 mt-2 w-48 bg-popover rounded-lg shadow-xl border border-border py-1"
                     >
-                      <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-700">
-                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      <div className="px-3 py-2 border-b border-border">
+                        <span className="text-sm font-medium text-foreground">
                           {user.username || user.email?.split('@')[0]}
                         </span>
                       </div>
                       <Link
                         href="/profile"
-                        className="flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                        className="flex items-center px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
                         onClick={() => setShowProfileDropdown(false)}
                       >
                         Profile
                       </Link>
                       <Link
                         href="/dashboard"
-                        className="flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                        className="flex items-center px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
                         onClick={() => setShowProfileDropdown(false)}
                       >
                         Dashboard
                       </Link>
-                      <hr className="my-1 border-gray-200 dark:border-gray-700" />
+                      <hr className="my-1 border-border" />
                       <button
                         onClick={handleLogout}
-                        className="w-full flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                        className="w-full flex items-center px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
                       >
                         Logout
                       </button>
@@ -304,7 +303,7 @@ export default function LandingNav() {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors duration-200"
+              className="md:hidden p-2 text-muted-foreground hover:bg-accent rounded-lg transition-colors duration-200"
             >
               <motion.svg
                 className="w-6 h-6"
@@ -342,7 +341,7 @@ export default function LandingNav() {
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3 }}
-              className="md:hidden bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700"
+              className="md:hidden bg-background border-t border-border"
             >
               <div className="px-4 py-4 space-y-3">
                 {/* Navigation Links */}
@@ -358,7 +357,7 @@ export default function LandingNav() {
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.1 }}
                       onClick={() => scrollToSection(link.href.replace('#', ''))}
-                      className="block w-full text-left px-3 py-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-all duration-200"
+                      className="block w-full text-left px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all duration-200"
                     >
                       {link.label}
                     </motion.button>
@@ -366,12 +365,12 @@ export default function LandingNav() {
                 </div>
 
                 {/* Auth Section */}
-                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                <div className="border-t border-border pt-4">
                   {isAuthenticated && user ? (
                     <div className="space-y-3">
                       <div className="flex items-center gap-3 px-3 py-2">
                         <UserAvatar />
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <span className="text-sm font-medium text-foreground">
                           {user.username || user.email?.split('@')[0]}
                         </span>
                       </div>
@@ -381,7 +380,7 @@ export default function LandingNav() {
                           className="block"
                           onClick={() => setIsMobileMenuOpen(false)}
                         >
-                          <div className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors">
+                          <div className="w-full text-left px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground rounded-lg transition-colors">
                             Profile
                           </div>
                         </Link>
@@ -390,13 +389,13 @@ export default function LandingNav() {
                           className="block"
                           onClick={() => setIsMobileMenuOpen(false)}
                         >
-                          <div className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors">
+                          <div className="w-full text-left px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground rounded-lg transition-colors">
                             Dashboard
                           </div>
                         </Link>
                         <button
                           onClick={handleLogout}
-                          className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                          className="w-full text-left px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground rounded-lg transition-colors"
                         >
                           Logout
                         </button>

@@ -9,9 +9,6 @@ export const SUPPORTED_IMAGE_TYPES = ['image/'];
 export const SUPPORTED_VIDEO_TYPES = ['video/'];
 export const SUPPORTED_TEXT_TYPES = ['.txt', '.pdf'];
 
-// API endpoints
-export const API_BASE_URL = 'http://127.0.0.1:8000/api';
-
 // UI constants
 export const TEXT_SIZES = {
   sm: 'text-sm',

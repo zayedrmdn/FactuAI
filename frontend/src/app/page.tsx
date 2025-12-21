@@ -3,12 +3,14 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import LandingNav from '@/components/landing/LandingNav';
-import HeroSection from '@/components/landing/HeroSection';
-import Features from '@/components/landing/Features';
-import HowItWorks from '@/components/landing/HowItWorks';
-import CallToAction from '@/components/landing/CallToAction';
-import Footer from '@/components/landing/Footer';
+import {
+  CallToAction,
+  Features,
+  Footer,
+  HeroSection,
+  HowItWorks,
+  LandingNav,
+} from '@/features/landing';
 
 export default function HomePage() {
   const router = useRouter();
@@ -24,7 +26,7 @@ export default function HomePage() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
       </div>
     );
   }

@@ -14,22 +14,22 @@ export function InvestigationTrace({ trace }: Props) {
   if (!trace) return null;
 
   return (
-    <Card className="border-l-4 border-l-purple-500 bg-slate-50/50 shadow-sm mb-6">
+    <Card className="border-l-4 border-l-primary bg-muted/50 shadow-sm mb-6">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex w-full items-center justify-between p-4 text-left hover:bg-slate-100/50 transition-colors"
+        className="flex w-full items-center justify-between p-4 text-left hover:bg-muted transition-colors"
       >
         <div className="flex items-center gap-3">
-          <Brain className="h-5 w-5 text-purple-600" />
+          <Brain className="h-5 w-5 text-primary" />
           <div>
-            <h3 className="text-sm font-semibold text-slate-900">Investigation Logic</h3>
+            <h3 className="text-sm font-semibold text-foreground">Investigation Logic</h3>
             <p className="text-xs text-muted-foreground">
               {trace.queries.length} queries • {trace.pivot?.triggered ? 'Pivoted' : 'Direct'}
             </p>
           </div>
         </div>
         <ChevronDown
-          className={`h-5 w-5 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          className={`h-5 w-5 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`}
         />
       </button>
 
@@ -37,14 +37,14 @@ export function InvestigationTrace({ trace }: Props) {
         <CardContent className="pt-0 pb-4 px-4 space-y-4">
           {/* Phase 1: Queries */}
           <div className="space-y-2">
-            <h4 className="text-xs font-medium uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+            <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
               <Search className="h-3 w-3" /> Initial Strategy
             </h4>
             <div className="grid gap-2">
               {trace.queries.map((q, i) => (
                 <div
                   key={i}
-                  className="text-xs bg-white border px-2 py-1.5 rounded-md text-slate-700 font-mono"
+                  className="text-xs bg-card border border-border px-2 py-1.5 rounded-md text-foreground font-mono"
                 >
                   {q}
                 </div>
@@ -55,14 +55,14 @@ export function InvestigationTrace({ trace }: Props) {
           {/* Phase 2: Pivot */}
           {trace.pivot && (
             <div className="space-y-2">
-              <h4 className="text-xs font-medium uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+              <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                 <Zap className="h-3 w-3" /> Pivot Decision
               </h4>
               <div
                 className={`text-xs px-3 py-2 rounded-md border ${
                   trace.pivot.triggered
-                    ? 'bg-purple-50 border-purple-200 text-purple-800'
-                    : 'bg-slate-100 border-slate-200 text-slate-600'
+                    ? 'bg-primary/5 border-primary/10 text-foreground'
+                    : 'bg-muted border-border text-muted-foreground'
                 }`}
               >
                 {trace.pivot.triggered ? (

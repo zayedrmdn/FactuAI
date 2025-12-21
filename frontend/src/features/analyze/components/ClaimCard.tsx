@@ -19,7 +19,6 @@ interface ClaimCardProps {
   result: FactCheckResult;
   index: number;
   textSize: TextSize;
-  animationDelay: number;
 }
 
 const VERDICT_CONFIG: Record<
@@ -36,59 +35,54 @@ const VERDICT_CONFIG: Record<
     variant: 'success',
     label: 'True',
     icon: CheckCircle2,
-    borderColor: 'border-l-emerald-500',
-    headerBg: 'bg-emerald-50/30',
+    borderColor: 'border-l-success',
+    headerBg: 'bg-success/5',
   },
   mostly_true: {
     variant: 'success',
     label: 'Mostly True',
     icon: CheckCircle2,
-    borderColor: 'border-l-emerald-500',
-    headerBg: 'bg-emerald-50/30',
+    borderColor: 'border-l-success',
+    headerBg: 'bg-success/5',
   },
   half_true: {
     variant: 'warning',
     label: 'Half True',
     icon: AlertTriangle,
-    borderColor: 'border-l-amber-500',
-    headerBg: 'bg-amber-50/30',
+    borderColor: 'border-l-warning',
+    headerBg: 'bg-warning/5',
   },
   barely_true: {
     variant: 'warning',
     label: 'Barely True',
     icon: AlertTriangle,
-    borderColor: 'border-l-amber-500',
-    headerBg: 'bg-amber-50/30',
+    borderColor: 'border-l-warning',
+    headerBg: 'bg-warning/5',
   },
   false: {
     variant: 'destructive',
     label: 'False',
     icon: XCircle,
-    borderColor: 'border-l-rose-500',
-    headerBg: 'bg-rose-50/30',
+    borderColor: 'border-l-destructive',
+    headerBg: 'bg-destructive/5',
   },
   mostly_false: {
     variant: 'destructive',
     label: 'Mostly False',
     icon: XCircle,
-    borderColor: 'border-l-rose-500',
-    headerBg: 'bg-rose-50/30',
+    borderColor: 'border-l-destructive',
+    headerBg: 'bg-destructive/5',
   },
   unknown: {
     variant: 'secondary',
     label: 'Unknown',
     icon: HelpCircle,
-    borderColor: 'border-l-slate-300',
-    headerBg: 'bg-slate-50/50',
+    borderColor: 'border-l-border',
+    headerBg: 'bg-muted/30',
   },
 };
 
-export default function ClaimCard({
-  result,
-  index,
-  textSize,
-  animationDelay,
-}: Readonly<ClaimCardProps>) {
+export default function ClaimCard({ result, index, textSize }: Readonly<ClaimCardProps>) {
   const sourceUrls = Array.isArray(result.sources)
     ? result.sources
         .map((s) => {
@@ -114,25 +108,24 @@ export default function ClaimCard({
   return (
     <Card
       className={cn(
-        'w-full overflow-hidden border border-slate-200 shadow-sm rounded-xl bg-white transition-all duration-300 hover:shadow-md animate-in fade-in slide-in-from-bottom-4 border-l-4',
+        'w-full overflow-hidden border border-border shadow-sm rounded-xl bg-card transition-all duration-300 hover:shadow-md animate-in fade-in slide-in-from-bottom-4 border-l-4',
         config!.borderColor
       )}
-      style={{ animationDelay: `${animationDelay}ms` }}
     >
       {/* Card Header - Vertical Stack for Mobile, Horizontal for Desktop */}
       <CardHeader className={cn('p-6 pb-4 space-y-4', config!.headerBg)}>
         {/* Top Row: Claim Number & Confidence (Demoted) */}
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Claim {index + 1}
           </span>
 
           {result.confidence !== undefined && (
             <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Confidence
               </span>
-              <span className="text-xs font-bold text-slate-600 bg-white/50 px-1.5 py-0.5 rounded border border-slate-200/50">
+              <span className="text-xs font-bold text-foreground bg-background/50 px-1.5 py-0.5 rounded border border-border">
                 {(result.confidence * 100).toFixed(0)}%
               </span>
             </div>
@@ -154,7 +147,7 @@ export default function ClaimCard({
         <div className="space-y-2 pt-1">
           <h3
             className={cn(
-              'font-medium text-slate-900 leading-relaxed break-words whitespace-normal',
+              'font-medium text-foreground leading-relaxed break-words whitespace-normal',
               textSizeClass
             )}
           >
@@ -168,7 +161,7 @@ export default function ClaimCard({
         {result.explanation && (
           <div
             className={cn(
-              'rounded-lg bg-slate-50 border border-slate-200 p-4 text-slate-700 leading-relaxed',
+              'rounded-lg bg-muted border border-border p-4 text-foreground leading-relaxed',
               textSizeClass
             )}
           >
@@ -180,11 +173,11 @@ export default function ClaimCard({
         {result.reasoning && (
           <div
             className={cn(
-              'rounded-lg bg-blue-50/50 border border-blue-100 p-4 text-slate-700 leading-relaxed',
+              'rounded-lg bg-primary/5 border border-primary/10 p-4 text-foreground leading-relaxed',
               textSizeClass
             )}
           >
-            <h4 className="text-xs font-semibold text-blue-700 uppercase tracking-wider mb-2 flex items-center gap-2">
+            <h4 className="text-xs font-semibold text-primary uppercase tracking-wider mb-2 flex items-center gap-2">
               <HelpCircle className="h-4 w-4" />
               Analysis
             </h4>
@@ -193,14 +186,14 @@ export default function ClaimCard({
         )}
 
         {/* Evidence & Sources Accordion */}
-        <div className="border border-slate-200 rounded-lg">
+        <div className="border border-border rounded-lg">
           <Accordion>
             {/* Evidence Section */}
             <AccordionItem
               title={
                 <div className="flex items-center gap-2">
-                  <Quote className="h-4 w-4 text-slate-500" />
-                  <span className="text-slate-700 font-medium">Evidence & Analysis</span>
+                  <Quote className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-foreground font-medium">Evidence & Analysis</span>
                 </div>
               }
             >
@@ -210,18 +203,18 @@ export default function ClaimCard({
                     {result.source_quotes.map((quote, idx) => (
                       <div
                         key={`quote-${idx}`}
-                        className="pl-3 border-l-2 border-slate-200 hover:border-primary/50 transition-colors"
+                        className="pl-3 border-l-2 border-border hover:border-primary/50 transition-colors"
                       >
-                        <blockquote className="text-sm text-slate-600 italic mb-1.5">
+                        <blockquote className="text-sm text-muted-foreground italic mb-1.5">
                           &quot;{quote.quote}&quot;
                         </blockquote>
-                        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                           <span className="font-medium">{quote.source}</span>
                           <a
                             href={quote.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-1 text-blue-600 hover:underline"
+                            className="flex items-center gap-1 text-primary hover:underline"
                           >
                             View Source <ExternalLink className="h-3 w-3" />
                           </a>
@@ -230,7 +223,7 @@ export default function ClaimCard({
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-slate-500">
+                  <p className="text-sm text-muted-foreground">
                     {Array.isArray(result.evidence)
                       ? result.evidence.map((item) => item.text || item).join('. ')
                       : result.evidence || 'No detailed evidence available.'}
@@ -244,8 +237,8 @@ export default function ClaimCard({
               <AccordionItem
                 title={
                   <div className="flex items-center gap-2">
-                    <ExternalLink className="h-4 w-4 text-slate-500" />
-                    <span className="text-slate-700 font-medium">
+                    <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-foreground font-medium">
                       All Sources ({sourceUrls.length})
                     </span>
                   </div>
@@ -255,12 +248,14 @@ export default function ClaimCard({
                   <ul className="space-y-2">
                     {sourceUrls.map((url, idx) => (
                       <li key={`source-${idx}`} className="flex items-start gap-2 text-sm">
-                        <span className="text-xs text-slate-400 w-5 shrink-0">{idx + 1}.</span>
+                        <span className="text-xs text-muted-foreground w-5 shrink-0">
+                          {idx + 1}.
+                        </span>
                         <a
                           href={url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline break-all"
+                          className="text-primary hover:underline break-all"
                         >
                           {url}
                         </a>

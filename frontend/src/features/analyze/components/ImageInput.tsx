@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { PhotoIcon } from '@heroicons/react/24/outline';
+import { Image as ImageIcon } from 'lucide-react';
 import { useImageProcessing } from '@/lib/hooks/useImageProcessing';
 import { FileDropZone } from '@/components/ui/file-input';
 import { ProcessingStatus } from '@/components/ui/feedback-states';
+import { Button } from '@/components/ui/button';
 
 interface ImagePreviewData {
   imageUrl: string;
@@ -83,7 +84,7 @@ export default function ImageInput({ onImageProcessed }: Readonly<ImageTabProps>
             <h3 className="font-medium text-sm">Image Processed</h3>
             <button
               onClick={handleClearPreview}
-              className="text-xs text-gray-500 hover:text-gray-700"
+              className="text-xs text-muted-foreground hover:text-foreground"
             >
               Clear
             </button>
@@ -100,7 +101,7 @@ export default function ImageInput({ onImageProcessed }: Readonly<ImageTabProps>
             {imagePreview.aiScore !== undefined && (
               <div className="text-xs">
                 <span className="font-medium">AI Detection: </span>
-                <span className={imagePreview.aiScore > 50 ? 'text-red-600' : 'text-green-600'}>
+                <span className={imagePreview.aiScore > 50 ? 'text-destructive' : 'text-success'}>
                   {imagePreview.aiScore.toFixed(1)}% AI-generated
                 </span>
               </div>
@@ -118,7 +119,7 @@ export default function ImageInput({ onImageProcessed }: Readonly<ImageTabProps>
             onFileSelect={uploadImage}
             accept="image/*"
             isProcessing={isProcessing}
-            icon={PhotoIcon}
+            icon={ImageIcon}
             title="Drop an image here or click to upload"
             description="Text will be extracted using OCR technology"
             buttonText="Select Image File"
@@ -126,7 +127,7 @@ export default function ImageInput({ onImageProcessed }: Readonly<ImageTabProps>
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300" />
+              <div className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-sm">
               <span className="px-2 bg-background text-muted-foreground">or</span>
@@ -139,16 +140,16 @@ export default function ImageInput({ onImageProcessed }: Readonly<ImageTabProps>
               value={imageUrl}
               onChange={(e) => setImageUrl(e.target.value)}
               placeholder="Enter image URL..."
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm"
+              className="flex-1 px-3 py-2 border border-input rounded-md text-sm bg-background text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               disabled={isProcessing || imageUrlLoading}
             />
-            <button
+            <Button
               onClick={handleImageUrl}
+              type="button"
               disabled={!imageUrl.trim() || isProcessing || imageUrlLoading}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 disabled:opacity-50"
             >
               {imageUrlLoading ? 'Loading...' : 'Extract'}
-            </button>
+            </Button>
           </div>
 
           <ProcessingStatus
