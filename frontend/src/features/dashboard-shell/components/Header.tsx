@@ -41,7 +41,7 @@ export function Header({ onMobileMenuToggle, mobileMenuOpen = false }: Readonly<
       </Button>
 
       <div className="hidden md:flex items-center gap-2 flex-1">
-        <h1 className="text-lg font-semibold text-foreground">FactuAI</h1>
+        {/* Title removed to avoid redundancy with Sidebar */}
       </div>
 
       <div className="flex items-center gap-2 sm:gap-4 shrink-0 ml-auto">

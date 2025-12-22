@@ -4,17 +4,16 @@
 import { useState } from 'react';
 import { SettingsDialog } from '@/features/dashboard-shell';
 import { InputCard, ResultsView } from '@/features/analyze';
-import { HistoryPanel } from '@/features/history';
 import { useSettings } from '@/lib/hooks/useSettings';
 import { useAppState } from '@/lib/hooks/useAppState';
-import { RotateCcw, FileText } from 'lucide-react'; // Added icons for better UI
+import { cn } from '@/lib/utils';
+import { ButtonContainer } from './components/ButtonContainer';
 
 export default function DashboardPage() {
   const { prefs, savePrefs, isDark, toggleTheme, isLoaded: settingsLoaded } = useSettings();
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   const {
-    // Input and results state
     input,
     setInput,
     showResults,
@@ -22,36 +21,21 @@ export default function DashboardPage() {
     summary,
     updated,
     avgConfidence,
-
-    // Loading state
     loading,
     loadingPhase,
     progress,
     currentClaim,
-
-    // Error state
     factCheckError,
-
-    // History state
-    history,
-
-    // Handlers
     handleFactCheck,
     handleCancel,
     handleRetryInput,
     handleClear,
     handleAIDetection,
     handleInputTypeChange,
-    loadHistoryItem,
-    deleteHistoryItem,
-    clearAllHistory,
-
-    // Save functions
     saveImageToHistory,
     saveVideoToHistory,
   } = useAppState();
 
-  // Sample demos for CTA buttons
   const loadSampleText = () => {
     setInput(
       'Scientists have discovered that drinking 8 glasses of water daily can cure cancer. This breakthrough study was conducted at Harvard Medical School and published in Nature.'
@@ -62,14 +46,10 @@ export default function DashboardPage() {
     setInput('COVID-19 vaccines contain microchips that track your location and thoughts.');
   };
 
-  // Don't render until settings are loaded to prevent hydration mismatch
   if (!settingsLoaded) {
     return (
-      <div className="p-6 max-w-screen-2xl mx-auto">
-        <div className="animate-pulse grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-8 h-panel bg-muted rounded-xl"></div>
-          <div className="lg:col-span-4 h-panel bg-muted rounded-xl"></div>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
   }
@@ -86,21 +66,52 @@ export default function DashboardPage() {
       />
 
       {/* Main Dashboard Container */}
-      <div className="p-4 sm:p-6 lg:p-8 max-w-screen-2xl mx-auto flex flex-col h-full">
-        {/* Page Header */}
-        <div className="mb-4 sm:mb-6">
-          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">
-            Investigation Console
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Analyze text, images, or videos to verify claims against real-time evidence.
-          </p>
-        </div>
+      <div className="relative h-full flex flex-col max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-8">
+        {/* Dynamic Layout Transition */}
+        <div
+          className={cn(
+            'grid gap-8 transition-all duration-500 ease-in-out w-full flex-1',
+            showResults
+              ? 'grid-cols-1 lg:grid-cols-12 items-start'
+              : 'grid-cols-1 place-content-center max-w-4xl mx-auto'
+          )}
+        >
+          {/* Main Workspace Area */}
+          <main
+            className={cn(
+              'flex flex-col gap-8 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] relative',
+              showResults ? 'col-span-1 lg:col-span-12 w-full' : 'col-span-1 w-full'
+            )}
+          >
+            {!showResults && (
+              <div className="text-center space-y-6 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700 relative">
+                {/* 3D Visual Anchor */}
+                <div className="relative w-48 h-48 mx-auto pointer-events-none select-none">
+                  {/* Glow effect */}
+                  <div className="absolute inset-0 bg-primary/20 blur-[60px] rounded-full opacity-50 dark:opacity-30" />
 
-        {/* Main Content - Mobile First Grid */}
-        <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-12 items-start flex-1">
-          {/* Main Workspace */}
-          <main className="lg:col-span-8 xl:col-span-9 flex flex-col gap-4 sm:gap-6 h-full">
+                  {/* Hero Image */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/images/hero-abstract.png"
+                    alt="FactuAI Abstract"
+                    className="relative w-full h-full object-contain drop-shadow-2xl opacity-90 transition-transform duration-700 hover:scale-105"
+                  />
+                </div>
+
+                <div className="space-y-4">
+                  <h1 className="text-4xl sm:text-5xl font-bold tracking-tight bg-gradient-to-br from-foreground to-foreground/60 bg-clip-text text-transparent pb-1">
+                    FactuAI Console
+                  </h1>
+                  <p className="text-lg text-muted-foreground max-w-xl mx-auto">
+                    The anti-misinformation engine. Verify claims with{' '}
+                    <span className="text-foreground font-medium">real-time evidence</span> and AI
+                    analysis.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {showResults ? (
               <ResultsView
                 results={factResults}
@@ -119,61 +130,26 @@ export default function DashboardPage() {
                 error={factCheckError}
               />
             ) : (
-              /* Input Console */
-              <div className="flex flex-col rounded-xl border bg-card shadow-sm overflow-hidden min-h-[500px] h-full">
-                <div className="flex-1 p-1">
-                  <InputCard
-                    input={input}
-                    setInput={setInput}
-                    loading={loading}
-                    onFactCheck={handleFactCheck}
-                    onClear={handleClear}
-                    textSize={prefs.textSize}
-                    openSettings={() => setSettingsOpen(true)}
-                    onAIDetection={handleAIDetection}
-                    onInputTypeChange={handleInputTypeChange}
-                    saveImageToHistory={saveImageToHistory}
-                    saveVideoToHistory={saveVideoToHistory}
-                  />
-                </div>
+              <div className="w-full">
+                <InputCard
+                  input={input}
+                  setInput={setInput}
+                  loading={loading}
+                  onFactCheck={handleFactCheck}
+                  onClear={handleClear}
+                  textSize={prefs.textSize}
+                  openSettings={() => setSettingsOpen(true)}
+                  onAIDetection={handleAIDetection}
+                  onInputTypeChange={handleInputTypeChange}
+                  saveImageToHistory={saveImageToHistory}
+                  saveVideoToHistory={saveVideoToHistory}
+                />
 
-                {/* Quick Start Actions */}
-                <div className="border-t bg-muted/30 p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Quick Start
-                  </span>
-                  <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-                    <button
-                      onClick={loadSampleText}
-                      className="inline-flex items-center gap-2 rounded-md border bg-background px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent hover:text-accent-foreground flex-1 sm:flex-initial justify-center"
-                    >
-                      <RotateCcw className="h-3.5 w-3.5" />
-                      Medical Sample
-                    </button>
-                    <button
-                      onClick={loadDemoClaim}
-                      className="inline-flex items-center gap-2 rounded-md border bg-background px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent hover:text-accent-foreground flex-1 sm:flex-initial justify-center"
-                    >
-                      <FileText className="h-3.5 w-3.5" />
-                      Conspiracy Sample
-                    </button>
-                  </div>
-                </div>
+                {/* Editorial Quick Starts */}
+                <ButtonContainer onSample={loadSampleText} onDemo={loadDemoClaim} />
               </div>
             )}
           </main>
-
-          {/* History Sidebar - Hidden on mobile, sticky on desktop */}
-          <aside className="hidden lg:block lg:col-span-4 xl:col-span-3 sticky top-6 h-[calc(100vh-3rem)]">
-            <div className="h-full border rounded-xl bg-card shadow-sm overflow-hidden">
-              <HistoryPanel
-                history={history}
-                load={loadHistoryItem}
-                del={deleteHistoryItem}
-                clearAll={clearAllHistory}
-              />
-            </div>
-          </aside>
         </div>
       </div>
     </>

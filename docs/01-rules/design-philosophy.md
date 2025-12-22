@@ -93,6 +93,16 @@ FactuAI is a **fact-checking system**. The UI should communicate:
 - Clear information hierarchy for complex verification results
 - Professional without being sterile or corporate
 
+### Trust & Authority
+- Clean, confident layouts that instill credibility
+- Clear information hierarchy for complex verification results
+- Professional without being sterile or corporate
+
+### Tactility & Depth (Anti-Flat)
+- **Avoid "Floating Text":** Interactive elements must look clickable. Use subtle borders, backgrounds, or shadows. Pure text buttons are for secondary navigation only, not primary tools.
+- **Micro-Shadows:** Use `shadow-sm` or `shadow-md` to lift distinct tools off the canvas.
+- **Defined Boundaries:** Inputs and toolbars should have clear (but elegant) containment, not just whitespace.
+
 ### Intelligence & Precision
 - The interface should feel "smart"—every element purposeful
 - Verdicts and confidence scores deserve visual presence

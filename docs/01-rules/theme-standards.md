@@ -1,6 +1,6 @@
 ---
 title: FactuAI Theme Standards
-version: 1.2.0
+version: 1.2.1
 last_updated: 2025-12-22
 audience: AI Agents, Developers, UI/UX Contributors
 status: Active Technical Standards
@@ -243,6 +243,14 @@ Write base styles for mobile, then add responsive modifiers for larger screens.
 | `lg:` | 1024px | Laptops, small desktops |
 | `xl:` | 1280px | Desktops |
 | `2xl:` | 1536px | Large desktops |
+
+### Viewport Hygiene (New)
+
+Rules for preventing layout blocking on desktops:
+
+1.  **Respect the Shell**: Dashboard sub-pages (`layout.tsx` children) must NOT use `min-h-screen`. Use `min-h-full` or `h-full` to fit within the provided flexible content area (usually `100vh - header_height`).
+2.  **Safe Zones**: Avoid absolute positioning with negative top values (e.g., `-top-12`) at the top of the page, as this frequently overlaps with the header. Keep interactive elements within the content padding.
+3.  **No Scroll Traps**: Ensure your centering logic (`flex items-center` or `place-content-center`) doesn't push top content off-screen on shorter viewports (e.g., 1080p, 1366x768). Use `min-h-full` combined with `py-8` to ensure safe scrolling.
 
 ### Common Patterns
 

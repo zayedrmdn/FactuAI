@@ -46,8 +46,8 @@ export default function InputTabs({
 
   return (
     <div className="w-full">
-      {/* Enhanced Tab Headers */}
-      <div className="flex p-1 bg-muted/60 rounded-lg border border-border/40">
+      {/* Enhanced Tab Headers - Minimal "Pill" Design */}
+      <div className="flex items-center gap-2 p-1 mb-2">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -57,23 +57,26 @@ export default function InputTabs({
               key={tab.id}
               onClick={() => handleTabChange(tab.id)}
               className={cn(
-                'relative flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-all duration-200',
+                'relative flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-full transition-all duration-300 ease-out',
                 isActive
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
+                  ? 'bg-primary/10 text-primary ring-1 ring-primary/20'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
               )}
             >
               <Icon
-                className={cn('w-4 h-4', isActive ? 'text-primary' : 'text-muted-foreground')}
+                className={cn(
+                  'w-4 h-4 transition-colors',
+                  isActive ? 'text-primary' : 'text-muted-foreground/70'
+                )}
               />
-              <span className="relative z-10">{tab.label}</span>
+              <span>{tab.label}</span>
             </button>
           );
         })}
       </div>
 
       {/* Enhanced Tab Content */}
-      <div className="pt-6">
+      <div className="relative min-h-[160px]">
         <motion.div
           key={activeTab}
           initial={{ opacity: 0, y: 5 }}

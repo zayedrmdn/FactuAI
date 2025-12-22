@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Sidebar, Header } from '@/features/dashboard-shell';
+import { Sidebar, Header, DashboardFooter } from '@/features/dashboard-shell';
 
 export default function DashboardLayout({
   children,
@@ -71,6 +71,7 @@ export default function DashboardLayout({
         />
 
         <main className="flex-1 overflow-y-auto">{children}</main>
+        <DashboardFooter />
       </div>
     </div>
   );

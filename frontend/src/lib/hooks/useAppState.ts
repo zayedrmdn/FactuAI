@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useFactCheck } from './useFactCheck';
 import { useHistory } from '@/features/history';
@@ -71,12 +71,15 @@ export function useAppState() {
     [baseHandleInputTypeChange, input, saveImageToHistory, saveVideoToHistory]
   );
 
-  // Enhanced fact-check with history saving
+  // Enhanced fact-check (without history saving - moved to useEffect)
   const handleFactCheck = useCallback(async () => {
     await baseHandleFactCheck();
+  }, [baseHandleFactCheck]);
 
-    // Save to history after successful fact-check
-    if (factResults.length > 0) {
+  // Save to history when factResults updates (after successful fact-check)
+  useEffect(() => {
+    // Only save if we have results and they're fresh (not from loading history)
+    if (factResults.length > 0 && updated && input.trim()) {
       const historyData: Omit<HistoryItem, 'id' | 'timestamp'> = {
         input: input,
         summary,
@@ -101,8 +104,8 @@ export function useAppState() {
       pushHistory(historyData);
     }
   }, [
-    baseHandleFactCheck,
     factResults,
+    updated,
     input,
     summary,
     currentInputType,

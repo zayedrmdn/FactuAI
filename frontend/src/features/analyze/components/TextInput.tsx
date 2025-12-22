@@ -3,8 +3,9 @@ import { Clipboard, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { franc } from 'franc';
 import { fileToText } from '@/lib/dashboard/fileToText';
-import { validateBasic } from '@/lib/dashboard/validation';
 import { TextSize } from '@/types/dashboard/ui';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 interface PasteUploadClearProps {
   onPaste: () => void;
@@ -21,30 +22,37 @@ function PasteUploadClear({
 }: Readonly<PasteUploadClearProps>) {
   return (
     <div className="flex gap-2">
-      <button
+      <Button
+        variant="outline"
+        size="sm"
         onClick={onPaste}
         disabled={disabled}
-        className="flex items-center gap-1 px-3 py-1 text-xs border border-input rounded hover:bg-accent hover:text-accent-foreground disabled:opacity-50 transition-colors"
+        className="h-7 text-xs font-medium text-muted-foreground hover:text-foreground bg-background hover:bg-muted/50 border-input shadow-sm transition-all duration-200"
       >
-        <Clipboard className="h-3 w-3" />
+        <Clipboard className="h-3 w-3 mr-1.5" />
         Paste
-      </button>
-      <button
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
         onClick={onUpload}
         disabled={disabled}
-        className="flex items-center gap-1 px-3 py-1 text-xs border border-input rounded hover:bg-accent hover:text-accent-foreground disabled:opacity-50 transition-colors"
+        className="h-7 text-xs font-medium text-muted-foreground hover:text-foreground bg-background hover:bg-muted/50 border-input shadow-sm transition-all duration-200"
       >
-        <Upload className="h-3 w-3" />
+        <Upload className="h-3 w-3 mr-1.5" />
         Upload
-      </button>
-      <button
+      </Button>
+      <div className="h-4 w-px bg-border my-auto mx-1" /> {/* Divider for visual separation */}
+      <Button
+        variant="ghost"
+        size="sm"
         onClick={onClear}
         disabled={disabled}
-        className="flex items-center gap-1 px-3 py-1 text-xs border border-input rounded hover:bg-accent hover:text-accent-foreground disabled:opacity-50 transition-colors"
+        className="h-7 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
       >
-        <X className="h-3 w-3" />
+        <X className="h-3 w-3 mr-1.5" />
         Clear
-      </button>
+      </Button>
     </div>
   );
 }
@@ -57,9 +65,7 @@ interface TextTabProps {
 }
 
 export default function TextInput({ input, setInput, textSize, onClear }: Readonly<TextTabProps>) {
-  const validationResult = validateBasic(input);
   const wordCount = input.trim().split(/\s+/).filter(Boolean).length;
-  const showValidationError = input.trim().length > 0 && validationResult.error;
 
   const handleFile = async (file: File) => {
     try {
@@ -115,38 +121,38 @@ export default function TextInput({ input, setInput, textSize, onClear }: Readon
   };
 
   const textSizeClass = {
-    sm: 'text-sm',
-    md: 'text-base',
-    lg: 'text-lg',
+    sm: 'text-base',
+    md: 'text-lg',
+    lg: 'text-xl',
   }[textSize];
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="space-y-2 relative group">
+      <div className="flex items-center justify-between px-1">
         <PasteUploadClear
           onPaste={pasteFromClipboard}
           onUpload={pickFile}
           onClear={onClear}
-          disabled={validationResult.isValid === false}
+          disabled={false}
         />
-        <div className="text-xs text-muted-foreground">{wordCount} words</div>
+        <div className="text-xs font-mono text-muted-foreground/60">{wordCount} words</div>
       </div>
 
-      <textarea
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        placeholder="Enter text to fact-check, or use the buttons above to paste/upload..."
-        className={`w-full h-64 p-4 border border-input rounded-lg resize-none bg-background text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${textSizeClass}`}
-      />
-
-      {showValidationError && (
-        <div className="text-sm text-destructive">
-          <p className="font-medium">{validationResult.error}</p>
-          {validationResult.suggestion && (
-            <p className="text-xs text-muted-foreground mt-1">{validationResult.suggestion}</p>
+      <div className="relative">
+        <textarea
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Paste claim or text to analyze..."
+          className={cn(
+            'w-full h-64 p-4 rounded-xl resize-none bg-muted/30 focus:bg-background transition-colors duration-200',
+            'border-2 border-transparent focus:border-primary/10',
+            'text-foreground placeholder:text-muted-foreground/50',
+            'focus-visible:outline-none',
+            'leading-relaxed',
+            textSizeClass
           )}
-        </div>
-      )}
+        />
+      </div>
     </div>
   );
 }
