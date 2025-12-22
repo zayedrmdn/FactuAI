@@ -30,6 +30,8 @@
 ### 01 - Rules & Governance
 - [constitution.md](01-rules/constitution.md) - Engineering rules (non-negotiable)
 - [agents.md](01-rules/agents.md) - AI agent onboarding & quick reference
+- [theme-standards.md](01-rules/theme-standards.md) - UI technical specifications
+- [design-philosophy.md](01-rules/design-philosophy.md) - Anti-AI-slop creative direction
 
 ### 02 - Setup Guides
 - [quickstart.md](02-setup/quickstart.md) - Docker + local development

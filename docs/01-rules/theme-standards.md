@@ -1,14 +1,16 @@
 ---
-title: FactuAI Theme Guide
-version: 1.1.0
-last_updated: 2025-12-21
+title: FactuAI Theme Standards
+version: 1.2.0
+last_updated: 2025-12-22
 audience: AI Agents, Developers, UI/UX Contributors
-status: Active UI Standards
+status: Active Technical Standards
 ---
 
-# FactuAI Theme Guide
+# FactuAI Theme Standards
 
-Centralized UI/UX standards for professional, enterprise-ready interfaces.
+Technical UI specifications for consistent, accessible interfaces.
+
+> **For creative direction and anti-template design philosophy, see [design-philosophy.md](design-philosophy.md).**
 
 ---
 
@@ -385,6 +387,7 @@ frontend/src/
 
 ## Related Documents
 
+- [Design Philosophy](design-philosophy.md) - Anti-AI-slop creative direction
 - [Constitution](constitution.md) - Engineering rules
 - [Frontend Architecture](../03-architecture/frontend.md) - Component patterns
 
