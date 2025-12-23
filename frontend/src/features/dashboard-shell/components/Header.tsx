@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Home } from 'lucide-react';
 import { useUser } from '@/lib/hooks/useUser';
 import { getMediaUrl } from '@/lib/apiBase';
 
@@ -45,6 +45,17 @@ export function Header({ onMobileMenuToggle, mobileMenuOpen = false }: Readonly<
       </div>
 
       <div className="flex items-center gap-2 sm:gap-4 shrink-0 ml-auto">
+        <Link href="/" passHref>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2 text-muted-foreground hover:text-foreground"
+          >
+            <Home className="h-4 w-4" />
+            <span className="hidden sm:inline">Home</span>
+          </Button>
+        </Link>
+
         <span className="hidden sm:inline text-sm font-medium text-muted-foreground">
           Welcome back, {displayName}
         </span>

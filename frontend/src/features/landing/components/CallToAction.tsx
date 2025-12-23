@@ -1,61 +1,92 @@
 'use client';
 
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { BadgeCheck, Lock, Zap } from 'lucide-react';
+import { ArrowRight, Quote } from 'lucide-react';
 import Link from 'next/link';
 
 export default function CallToAction() {
   return (
-    <section className="py-16 bg-gradient-to-r from-primary to-info">
-      <div className="container mx-auto px-6 text-center">
-        <div className="max-w-4xl mx-auto space-y-8">
-          <h2 className="text-3xl md:text-5xl font-bold text-primary-foreground mb-6">
-            Ready to try FactuAI?
-          </h2>
-          <p className="text-xl md:text-2xl text-primary-foreground/80 mb-8 leading-relaxed">
-            Register for free and start fact-checking instantly. Join researchers, journalists, and
-            truth-seekers who trust FactuAI.
-          </p>
+    <section className="py-24 bg-background relative overflow-hidden">
+      {/* Subtle accent background */}
+      <div className="absolute inset-0 opacity-[0.03]">
+        <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-primary to-transparent" />
+      </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Link href="/register">
-              <Button
-                size="lg"
-                variant="secondary"
-                className="w-full sm:w-auto text-lg px-8 py-4 bg-background text-foreground hover:bg-muted border-0"
-              >
-                Get Started Free →
-              </Button>
-            </Link>
-            <Link href="/login">
-              <button className="w-full sm:w-auto text-lg px-8 py-4 h-12 rounded-md font-medium text-primary-foreground border-2 border-primary-foreground/70 bg-transparent hover:bg-background hover:text-foreground transition-all duration-200 inline-flex items-center justify-center gap-2">
-                Already have an account?
-              </button>
-            </Link>
-          </div>
+      <div className="container mx-auto px-6 relative">
+        <div className="max-w-4xl mx-auto">
+          {/* Editorial Quote Style */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center space-y-8"
+          >
+            {/* Quote Mark */}
+            <div className="flex justify-center">
+              <Quote className="w-12 h-12 text-primary/30 rotate-180" aria-hidden="true" />
+            </div>
 
-          {/* Feature Highlights */}
-          <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 text-primary-foreground">
-            <div className="flex items-center justify-center gap-3">
-              <BadgeCheck className="w-5 h-5" aria-hidden="true" />
-              <span className="text-lg">Free to use</span>
-            </div>
-            <div className="flex items-center justify-center gap-3">
-              <Zap className="w-5 h-5" aria-hidden="true" />
-              <span className="text-lg">Instant results</span>
-            </div>
-            <div className="flex items-center justify-center gap-3">
-              <Lock className="w-5 h-5" aria-hidden="true" />
-              <span className="text-lg">Privacy-focused</span>
-            </div>
-          </div>
+            {/* Main Quote / Statement */}
+            <h2 className="text-2xl md:text-3xl lg:text-4xl font-semibold text-foreground leading-relaxed">
+              In an era of misinformation, having a reliable fact-checking tool is not a luxury—
+              <span className="text-primary"> it is a necessity.</span>
+            </h2>
 
-          {/* Stats or Social Proof */}
-          <div className="mt-12 pt-8 border-t border-primary-foreground/20">
-            <p className="text-primary-foreground/80 text-sm">
-              Powered by advanced AI models • Built for accuracy and transparency
-            </p>
-          </div>
+            {/* Divider */}
+            <div className="flex items-center justify-center gap-4">
+              <div className="h-px w-16 bg-border" />
+              <span className="text-sm text-muted-foreground font-medium">FactuAI</span>
+              <div className="h-px w-16 bg-border" />
+            </div>
+
+            {/* CTA */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="pt-4"
+            >
+              <Link href="/register">
+                <Button size="lg" className="text-base px-10 h-13 gap-2 group">
+                  Create Free Account
+                  <ArrowRight
+                    className="w-4 h-4 group-hover:translate-x-1 transition-transform"
+                    aria-hidden="true"
+                  />
+                </Button>
+              </Link>
+              <p className="mt-4 text-sm text-muted-foreground">
+                No credit card required • Start verifying in seconds
+              </p>
+            </motion.div>
+          </motion.div>
+
+          {/* Trust Indicators */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.4 }}
+            className="mt-16 pt-8 border-t border-border"
+          >
+            <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-success" />
+                <span>Open-source powered</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-info" />
+                <span>Multi-model verification</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-primary" />
+                <span>Research-backed methodology</span>
+              </div>
+            </div>
+          </motion.div>
         </div>
       </div>
     </section>

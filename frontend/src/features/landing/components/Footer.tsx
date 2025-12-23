@@ -1,49 +1,50 @@
+'use client';
+
 import Link from 'next/link';
-import { GraduationCap, Heart, Mail, Microscope, Globe2, Hammer, ScrollText } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Search, Mail, Github, ExternalLink } from 'lucide-react';
 
 export default function Footer() {
   return (
-    <footer className="bg-muted/30 text-foreground py-12 border-t border-border">
-      <div className="container mx-auto px-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Left - Brand */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="font-bold text-primary-foreground">F</span>
+    <footer className="bg-card border-t border-border">
+      <div className="container mx-auto px-6 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-12">
+          {/* Brand Column */}
+          <div className="md:col-span-5 space-y-6">
+            <Link href="/" className="inline-flex items-center gap-3 group">
+              <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform">
+                <Search className="w-4 h-4 text-primary-foreground" aria-hidden="true" />
               </div>
-              <span className="text-xl font-bold">FactuAI</span>
-            </div>
-            <p className="text-muted-foreground leading-relaxed">
-              AI-powered news summarization and fact-checking platform. Helping you navigate
-              information with confidence and clarity.
+              <span className="text-xl font-bold text-foreground">FactuAI</span>
+            </Link>
+            <p className="text-muted-foreground leading-relaxed max-w-md">
+              AI-powered claim verification built to combat misinformation. Evidence-based verdicts
+              you can trust.
             </p>
-            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-              <span className="inline-flex items-center gap-2">
-                <GraduationCap className="w-4 h-4" aria-hidden="true" />
-                Research Project
-              </span>
-              <span className="inline-flex items-center gap-2">
-                <Microscope className="w-4 h-4" aria-hidden="true" />
-                AI-Powered
-              </span>
-              <span className="inline-flex items-center gap-2">
-                <Globe2 className="w-4 h-4" aria-hidden="true" />
-                Global Impact
-              </span>
+            <div className="flex items-center gap-4">
+              <a
+                href="mailto:contact@factual.ai"
+                className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center hover:bg-accent transition-colors"
+                aria-label="Email"
+              >
+                <Mail className="w-4 h-4 text-muted-foreground" />
+              </a>
+              <a
+                href="https://github.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center hover:bg-accent transition-colors"
+                aria-label="GitHub"
+              >
+                <Github className="w-4 h-4 text-muted-foreground" />
+              </a>
             </div>
           </div>
 
-          {/* Center - Quick Links */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Quick Links</h3>
-            <nav className="space-y-2">
-              <Link
-                href="/"
-                className="block text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Home
-              </Link>
+          {/* Links Columns */}
+          <div className="md:col-span-3">
+            <h3 className="font-semibold text-foreground mb-4">Product</h3>
+            <nav className="space-y-3">
               <Link
                 href="/register"
                 className="block text-muted-foreground hover:text-foreground transition-colors"
@@ -57,6 +58,12 @@ export default function Footer() {
                 Login
               </Link>
               <Link
+                href="#features"
+                className="block text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Features
+              </Link>
+              <Link
                 href="#how-it-works"
                 className="block text-muted-foreground hover:text-foreground transition-colors"
               >
@@ -65,65 +72,53 @@ export default function Footer() {
             </nav>
           </div>
 
-          {/* Right - Contact & Info */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Contact & Info</h3>
-            <div className="space-y-2 text-muted-foreground">
-              <p className="flex items-center gap-2">
-                <GraduationCap className="w-4 h-4" aria-hidden="true" />
-                <span>APU Final Year Project</span>
+          <div className="md:col-span-4">
+            <h3 className="font-semibold text-foreground mb-4">About</h3>
+            <div className="space-y-3 text-muted-foreground">
+              <p className="flex items-start gap-2">
+                <span className="w-2 h-2 mt-2 rounded-full bg-primary flex-shrink-0" />
+                <span>APU Final Year Research Project</span>
               </p>
-              <p className="flex items-center gap-2">
-                <Hammer className="w-4 h-4" aria-hidden="true" />
+              <p className="flex items-start gap-2">
+                <span className="w-2 h-2 mt-2 rounded-full bg-success flex-shrink-0" />
+                <span>SDG Goal 16: Peace, Justice, Strong Institutions</span>
+              </p>
+              <p className="flex items-start gap-2">
+                <span className="w-2 h-2 mt-2 rounded-full bg-info flex-shrink-0" />
                 <span>Built by Zayed Ramadhan</span>
-              </p>
-              <p className="flex items-center gap-2">
-                <Mail className="w-4 h-4" aria-hidden="true" />
-                <span>Contact for inquiries</span>
-              </p>
-              <p className="flex items-center gap-2">
-                <ScrollText className="w-4 h-4" aria-hidden="true" />
-                <span>SDG Goal 16 - Peace & Justice</span>
               </p>
             </div>
           </div>
         </div>
 
         {/* Bottom Bar */}
-        <div className="mt-12 pt-8 border-t border-border">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-muted-foreground text-sm inline-flex items-center gap-2">
-              <span>© 2025 FactuAI. Built with</span>
-              <Heart className="w-4 h-4" aria-hidden="true" />
-              <span>for truth-seekers everywhere.</span>
-            </p>
-            <div className="flex items-center gap-6 text-sm text-muted-foreground">
-              <Link href="#" className="hover:text-foreground transition-colors">
-                Privacy Policy
-              </Link>
-              <Link href="#" className="hover:text-foreground transition-colors">
-                Terms of Service
-              </Link>
-              <Link href="#" className="hover:text-foreground transition-colors">
-                Help
-              </Link>
-            </div>
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          className="mt-12 pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4"
+        >
+          <p className="text-sm text-muted-foreground">
+            © 2025 FactuAI. Built for truth-seekers everywhere.
+          </p>
+          <div className="flex items-center gap-6 text-sm text-muted-foreground">
+            <Link href="#" className="hover:text-foreground transition-colors">
+              Privacy
+            </Link>
+            <Link href="#" className="hover:text-foreground transition-colors">
+              Terms
+            </Link>
+            <a
+              href="https://github.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
+            >
+              Source
+              <ExternalLink className="w-3 h-3" aria-hidden="true" />
+            </a>
           </div>
-        </div>
-
-        {/* Tech Stack Badge */}
-        <div className="mt-8 text-center">
-          <div className="inline-flex flex-wrap items-center gap-2 bg-card px-4 py-2 rounded-full text-xs text-muted-foreground border border-border">
-            <span>Built with</span>
-            <span className="text-primary">Next.js</span>
-            <span>•</span>
-            <span className="text-info">Flask</span>
-            <span>•</span>
-            <span className="text-success">AI Models</span>
-            <span>•</span>
-            <span className="text-warning">PostgreSQL</span>
-          </div>
-        </div>
+        </motion.div>
       </div>
     </footer>
   );

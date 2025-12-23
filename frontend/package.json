@@ -6,8 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "lint:strict": "next lint --max-warnings=0",
+    "lint": "eslint .",
+    "lint:strict": "eslint --max-warnings=0 .",
     "format": "prettier --write .",
     "analyze": "cross-env ANALYZE=true next build",
     "test": "vitest"

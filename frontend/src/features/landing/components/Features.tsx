@@ -1,104 +1,188 @@
-import {
-  BrainCircuit,
-  History,
-  Search,
-  Upload,
-  GraduationCap,
-  Settings2,
-  ScrollText,
-} from 'lucide-react';
+'use client';
+
+import { motion } from 'framer-motion';
+import { BrainCircuit, History, Search, Shield, Sparkles, Zap } from 'lucide-react';
+
+const features = [
+  {
+    icon: BrainCircuit,
+    title: 'Multi-Model AI Analysis',
+    description:
+      'Leverages multiple LLMs with a 4-phase verification pipeline: strategize, search, pivot, verify.',
+    size: 'large',
+    accent: 'primary',
+  },
+  {
+    icon: Search,
+    title: 'Evidence-Based Verdicts',
+    description: 'Cross-references claims against fact-check databases and trusted news sources.',
+    size: 'medium',
+    accent: 'info',
+  },
+  {
+    icon: Zap,
+    title: 'Quick & Deep Modes',
+    description: 'Fast verification for simple claims, thorough analysis for complex topics.',
+    size: 'medium',
+    accent: 'warning',
+  },
+  {
+    icon: Shield,
+    title: 'Source Filtering',
+    description:
+      'Automatically blocks unreliable social media sources, prioritizing credible journalism.',
+    size: 'small',
+    accent: 'success',
+  },
+  {
+    icon: History,
+    title: 'Session History',
+    description: 'Track and export your verification history.',
+    size: 'small',
+    accent: 'muted-foreground',
+  },
+  {
+    icon: Sparkles,
+    title: 'Confidence Scoring',
+    description: 'Transparent confidence levels for every verdict.',
+    size: 'small',
+    accent: 'primary',
+  },
+];
+
+const accentClasses: Record<string, string> = {
+  primary: 'text-primary bg-primary/10',
+  info: 'text-info bg-info/10',
+  success: 'text-success bg-success/10',
+  warning: 'text-warning bg-warning/10',
+  'muted-foreground': 'text-muted-foreground bg-muted',
+};
+
+const containerVariants = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+};
 
 export default function Features() {
-  const features = [
-    {
-      icon: 'brain',
-      title: 'Smart Summarization',
-      description:
-        'Extractive + abstractive AI models for context-rich news briefs and key insights.',
-    },
-    {
-      icon: 'search',
-      title: 'Instant Fact-Checking',
-      description: 'Get automated True/False/Unverified verdicts on claims with confidence scores.',
-    },
-    {
-      icon: 'upload',
-      title: 'Flexible Input',
-      description: 'Paste text, upload documents, or analyze screenshots with our OCR technology.',
-    },
-    {
-      icon: 'history',
-      title: 'Session History',
-      description: "Track what you've checked. Export reports to PDF anytime for reference.",
-    },
-  ];
-
-  const getFeatureIcon = (icon: string) => {
-    switch (icon) {
-      case 'brain':
-        return <BrainCircuit className="w-10 h-10 text-primary" aria-hidden="true" />;
-      case 'search':
-        return <Search className="w-10 h-10 text-info" aria-hidden="true" />;
-      case 'upload':
-        return <Upload className="w-10 h-10 text-success" aria-hidden="true" />;
-      case 'history':
-        return <History className="w-10 h-10 text-warning" aria-hidden="true" />;
-      default:
-        return <Search className="w-10 h-10 text-primary" aria-hidden="true" />;
-    }
-  };
+  const largeFeature = features.find((f) => f.size === 'large')!;
+  const mediumFeatures = features.filter((f) => f.size === 'medium');
+  const smallFeatures = features.filter((f) => f.size === 'small');
 
   return (
-    <section className="py-16 bg-background">
+    <section className="py-24 bg-background">
       <div className="container mx-auto px-6">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            What FactuAI Can Do for You
-          </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Powerful AI tools designed to help you navigate information with confidence
-          </p>
+        {/* Section Header - Asymmetric */}
+        <div className="mb-16 max-w-2xl">
+          <motion.span
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-sm font-medium text-primary uppercase tracking-wider"
+          >
+            Capabilities
+          </motion.span>
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mt-3 leading-tight"
+          >
+            Built for precision,
+            <br />
+            <span className="text-muted-foreground">not speculation.</span>
+          </motion.h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {features.map((feature) => (
-            <div
-              key={feature.title}
-              className="group bg-card rounded-2xl p-6 text-center hover:shadow-xl hover:scale-105 transition-all duration-300 border border-border"
-            >
-              <div className="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">
-                {getFeatureIcon(feature.icon)}
+        {/* Bento Grid */}
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: '-100px' }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-5"
+        >
+          {/* Large Feature - Spans 2 columns */}
+          <motion.div variants={itemVariants} className="md:col-span-2 lg:row-span-2 group">
+            <div className="h-full bg-card rounded-2xl border border-border p-8 lg:p-10 flex flex-col justify-between hover:border-primary/30 transition-colors duration-300">
+              <div>
+                <div
+                  className={`w-14 h-14 rounded-xl flex items-center justify-center ${accentClasses[largeFeature.accent]} mb-6`}
+                >
+                  <largeFeature.icon className="w-7 h-7" aria-hidden="true" />
+                </div>
+                <h3 className="text-2xl lg:text-3xl font-semibold text-foreground mb-4">
+                  {largeFeature.title}
+                </h3>
+                <p className="text-muted-foreground text-lg leading-relaxed">
+                  {largeFeature.description}
+                </p>
               </div>
-              <h3 className="text-xl font-semibold text-foreground mb-3">{feature.title}</h3>
-              <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
-            </div>
-          ))}
-        </div>
 
-        {/* Additional Feature Highlight */}
-        <div className="mt-16 bg-muted/30 rounded-2xl p-8 text-center border border-border">
-          <h3 className="text-2xl font-bold text-foreground mb-4">
-            Built for Truth-Seekers, Researchers, and Everyday Readers
-          </h3>
-          <p className="text-muted-foreground max-w-3xl mx-auto mb-6">
-            FactuAI combines cutting-edge AI research with practical tools to help you make informed
-            decisions based on verified information.
-          </p>
-          <div className="flex flex-wrap justify-center gap-6 text-sm">
-            <div className="flex items-center gap-2 bg-background px-4 py-2 rounded-full shadow-sm border border-border">
-              <Settings2 className="w-4 h-4 text-primary" aria-hidden="true" />
-              <span className="text-muted-foreground">Built with AI (BERT, T5, QLoRA)</span>
+              {/* Visual element for large card */}
+              <div className="mt-8 pt-6 border-t border-border">
+                <div className="flex items-center gap-3">
+                  <div className="flex -space-x-1">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div
+                        key={i}
+                        className="w-8 h-8 rounded-full bg-muted border-2 border-card flex items-center justify-center text-xs font-medium text-muted-foreground"
+                      >
+                        {i}
+                      </div>
+                    ))}
+                  </div>
+                  <span className="text-sm text-muted-foreground">4-Phase Pipeline</span>
+                </div>
+              </div>
             </div>
-            <div className="flex items-center gap-2 bg-background px-4 py-2 rounded-full shadow-sm border border-border">
-              <GraduationCap className="w-4 h-4 text-success" aria-hidden="true" />
-              <span className="text-muted-foreground">Research-backed Development</span>
-            </div>
-            <div className="flex items-center gap-2 bg-background px-4 py-2 rounded-full shadow-sm border border-border">
-              <ScrollText className="w-4 h-4 text-info" aria-hidden="true" />
-              <span className="text-muted-foreground">SDG Goal 16 Compliant</span>
-            </div>
-          </div>
-        </div>
+          </motion.div>
+
+          {/* Medium Features */}
+          {mediumFeatures.map((feature) => (
+            <motion.div key={feature.title} variants={itemVariants} className="group">
+              <div className="h-full bg-card rounded-2xl border border-border p-6 lg:p-7 hover:border-primary/30 transition-colors duration-300">
+                <div
+                  className={`w-11 h-11 rounded-lg flex items-center justify-center ${accentClasses[feature.accent]} mb-5`}
+                >
+                  <feature.icon className="w-5 h-5" aria-hidden="true" />
+                </div>
+                <h3 className="text-xl font-semibold text-foreground mb-3">{feature.title}</h3>
+                <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
+              </div>
+            </motion.div>
+          ))}
+
+          {/* Small Features Row */}
+          {smallFeatures.map((feature) => (
+            <motion.div key={feature.title} variants={itemVariants} className="group">
+              <div className="h-full bg-card rounded-2xl border border-border p-5 lg:p-6 hover:border-primary/30 transition-colors duration-300">
+                <div className="flex items-start gap-4">
+                  <div
+                    className={`w-10 h-10 rounded-lg flex-shrink-0 flex items-center justify-center ${accentClasses[feature.accent]}`}
+                  >
+                    <feature.icon className="w-5 h-5" aria-hidden="true" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground mb-1">{feature.title}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {feature.description}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
       </div>
     </section>
   );

@@ -8,6 +8,7 @@ import { useSettings } from '@/lib/hooks/useSettings';
 import { useAppState } from '@/lib/hooks/useAppState';
 import { cn } from '@/lib/utils';
 import { ButtonContainer } from './components/ButtonContainer';
+import { DashboardHero } from './components/DashboardHero';
 
 export default function DashboardPage() {
   const { prefs, savePrefs, isDark, toggleTheme, isLoaded: settingsLoaded } = useSettings();
@@ -86,17 +87,9 @@ export default function DashboardPage() {
             {!showResults && (
               <div className="text-center space-y-6 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700 relative">
                 {/* 3D Visual Anchor */}
-                <div className="relative w-48 h-48 mx-auto pointer-events-none select-none">
-                  {/* Glow effect */}
-                  <div className="absolute inset-0 bg-primary/20 blur-[60px] rounded-full opacity-50 dark:opacity-30" />
-
-                  {/* Hero Image */}
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src="/images/hero-abstract.png"
-                    alt="FactuAI Abstract"
-                    className="relative w-full h-full object-contain drop-shadow-2xl opacity-90 transition-transform duration-700 hover:scale-105"
-                  />
+                {/* Dynamic Visual Anchor */}
+                <div className="relative mb-6">
+                  <DashboardHero />
                 </div>
 
                 <div className="space-y-4">

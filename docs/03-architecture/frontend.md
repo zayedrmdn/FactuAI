@@ -146,26 +146,23 @@ function ModelSelector() {
 
 ### Pipeline Progress Visualization
 
-The `PipelineStepLoader` component provides immediate visual feedback for the 4-phase process:
+The `PipelineStepLoader` component provides immersive visual feedback for the 4-phase process with orbital animations and progress tracking:
 
 ```typescript
 // frontend/src/features/analyze/components/PipelineStepLoader.tsx
-export function PipelineStepLoader({ phase }: { phase: number }) {
-  const steps = ['Intent', 'Strategy', 'Search', 'Verify'];
+export function PipelineStepLoader() {
+  // Features:
+  // - Orbital particle animation around central icon
+  // - SVG progress ring with gradient stroke
+  // - Animated icon transitions between phases (Brain → Search → Globe → Shield)
+  // - Step progress dots with animated connectors
+  // - Overall progress bar with percentage
   
-  return (
-    <div className="flex gap-4">
-      {steps.map((step, i) => (
-        <div key={step} className={phase >= i ? 'text-green-500' : 'text-gray-400'}>
-          {step}
-        </div>
-      ))}
-    </div>
-  );
+  // Steps: 'Extracting Claims' → 'Strategizing' → 'Gathering Evidence' → 'Synthesizing Verdict'
 }
 ```
 
-This ensures perceived performance while the backend executes complex chains.
+This ensures perceived performance and engagement while the backend executes complex chains.
 
 ---
 
