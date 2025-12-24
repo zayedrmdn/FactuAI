@@ -1,17 +1,17 @@
 'use client';
 
+import { useState } from 'react';
 import { TextSize } from '@/types/dashboard/ui';
 import { FactCheckResult } from '@/types/dashboard/factcheck';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Badge } from '@/components/ui/primitives';
-import { Accordion, AccordionItem } from '@/components/ui/accordion';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import {
   CheckCircle2,
   AlertTriangle,
   XCircle,
   HelpCircle,
-  ExternalLink,
-  Quote,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -24,65 +24,67 @@ interface ClaimCardProps {
 const VERDICT_CONFIG: Record<
   string,
   {
-    variant: 'success' | 'warning' | 'destructive' | 'secondary';
+    textClass: string;
+    bgClass: string;
+    borderClass: string;
     label: string;
     icon: React.ElementType;
-    borderColor: string;
-    headerBg: string;
   }
 > = {
   true: {
-    variant: 'success',
+    textClass: 'text-success',
+    bgClass: 'bg-success/10',
+    borderClass: 'border-l-success',
     label: 'True',
     icon: CheckCircle2,
-    borderColor: 'border-l-success',
-    headerBg: 'bg-success/5',
   },
   mostly_true: {
-    variant: 'success',
+    textClass: 'text-success',
+    bgClass: 'bg-success/10',
+    borderClass: 'border-l-success',
     label: 'Mostly True',
     icon: CheckCircle2,
-    borderColor: 'border-l-success',
-    headerBg: 'bg-success/5',
   },
   half_true: {
-    variant: 'warning',
+    textClass: 'text-warning',
+    bgClass: 'bg-warning/10',
+    borderClass: 'border-l-warning',
     label: 'Half True',
     icon: AlertTriangle,
-    borderColor: 'border-l-warning',
-    headerBg: 'bg-warning/5',
   },
   barely_true: {
-    variant: 'warning',
+    textClass: 'text-warning',
+    bgClass: 'bg-warning/10',
+    borderClass: 'border-l-warning',
     label: 'Barely True',
     icon: AlertTriangle,
-    borderColor: 'border-l-warning',
-    headerBg: 'bg-warning/5',
   },
   false: {
-    variant: 'destructive',
+    textClass: 'text-destructive',
+    bgClass: 'bg-destructive/10',
+    borderClass: 'border-l-destructive',
     label: 'False',
     icon: XCircle,
-    borderColor: 'border-l-destructive',
-    headerBg: 'bg-destructive/5',
   },
   mostly_false: {
-    variant: 'destructive',
+    textClass: 'text-destructive',
+    bgClass: 'bg-destructive/10',
+    borderClass: 'border-l-destructive',
     label: 'Mostly False',
     icon: XCircle,
-    borderColor: 'border-l-destructive',
-    headerBg: 'bg-destructive/5',
   },
   unknown: {
-    variant: 'secondary',
+    textClass: 'text-muted-foreground',
+    bgClass: 'bg-muted',
+    borderClass: 'border-l-muted-foreground',
     label: 'Unknown',
     icon: HelpCircle,
-    borderColor: 'border-l-border',
-    headerBg: 'bg-muted/30',
   },
 };
 
 export default function ClaimCard({ result, index, textSize }: Readonly<ClaimCardProps>) {
+  const [expanded, setExpanded] = useState(false);
+
   const sourceUrls = Array.isArray(result.sources)
     ? result.sources
         .map((s) => {
@@ -96,8 +98,9 @@ export default function ClaimCard({ result, index, textSize }: Readonly<ClaimCar
         .filter((s) => !!s)
     : [];
 
-  const config = VERDICT_CONFIG[result.label] ?? VERDICT_CONFIG.unknown;
-  const VerdictIcon = config!.icon;
+  const label = result.label?.toLowerCase() || 'unknown';
+  const config = (VERDICT_CONFIG[label] || VERDICT_CONFIG.unknown)!;
+  const VerdictIcon = config.icon;
 
   const textSizeClass = {
     sm: 'text-sm',
@@ -108,166 +111,120 @@ export default function ClaimCard({ result, index, textSize }: Readonly<ClaimCar
   return (
     <Card
       className={cn(
-        'w-full overflow-hidden border border-border shadow-sm rounded-xl bg-card transition-all duration-300 hover:shadow-md animate-in fade-in slide-in-from-bottom-4 border-l-4',
-        config!.borderColor
+        'group relative overflow-hidden bg-card border border-border shadow-sm hover:shadow-md transition-all duration-300',
+        expanded ? 'ring-1 ring-primary/5' : ''
       )}
     >
-      {/* Card Header - Vertical Stack for Mobile, Horizontal for Desktop */}
-      <CardHeader className={cn('p-6 pb-4 space-y-4', config!.headerBg)}>
-        {/* Top Row: Claim Number & Confidence (Demoted) */}
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Claim {index + 1}
-          </span>
+      {/* Verdict Strip - Left Border Accent */}
+      <div
+        className={cn('absolute left-0 top-0 bottom-0 w-1', config.bgClass.replace('/10', ''))}
+      />
 
+      <div className="p-5 pl-7 flex flex-col h-full">
+        {/* Header: Verdict & Confidence */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <span
+              className={cn(
+                'flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest',
+                config.bgClass,
+                config.textClass
+              )}
+            >
+              <VerdictIcon className="h-3 w-3" />
+              {config.label}
+            </span>
+            <span className="text-[10px] font-medium text-muted-foreground/70">
+              CLAIM #{index + 1}
+            </span>
+          </div>
           {result.confidence !== undefined && (
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Confidence
-              </span>
-              <span className="text-xs font-bold text-foreground bg-background/50 px-1.5 py-0.5 rounded border border-border">
-                {(result.confidence * 100).toFixed(0)}%
-              </span>
-            </div>
+            <span className="text-[10px] font-mono text-muted-foreground">
+              {(result.confidence * 100).toFixed(0)}% CONFIDENCE
+            </span>
           )}
         </div>
 
-        {/* Hero Verdict Badge (Promoted) */}
-        <div>
-          <Badge
-            variant={config!.variant}
-            className="text-sm sm:text-base px-4 py-1.5 gap-2 shadow-sm"
-          >
-            <VerdictIcon className="h-4 w-4 sm:h-5 sm:w-5" />
-            {config!.label}
-          </Badge>
-        </div>
-
         {/* Claim Text */}
-        <div className="space-y-2 pt-1">
-          <h3
-            className={cn(
-              'font-medium text-foreground leading-relaxed break-words whitespace-normal',
-              textSizeClass
-            )}
-          >
-            {result.claim}
-          </h3>
-        </div>
-      </CardHeader>
+        <h3 className={cn('font-medium text-foreground leading-snug mb-4', textSizeClass)}>
+          {result.claim}
+        </h3>
 
-      <CardContent className="p-6 pt-0 space-y-4">
-        {/* Explanation */}
-        {result.explanation && (
-          <div
-            className={cn(
-              'rounded-lg bg-muted border border-border p-4 text-foreground leading-relaxed',
-              textSizeClass
-            )}
-          >
-            {result.explanation}
-          </div>
-        )}
+        {/* Evidence / Reasoning Preview */}
+        <div className="mt-auto space-y-3">
+          {/* Primary Evidence Snippet */}
+          {result.source_quotes?.[0] && (
+            <div className="bg-muted/30 border-l-2 border-primary/20 pl-3 py-1">
+              <p className="text-sm text-muted-foreground italic line-clamp-2">
+                &ldquo;{result.source_quotes[0].quote}&rdquo;
+              </p>
+            </div>
+          )}
 
-        {/* Analysis / Reasoning */}
-        {result.reasoning && (
-          <div
-            className={cn(
-              'rounded-lg bg-primary/5 border border-primary/10 p-4 text-foreground leading-relaxed',
-              textSizeClass
-            )}
-          >
-            <h4 className="text-xs font-semibold text-primary uppercase tracking-wider mb-2 flex items-center gap-2">
-              <HelpCircle className="h-4 w-4" />
-              Analysis
-            </h4>
-            {result.reasoning}
-          </div>
-        )}
+          {/* Analysis (Collapsed by default unless very short) */}
+          {expanded && result.reasoning && (
+            <div className="text-sm text-muted-foreground animate-in fade-in slide-in-from-top-1 duration-200">
+              <span className="font-semibold text-foreground text-xs uppercase tracking-wide block mb-1">
+                Analysis
+              </span>
+              {result.reasoning}
+            </div>
+          )}
 
-        {/* Evidence & Sources Accordion */}
-        <div className="border border-border rounded-lg">
-          <Accordion>
-            {/* Evidence Section */}
-            <AccordionItem
-              title={
-                <div className="flex items-center gap-2">
-                  <Quote className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-foreground font-medium">Evidence & Analysis</span>
-                </div>
-              }
+          {/* Sources List (Collapsed) */}
+          {expanded && sourceUrls.length > 0 && (
+            <div className="pt-2 border-t border-border/50 animate-in fade-in slide-in-from-top-1 duration-300">
+              <span className="font-semibold text-foreground text-xs uppercase tracking-wide block mb-2">
+                Sources
+              </span>
+              <ul className="space-y-1.5">
+                {sourceUrls.map((url, i) => (
+                  <li key={i} className="flex items-start gap-2">
+                    <span className="text-[10px] text-muted-foreground mt-0.5">{i + 1}.</span>
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-primary hover:underline truncate"
+                    >
+                      {url}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Expand/Collapse Action */}
+          <div className="flex items-center justify-between pt-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setExpanded(!expanded)}
+              className="h-6 px-0 text-xs text-muted-foreground hover:text-foreground hover:bg-transparent p-0 flex items-center gap-1"
             >
-              <div className="px-4 space-y-3">
-                {result.source_quotes && result.source_quotes.length > 0 ? (
-                  <div className="space-y-3">
-                    {result.source_quotes.map((quote, idx) => (
-                      <div
-                        key={`quote-${idx}`}
-                        className="pl-3 border-l-2 border-border hover:border-primary/50 transition-colors"
-                      >
-                        <blockquote className="text-sm text-muted-foreground italic mb-1.5">
-                          &quot;{quote.quote}&quot;
-                        </blockquote>
-                        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                          <span className="font-medium">{quote.source}</span>
-                          <a
-                            href={quote.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1 text-primary hover:underline"
-                          >
-                            View Source <ExternalLink className="h-3 w-3" />
-                          </a>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    {Array.isArray(result.evidence)
-                      ? result.evidence.map((item) => item.text || item).join('. ')
-                      : result.evidence || 'No detailed evidence available.'}
-                  </p>
-                )}
-              </div>
-            </AccordionItem>
+              {expanded ? (
+                <>
+                  Read Less <ChevronUp className="h-3 w-3" />
+                </>
+              ) : (
+                <>
+                  Read Analysis & Sources{' '}
+                  <span className="px-1.5 py-0.5 rounded-full bg-muted text-[9px] font-medium">
+                    {sourceUrls.length + (result.reasoning ? 1 : 0)}
+                  </span>
+                  <ChevronDown className="h-3 w-3" />
+                </>
+              )}
+            </Button>
 
-            {/* Sources Section */}
-            {result.sources?.length > 0 && (
-              <AccordionItem
-                title={
-                  <div className="flex items-center gap-2">
-                    <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-foreground font-medium">
-                      All Sources ({sourceUrls.length})
-                    </span>
-                  </div>
-                }
-              >
-                <div className="px-4">
-                  <ul className="space-y-2">
-                    {sourceUrls.map((url, idx) => (
-                      <li key={`source-${idx}`} className="flex items-start gap-2 text-sm">
-                        <span className="text-xs text-muted-foreground w-5 shrink-0">
-                          {idx + 1}.
-                        </span>
-                        <a
-                          href={url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary hover:underline break-all"
-                        >
-                          {url}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </AccordionItem>
+            {/* Small visual indicator if not expanded but has content */}
+            {!expanded && (
+              <div className="text-[10px] text-muted-foreground/50 font-mono">+ Details</div>
             )}
-          </Accordion>
+          </div>
         </div>
-      </CardContent>
+      </div>
     </Card>
   );
 }

@@ -115,79 +115,89 @@ export default function InputCard({
   }, [setInput, onClear]);
 
   return (
-    <div className="w-full flex flex-col gap-6 animate-in fade-in duration-500">
-      {/* Input Area */}
-      <div className="relative">
-        <InputTabs
-          input={input}
-          setInput={handleTextInput}
-          textSize={textSize}
-          onClear={handleClear}
-          onImageProcessed={handleImageProcessed}
-          onVideoProcessed={handleVideoProcessed}
-          onInputTypeChange={handleInputTypeChange}
-        />
+    <div className="w-full flex flex-col gap-4 animate-in fade-in duration-500">
+      {/* Glowing Input Container */}
+      <div className="relative group">
+        {/* Glow effect behind input */}
+        <div className="absolute -inset-0.5 bg-gradient-to-r from-primary via-primary/50 to-primary rounded-xl opacity-0 group-hover:opacity-20 group-focus-within:opacity-30 transition-opacity duration-500 blur-md" />
 
-        {/* Settings Action - Absolute positioned to be unobtrusive but visible */}
-        <div className="absolute top-0 right-0 z-10">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={openSettings}
-            className="text-xs font-medium text-muted-foreground hover:text-foreground bg-background/50 hover:bg-background border-border/60 hover:border-border shadow-sm h-7 px-3 gap-1.5 transition-all duration-200 backdrop-blur-sm rounded-full"
-            aria-label="Settings"
-          >
-            <Settings className="h-3.5 w-3.5" />
-            <span>Config</span>
-          </Button>
+        {/* Main Input Card */}
+        <div className="relative bg-card rounded-xl border border-border overflow-hidden shadow-sm group-hover:shadow-lg group-focus-within:shadow-lg group-focus-within:border-primary/30 transition-all duration-300">
+          {/* Settings Button - Top Right */}
+          <div className="absolute top-3 right-3 z-10">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={openSettings}
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
+              aria-label="Settings"
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Input Tabs Content */}
+          <InputTabs
+            input={input}
+            setInput={handleTextInput}
+            textSize={textSize}
+            onClear={handleClear}
+            onImageProcessed={handleImageProcessed}
+            onVideoProcessed={handleVideoProcessed}
+            onInputTypeChange={handleInputTypeChange}
+          />
+
+          {/* Bottom Action Bar */}
+          {input && (
+            <div className="px-4 pb-4 pt-2 border-t border-border/50 bg-muted/30 animate-in slide-in-from-bottom-2 duration-200">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+                {/* Analysis Mode */}
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Mode
+                  </span>
+                  <AnalysisModeToggle />
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    onClick={handleClear}
+                    disabled={loading !== null}
+                    size="sm"
+                    className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                  >
+                    Clear
+                  </Button>
+                  <Button
+                    onClick={onFactCheck}
+                    disabled={loading !== null || !validationResult.isValid}
+                    className="gap-2 px-6 font-semibold shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all"
+                    size="sm"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        {loading === 'summary' ? 'Reading...' : 'Verifying...'}
+                      </>
+                    ) : (
+                      <>
+                        <ShieldCheck className="h-4 w-4" />
+                        Analyze
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Controls & Validation */}
-      {input && (
-        <div className="space-y-4 animate-in slide-in-from-top-2 duration-300">
-          {/* Analysis Mode Toggle */}
-          <div className="flex items-center justify-between py-2 border-t border-border/40">
-            <span className="text-sm font-medium text-muted-foreground">Analysis Depth</span>
-            <AnalysisModeToggle />
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex flex-col gap-3 sm:flex-row pt-2">
-            <Button
-              onClick={onFactCheck}
-              disabled={loading !== null || !validationResult.isValid}
-              className="flex-1 gap-2 h-12 text-base font-medium rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all duration-300"
-              size="lg"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  {loading === 'summary' ? 'Reading context...' : 'Verifying claims...'}
-                </>
-              ) : (
-                <>
-                  <ShieldCheck className="h-5 w-5" />
-                  Run Verification
-                </>
-              )}
-            </Button>
-
-            <Button
-              variant="ghost"
-              onClick={handleClear}
-              disabled={loading !== null}
-              size="lg"
-              className="px-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl"
-            >
-              Clear
-            </Button>
-          </div>
-        </div>
-      )}
-
+      {/* Validation Error */}
       {showValidationError && (
-        <div className="rounded-lg bg-destructive/5 border border-destructive/10 p-4 text-sm text-destructive animate-in fade-in slide-in-from-top-1">
+        <div className="rounded-lg bg-destructive/5 border border-destructive/10 p-4 text-sm animate-in fade-in slide-in-from-top-1">
           <div className="flex items-start gap-2">
             <div className="mt-0.5">
               <div className="h-1.5 w-1.5 rounded-full bg-destructive" />

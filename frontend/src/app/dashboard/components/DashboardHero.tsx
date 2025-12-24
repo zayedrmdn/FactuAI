@@ -13,7 +13,7 @@ export function DashboardHero() {
   if (!mounted) return null;
 
   return (
-    <div className="relative w-64 h-64 md:w-80 md:h-80 mx-auto flex items-center justify-center select-none pointer-events-none perspective-1000">
+    <div className="relative w-48 h-48 sm:w-64 sm:h-64 lg:w-80 lg:h-80 mx-auto flex items-center justify-center select-none pointer-events-none perspective-1000">
       {/* 
         Core Glow - Deep atmospheric lighting
         Using primary/20 for a subtle, high-tech feel that works in both light/dark modes
