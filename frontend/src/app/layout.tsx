@@ -1,4 +1,3 @@
-import Script from 'next/script';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { Toaster } from 'sonner';
 import ClientLayout from './ClientLayout';
@@ -17,18 +16,6 @@ export const metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <head>
-        {/* React Grab: Development tool for AI-assisted development and faster context retrieval.
-            Only loaded in development mode for security and bundle size reasons.
-            See PROJECT_DOCUMENTATION.md for more details. */}
-        {process.env.NODE_ENV === 'development' && (
-          <Script
-            src="//unpkg.com/react-grab/dist/index.global.js"
-            crossOrigin="anonymous"
-            strategy="beforeInteractive"
-          />
-        )}
-      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >

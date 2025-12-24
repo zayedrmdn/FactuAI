@@ -29,7 +29,6 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.23.6",
-    "franc": "^6.2.0",
     "jspdf": "^3.0.1",
     "lucide-react": "^0.513.0",
     "newsapi": "^2.4.1",

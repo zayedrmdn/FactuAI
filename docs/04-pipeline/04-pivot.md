@@ -1,6 +1,8 @@
-# Phase 3: Pivot Loop
+# Phase 3: Pivot Loop (Deep Mode Only)
 
 Iterative research when initial evidence reveals new concepts requiring follow-up.
+
+**Note:** This phase is **skipped in Quick Mode**.
 
 ---
 

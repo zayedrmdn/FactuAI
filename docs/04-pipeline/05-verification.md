@@ -57,7 +57,9 @@ class _LLMClaimVerdict(BaseModel):
 
 **Uses:** `PydanticOutputParser` for structured parsing.
 
-### Actual System Prompt
+### Actual System Prompt (In Use)
+
+**Location:** `backend/app/features/verification/adapters/openai_compatible.py`
 
 ```python
 _SYSTEM = (
@@ -71,15 +73,29 @@ _SYSTEM = (
 ```
 
 **Human Prompt:**
-```
-Claim:
-{claim}
-
-Evidence:
-{evidence}
+```python
+"Claim:\n{claim}\n\nEvidence:\n{evidence}\n"
 ```
 
-**Note:** Evidence is token-optimized - only includes title + text, NOT URLs (saves ~20-30 tokens per item).
+**Evidence Format:**
+```
+- [Title]
+  [Text snippet]
+- [Title]
+  [Text snippet]
+...
+```
+
+**Note:** Evidence is **token-optimized** - only includes title + text snippets, NOT URLs (saves ~20-30 tokens per item).
+
+---
+
+### Alternative Prompt (Available but Unused)
+
+**Location:** `backend/app/features/analyze/prompts.py`  
+**Status:** ⚠️ Defined but not currently used by verifier
+
+The `VERIFICATION_SYSTEM` prompt includes advanced "Missing Evidence Logic" but the actual verifier uses the simpler `_SYSTEM` prompt shown above.
 
 ### Circuit Breaker Protection
 

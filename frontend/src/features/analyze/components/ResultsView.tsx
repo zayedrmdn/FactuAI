@@ -174,26 +174,34 @@ export default function ResultsView({
         sections.push('');
 
         if (r.reasoning) {
-          sections.push(`Analysis: `);
-          sections.push(r.reasoning);
+          sections.push(`Analysis:`);
+          // Normalize text to match PDF export quality
+          const cleanReasoning = r.reasoning
+            .replace(/[\u2018\u2019]/g, "'")
+            .replace(/[\u201C\u201D]/g, '"')
+            .replace(/\u00AD/g, '')
+            .replace(/[\u2010\u2011\u2012\u2013\u2014\u2015]/g, '-')
+            .replace(/\s+/g, ' ')
+            .trim();
+          sections.push(cleanReasoning);
           sections.push('');
         }
 
         if (r.source_quotes && r.source_quotes.length > 0) {
-          sections.push('Evidence & Analysis');
+          sections.push('Key Evidence:');
           r.source_quotes.forEach((sq, i) => {
-            sections.push(`${i + 1}."${sq.quote}"`);
-            sections.push(`   Source: ${sq.source} `);
-            if (sq.url) sections.push(`   URL: ${sq.url} `);
+            sections.push(`  ${i + 1}. "${sq.quote}"`);
+            sections.push(`     — ${sq.source}`);
+            if (sq.url) sections.push(`     URL: ${sq.url}`);
           });
+          sections.push('');
         }
 
         const sourceUrls = toSourceStrings(r.sources);
         if (sourceUrls.length > 0) {
-          sections.push('');
-          sections.push('All Sources');
+          sections.push('Sources:');
           sourceUrls.forEach((url, i) => {
-            sections.push(`${i + 1}. ${url} `);
+            sections.push(`  ${i + 1}. ${url}`);
           });
         }
       }

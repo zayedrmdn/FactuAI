@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { useFactCheck } from './useFactCheck';
 import { useHistory } from '@/features/history';
@@ -49,6 +49,9 @@ export function useAppState() {
     clearInputTypeData,
   } = useInputType();
 
+  // Track the last saved timestamp to prevent duplicate saves
+  const lastSavedTimestamp = useRef<string | null>(null);
+
   // Enhanced input type change with history integration
   const handleInputTypeChange = useCallback(
     (
@@ -79,7 +82,13 @@ export function useAppState() {
   // Save to history when factResults updates (after successful fact-check)
   useEffect(() => {
     // Only save if we have results and they're fresh (not from loading history)
-    if (factResults.length > 0 && updated && input.trim()) {
+    // AND we haven't already saved this exact result
+    if (
+      factResults.length > 0 &&
+      updated &&
+      input.trim() &&
+      lastSavedTimestamp.current !== updated
+    ) {
       const historyData: Omit<HistoryItem, 'id' | 'timestamp'> = {
         input: input,
         summary,
@@ -102,6 +111,7 @@ export function useAppState() {
       }
 
       pushHistory(historyData);
+      lastSavedTimestamp.current = updated;
     }
   }, [
     factResults,

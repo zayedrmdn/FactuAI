@@ -102,5 +102,5 @@
 
 ---
 
-**Last Updated:** 2025-12-20  
-**Version:** 4.0.4
+**Last Updated:** 2025-12-24  
+**Version:** 4.0.5

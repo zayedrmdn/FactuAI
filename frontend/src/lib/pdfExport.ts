@@ -3,7 +3,6 @@ import { FactCheckResult, QAResult } from '@/types/dashboard/factcheck';
 
 type CombinedResult = FactCheckResult | QAResult;
 
-/** True if this is a QAResult, false otherwise */
 function isQAResult(r: CombinedResult): r is QAResult {
   return (r as QAResult).answer !== undefined;
 }
@@ -16,151 +15,376 @@ interface PdfExportOptions {
   isQAOnly: boolean;
 }
 
-/**
- * Helper function to detect URLs in text and make them clickable in PDF
- */
-function addTextWithLinks(
-  doc: jsPDF,
-  text: string,
-  x: number,
-  y: number,
-  maxWidth: number
-): number {
-  const urlRegex = /(https?:\/\/[^\s]+)/g;
-  const parts = text.split(urlRegex);
+// Professional color palette
+const COLORS = {
+  primary: [30, 64, 175] as [number, number, number],
+  text: [31, 41, 55] as [number, number, number],
+  muted: [107, 114, 128] as [number, number, number],
+  border: [229, 231, 235] as [number, number, number],
+  success: [22, 163, 74] as [number, number, number],
+  danger: [220, 38, 38] as [number, number, number],
+  warning: [217, 119, 6] as [number, number, number],
+  bgLight: [249, 250, 251] as [number, number, number],
+};
 
-  for (const part of parts) {
-    if (urlRegex.test(part)) {
-      // This is a URL - make it blue and clickable
-      doc.setTextColor(0, 0, 255); // Blue color
-      const lines = doc.splitTextToSize(part, maxWidth);
-      doc.text(lines, x, y);
-      // Add link annotation
-      doc.link(x, y - 10, doc.getTextWidth(lines[0]), 12, { url: part });
-      doc.setTextColor(0, 0, 0); // Reset to black
-      y += lines.length * 12;
-    } else if (part.trim()) {
-      // Regular text
-      const lines = doc.splitTextToSize(part, maxWidth);
-      doc.text(lines, x, y);
-      y += lines.length * 12;
-    }
+// Typography constants for consistent spacing
+const LINE_HEIGHT = {
+  body: 14,
+  small: 11,
+  tiny: 10,
+};
+
+const FONT_SIZE = {
+  title: 22,
+  subtitle: 12,
+  sectionHeader: 12,
+  body: 10,
+  small: 9,
+  tiny: 8,
+};
+
+// Maximum items to show to prevent extremely long PDFs
+const LIMITS = {
+  maxEvidence: 3,
+  maxSources: 10,
+  urlMaxLength: 90,
+};
+
+/**
+ * Check if we need a new page, and add one if necessary
+ */
+function checkPageBreak(
+  doc: jsPDF,
+  y: number,
+  pageHeight: number,
+  requiredSpace: number,
+  margin: number
+): number {
+  if (y + requiredSpace > pageHeight - 50) {
+    doc.addPage();
+    return margin + 20;
   }
   return y;
 }
 
 /**
- * Renders the header section of the PDF
+ * Renders the professional header
  */
 function renderHeader(doc: jsPDF, pageWidth: number, margin: number): number {
-  // Header section with better styling
-  doc.setFillColor(240, 248, 255); // Light blue background
-  doc.rect(0, 0, pageWidth, 90, 'F');
+  doc.setFillColor(...COLORS.primary);
+  doc.rect(0, 0, pageWidth, 4, 'F');
 
-  doc.setFontSize(20);
+  doc.setFontSize(FONT_SIZE.title);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(30, 64, 175); // Dark blue
-  doc.text('FactuAI Analysis Report', margin, 40);
+  doc.setTextColor(...COLORS.primary);
+  doc.text('FactuAI', margin, 45);
 
-  doc.setFontSize(11);
+  doc.setFontSize(FONT_SIZE.subtitle);
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(75, 85, 99); // Gray
-  doc.text(`Generated on ${new Date().toLocaleString()}`, margin, 65);
+  doc.setTextColor(...COLORS.muted);
+  doc.text('Analysis Report', margin + 100, 45);
 
-  doc.setTextColor(0, 0, 0); // Reset to black
-  return 120; // Return starting Y position for content
+  doc.setFontSize(FONT_SIZE.small);
+  const dateStr = new Date().toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+  doc.text(dateStr, pageWidth - margin, 45, { align: 'right' });
+
+  doc.setDrawColor(...COLORS.border);
+  doc.setLineWidth(0.5);
+  doc.line(margin, 58, pageWidth - margin, 58);
+
+  return 80;
 }
 
 /**
- * Renders the summary section of the PDF
+ * Renders the executive summary section
  */
 function renderSummary(
   doc: jsPDF,
   summary: string,
-  pageWidth: number,
   margin: number,
   maxWidth: number,
+  pageHeight: number,
   startY: number
 ): number {
+  if (!summary) return startY;
+
   let y = startY;
 
-  if (!summary) return y;
-
-  // Add separator line
-  doc.setDrawColor(229, 231, 235);
-  doc.setLineWidth(1);
-  doc.line(margin, y - 10, pageWidth - margin, y - 10);
-
-  doc.setFontSize(14);
+  doc.setFontSize(FONT_SIZE.sectionHeader);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(75, 85, 99);
-  doc.text('Executive Summary', margin, y);
-  y += 25;
+  doc.setTextColor(...COLORS.text);
+  doc.text('EXECUTIVE SUMMARY', margin, y);
+  y += 16;
 
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(0, 0, 0);
-
-  // Add background for summary
+  doc.setFillColor(...COLORS.bgLight);
   const summaryLines = doc.splitTextToSize(summary, maxWidth - 20);
-  const summaryHeight = summaryLines.length * 14 + 20;
-  doc.setFillColor(249, 250, 251);
-  doc.roundedRect(margin, y - 5, maxWidth, summaryHeight, 3, 3, 'F');
+  const boxHeight = summaryLines.length * LINE_HEIGHT.body + 20;
 
-  doc.text(summaryLines, margin + 10, y + 10);
-  y += summaryHeight + 15;
+  y = checkPageBreak(doc, y, pageHeight, boxHeight + 10, margin);
 
-  return y;
+  doc.roundedRect(margin, y - 6, maxWidth, boxHeight, 4, 4, 'F');
+
+  doc.setFontSize(FONT_SIZE.body);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...COLORS.text);
+  doc.text(summaryLines, margin + 10, y + 8);
+
+  return y + boxHeight + 20;
 }
 
 /**
- * Renders the metrics section (confidence and AI detection)
+ * Renders the metrics overview
  */
 function renderMetrics(
   doc: jsPDF,
   averageConfidence: number,
   aiScore: number | null | undefined,
+  results: CombinedResult[],
   pageWidth: number,
   margin: number,
+  maxWidth: number,
+  pageHeight: number,
   startY: number
 ): number {
-  let y = startY;
+  let y = checkPageBreak(doc, startY, pageHeight, 90, margin);
 
-  if (averageConfidence <= 0 && (aiScore === undefined || aiScore === null)) {
-    return y;
-  }
-
-  doc.setDrawColor(229, 231, 235);
-  doc.line(margin, y - 5, pageWidth - margin, y - 5);
-
-  doc.setFontSize(14);
+  doc.setFontSize(FONT_SIZE.sectionHeader);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(75, 85, 99);
-  doc.text('Analysis Metrics', margin, y + 10);
-  y += 35;
+  doc.setTextColor(...COLORS.text);
+  doc.text('OVERVIEW', margin, y);
+  y += 18;
 
-  if (averageConfidence > 0) {
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(34, 197, 94); // Green
-    doc.text(`Overall Confidence: ${averageConfidence.toFixed(1)}%`, margin, y);
-    y += 20;
-  }
+  const stats = results.reduce(
+    (acc, r) => {
+      if (!isQAResult(r)) {
+        const label = r.label?.toLowerCase() || 'unknown';
+        if (['true', 'mostly_true'].includes(label)) acc.verified++;
+        else if (['false', 'mostly_false'].includes(label)) acc.false++;
+        else acc.unclear++;
+      }
+      return acc;
+    },
+    { verified: 0, false: 0, unclear: 0 }
+  );
+
+  const metrics: { label: string; value: string; color: [number, number, number] }[] = [
+    { label: 'Trust Score', value: `${averageConfidence.toFixed(0)}%`, color: COLORS.primary },
+    { label: 'Claims', value: `${results.length}`, color: COLORS.text },
+    { label: 'Verified', value: `${stats.verified}`, color: COLORS.success },
+    { label: 'False', value: `${stats.false}`, color: COLORS.danger },
+  ];
 
   if (aiScore !== undefined && aiScore !== null) {
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(168, 85, 247); // Purple
-    doc.text(`AI Content Detection: ${aiScore.toFixed(1)}%`, margin, y);
-    y += 25;
+    metrics.push({ label: 'AI Score', value: `${aiScore.toFixed(0)}%`, color: COLORS.warning });
   }
 
-  doc.setTextColor(0, 0, 0); // Reset color
-  return y;
+  const boxWidth = (maxWidth - (metrics.length - 1) * 10) / metrics.length;
+  metrics.forEach((metric, i) => {
+    const x = margin + i * (boxWidth + 10);
+
+    doc.setFillColor(...COLORS.bgLight);
+    doc.roundedRect(x, y, boxWidth, 45, 3, 3, 'F');
+
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...metric.color);
+    doc.text(metric.value, x + boxWidth / 2, y + 22, { align: 'center' });
+
+    doc.setFontSize(FONT_SIZE.tiny);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...COLORS.muted);
+    doc.text(metric.label.toUpperCase(), x + boxWidth / 2, y + 38, { align: 'center' });
+  });
+
+  return y + 65;
 }
 
 /**
- * Renders a QA result card
+ * Gets verdict styling
+ */
+function getVerdictStyle(label: string | undefined): {
+  color: [number, number, number];
+  text: string;
+} {
+  const normalized = label?.toLowerCase();
+  if (normalized === 'true' || normalized === 'mostly_true') {
+    return { color: COLORS.success, text: 'VERIFIED' };
+  }
+  if (normalized === 'false' || normalized === 'mostly_false') {
+    return { color: COLORS.danger, text: 'FALSE' };
+  }
+  return { color: COLORS.warning, text: 'UNVERIFIED' };
+}
+
+/**
+ * Renders a single claim result with robust pagination
+ */
+function renderClaimResult(
+  doc: jsPDF,
+  result: FactCheckResult,
+  idx: number,
+  margin: number,
+  maxWidth: number,
+  pageWidth: number,
+  pageHeight: number,
+  startY: number
+): number {
+  let y = startY;
+  const verdictStyle = getVerdictStyle(result.label);
+
+  // Claim header
+  y = checkPageBreak(doc, y, pageHeight, 60, margin);
+
+  doc.setFontSize(FONT_SIZE.body);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...COLORS.muted);
+  doc.text(`CLAIM ${idx + 1}`, margin, y);
+
+  doc.setTextColor(...verdictStyle.color);
+  doc.text(verdictStyle.text, pageWidth - margin, y, { align: 'right' });
+  y += 12;
+
+  if (result.confidence !== undefined) {
+    doc.setFontSize(FONT_SIZE.tiny);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...COLORS.muted);
+    doc.text(`Confidence: ${(result.confidence * 100).toFixed(0)}%`, pageWidth - margin, y, {
+      align: 'right',
+    });
+  }
+  y += 6;
+
+  // Claim text
+  doc.setFontSize(FONT_SIZE.body);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...COLORS.text);
+  const claimLines = doc.splitTextToSize(result.claim, maxWidth);
+  y = checkPageBreak(doc, y, pageHeight, claimLines.length * LINE_HEIGHT.body + 10, margin);
+  doc.text(claimLines, margin, y);
+  y += claimLines.length * LINE_HEIGHT.body + 8;
+
+  // Analysis/Reasoning
+  if (result.reasoning) {
+    y = checkPageBreak(doc, y, pageHeight, 40, margin);
+
+    doc.setFontSize(FONT_SIZE.small);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...COLORS.muted);
+    doc.text('Analysis:', margin, y);
+    y += LINE_HEIGHT.small;
+
+    // Normalize text to prevent weird character spacing issues
+    const cleanReasoning = result.reasoning
+      .replace(/[\u2018\u2019]/g, "'") // Smart single quotes to apostrophe
+      .replace(/[\u201C\u201D]/g, '"') // Smart double quotes
+      .replace(/\u00AD/g, '') // Remove soft hyphens (invisible hyphenation hints)
+      .replace(/[\u2010\u2011\u2012\u2013\u2014\u2015]/g, '-') // Normalize all dash variants to ASCII hyphen
+      .replace(/\s+/g, ' ') // Normalize whitespace
+      .trim();
+
+    // Set font to normal for the analysis text content
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...COLORS.text);
+    doc.setFontSize(FONT_SIZE.small);
+
+    const reasoningLines = doc.splitTextToSize(cleanReasoning, maxWidth - 10);
+
+    // Render reasoning line by line with page breaks
+    for (const line of reasoningLines) {
+      y = checkPageBreak(doc, y, pageHeight, LINE_HEIGHT.small + 5, margin);
+      doc.text(line, margin, y);
+      y += LINE_HEIGHT.small;
+    }
+    y += 6;
+  }
+
+  // Key Evidence (limit to prevent overflow)
+  if (result.source_quotes && result.source_quotes.length > 0) {
+    y = checkPageBreak(doc, y, pageHeight, 30, margin);
+
+    doc.setFontSize(FONT_SIZE.small);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...COLORS.muted);
+    doc.text('Key Evidence:', margin, y);
+    y += LINE_HEIGHT.small + 2;
+
+    const evidenceToShow = result.source_quotes.slice(0, LIMITS.maxEvidence);
+    for (const sq of evidenceToShow) {
+      y = checkPageBreak(doc, y, pageHeight, 35, margin);
+
+      doc.setFont('helvetica', 'italic');
+      doc.setTextColor(...COLORS.text);
+      const quoteText = `"${sq.quote}"`;
+      const quoteLines = doc.splitTextToSize(quoteText, maxWidth - 12);
+      doc.text(quoteLines, margin + 6, y);
+      y += quoteLines.length * LINE_HEIGHT.small + 2;
+
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...COLORS.muted);
+      doc.text(`— ${sq.source}`, margin + 6, y);
+      y += LINE_HEIGHT.small + 4;
+    }
+
+    if (result.source_quotes.length > LIMITS.maxEvidence) {
+      doc.setTextColor(...COLORS.muted);
+      doc.text(
+        `(${result.source_quotes.length - LIMITS.maxEvidence} more evidence items not shown)`,
+        margin + 6,
+        y
+      );
+      y += LINE_HEIGHT.small;
+    }
+  }
+
+  // Sources (limit to prevent extremely long PDFs)
+  if (result.sources && result.sources.length > 0) {
+    y = checkPageBreak(doc, y, pageHeight, 30, margin);
+
+    doc.setFontSize(FONT_SIZE.small);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...COLORS.muted);
+    doc.text('Sources:', margin, y);
+    y += LINE_HEIGHT.small;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...COLORS.primary);
+
+    const sourcesToShow = result.sources.slice(0, LIMITS.maxSources);
+    for (let i = 0; i < sourcesToShow.length; i++) {
+      y = checkPageBreak(doc, y, pageHeight, LINE_HEIGHT.small + 3, margin);
+
+      const source = sourcesToShow[i];
+      const sourceText = typeof source === 'string' ? source : String(source ?? '');
+      const truncated =
+        sourceText.length > LIMITS.urlMaxLength
+          ? sourceText.substring(0, LIMITS.urlMaxLength - 3) + '...'
+          : sourceText;
+      doc.text(`${i + 1}. ${truncated}`, margin + 6, y);
+      y += LINE_HEIGHT.small;
+    }
+
+    if (result.sources.length > LIMITS.maxSources) {
+      doc.setTextColor(...COLORS.muted);
+      doc.text(`+ ${result.sources.length - LIMITS.maxSources} more sources`, margin + 6, y);
+      y += LINE_HEIGHT.small;
+    }
+  }
+
+  // Divider
+  y += 8;
+  doc.setDrawColor(...COLORS.border);
+  doc.setLineWidth(0.5);
+  doc.line(margin, y, pageWidth - margin, y);
+
+  return y + 15;
+}
+
+/**
+ * Renders a QA result
  */
 function renderQAResult(
   doc: jsPDF,
@@ -168,264 +392,96 @@ function renderQAResult(
   idx: number,
   margin: number,
   maxWidth: number,
+  pageWidth: number,
+  pageHeight: number,
   startY: number
 ): number {
-  let y = startY;
-  const cardStartY = y - 10;
+  let y = checkPageBreak(doc, startY, pageHeight, 50, margin);
 
-  // QA Result styling
-  doc.setFillColor(254, 249, 195); // Light yellow
-  doc.roundedRect(margin, cardStartY, maxWidth, 20, 3, 3, 'F');
-
-  doc.setFontSize(12);
+  doc.setFontSize(FONT_SIZE.body);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(146, 64, 14); // Orange-brown
-  doc.text(`Q${idx + 1}: ${result.question}`, margin + 10, y + 5);
-  y += 25;
+  doc.setTextColor(...COLORS.primary);
+  doc.text(`Q${idx + 1}:`, margin, y);
 
-  doc.setFontSize(11);
+  doc.setTextColor(...COLORS.text);
+  const questionLines = doc.splitTextToSize(result.question, maxWidth - 25);
+  doc.text(questionLines, margin + 22, y);
+  y += questionLines.length * LINE_HEIGHT.body + 8;
+
+  doc.setFontSize(FONT_SIZE.body);
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(0, 0, 0);
-  const answerLines = doc.splitTextToSize(result.answer, maxWidth - 20);
-  doc.text(answerLines, margin + 10, y);
-  y += answerLines.length * 14 + 15;
+  doc.setTextColor(...COLORS.text);
+  const answerLines = doc.splitTextToSize(result.answer, maxWidth);
 
-  if (result.sources?.length > 0) {
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(75, 85, 99);
-    doc.text('Sources:', margin + 10, y);
-    y += 15;
-
-    doc.setFont('helvetica', 'normal');
-    let qaSourceIdx = 0;
-    for (const source of result.sources) {
-      y = addTextWithLinks(doc, `${qaSourceIdx + 1}. ${source}`, margin + 20, y, maxWidth - 30);
-      y += 5;
-      qaSourceIdx++;
-    }
-    y += 10;
+  for (const line of answerLines) {
+    y = checkPageBreak(doc, y, pageHeight, LINE_HEIGHT.body + 3, margin);
+    doc.text(line, margin, y);
+    y += LINE_HEIGHT.body;
   }
+  y += 10;
 
-  return y;
+  doc.setDrawColor(...COLORS.border);
+  doc.line(margin, y, pageWidth - margin, y);
+
+  return y + 15;
 }
 
 /**
- * Renders a fact-check result card
+ * Renders all results with proper pagination
  */
-/**
- * Gets the background and text colors based on verdict
- */
-function getVerdictColors(label: string | undefined): {
-  bg: [number, number, number];
-  text: [number, number, number];
-} {
-  const normalizedLabel = label?.toLowerCase();
-  if (normalizedLabel === 'true' || normalizedLabel === 'mostly true') {
-    return { bg: [240, 253, 244], text: [22, 163, 74] }; // Green
-  }
-  if (normalizedLabel === 'false' || normalizedLabel === 'mostly false') {
-    return { bg: [254, 242, 242], text: [220, 38, 38] }; // Red
-  }
-  return { bg: [255, 251, 235], text: [217, 119, 6] }; // Yellow (default)
-}
-
-/**
- * Renders evidence section (source quotes or evidence array)
- */
-function renderEvidenceSection(
+function renderResults(
   doc: jsPDF,
-  result: FactCheckResult,
+  results: CombinedResult[],
+  isQAOnly: boolean,
+  pageWidth: number,
+  pageHeight: number,
   margin: number,
   maxWidth: number,
   startY: number
-): number {
-  let y = startY;
+): void {
+  if (results.length === 0) return;
 
-  if (result.source_quotes && result.source_quotes.length > 0) {
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(75, 85, 99);
-    doc.text('Evidence:', margin + 10, y);
-    y += 15;
+  let y = checkPageBreak(doc, startY, pageHeight, 40, margin);
 
-    doc.setFont('helvetica', 'italic');
-    doc.setTextColor(55, 65, 81);
-    for (const quote of result.source_quotes) {
-      const quoteText = `"${quote.quote}" - ${quote.source}`;
-      const quoteLines = doc.splitTextToSize(quoteText, maxWidth - 30);
-      doc.text(quoteLines, margin + 20, y);
-      y += quoteLines.length * 12 + 8;
-    }
-    y += 10;
-    return y;
-  }
-
-  if (result.evidence && result.evidence.length > 0) {
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(75, 85, 99);
-    doc.text('Evidence:', margin + 10, y);
-    y += 15;
-
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(55, 65, 81);
-    const evidenceText = Array.isArray(result.evidence)
-      ? result.evidence.join('. ')
-      : result.evidence;
-    const evidenceLines = doc.splitTextToSize(evidenceText, maxWidth - 30);
-    doc.text(evidenceLines, margin + 20, y);
-    y += evidenceLines.length * 12 + 15;
-  }
-
-  return y;
-}
-
-function renderFactCheckResult(
-  doc: jsPDF,
-  result: FactCheckResult,
-  idx: number,
-  margin: number,
-  maxWidth: number,
-  startY: number
-): number {
-  let y = startY;
-  const cardStartY = y - 10;
-
-  // Get colors based on verdict
-  const colors = getVerdictColors(result.label);
-
-  doc.setFillColor(colors.bg[0], colors.bg[1], colors.bg[2]);
-
-  // Calculate card height dynamically
-  const claimLines = doc.splitTextToSize(result.claim, maxWidth - 20);
-  let cardHeight = 60 + claimLines.length * 14;
-  if (result.source_quotes?.length) cardHeight += result.source_quotes.length * 25;
-  if (result.evidence?.length) cardHeight += 40;
-  if (result.sources?.length) cardHeight += result.sources.length * 15 + 25;
-
-  doc.roundedRect(margin, cardStartY, maxWidth, Math.min(cardHeight, 100), 3, 3, 'F');
-
-  doc.setFontSize(12);
+  doc.setFontSize(FONT_SIZE.sectionHeader);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
-  doc.text(`Claim ${idx + 1}:`, margin + 10, y + 5);
+  doc.setTextColor(...COLORS.text);
+  doc.text(isQAOnly ? 'QUESTIONS & ANSWERS' : 'DETAILED ANALYSIS', margin, y);
   y += 20;
 
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(0, 0, 0);
-  doc.text(claimLines, margin + 10, y);
-  y += claimLines.length * 14 + 15;
-
-  // Verdict with simple text
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
-  doc.text(`Verdict: ${result.label}`, margin + 10, y);
-  y += 15;
-
-  if (result.confidence) {
-    doc.setTextColor(75, 85, 99);
-    doc.text(`Confidence: ${(result.confidence * 100).toFixed(1)}%`, margin + 10, y);
-    y += 15;
-  }
-
-  doc.setTextColor(0, 0, 0);
-
-  // Render evidence section
-  y = renderEvidenceSection(doc, result, margin, maxWidth, y);
-
-  // Sources
-  if (result.sources?.length > 0) {
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(75, 85, 99);
-    doc.text('Sources:', margin + 10, y);
-    y += 15;
-
-    doc.setFont('helvetica', 'normal');
-    let fcSourceIdx = 0;
-    for (const source of result.sources) {
-      y = addTextWithLinks(doc, `${fcSourceIdx + 1}. ${source}`, margin + 20, y, maxWidth - 30);
-      y += 5;
-      fcSourceIdx++;
-    }
-    y += 10;
-  }
-
-  return y;
-}
-
-/**
- * Configuration for rendering results section
- */
-interface RenderResultsConfig {
-  doc: jsPDF;
-  results: CombinedResult[];
-  isQAOnly: boolean;
-  dimensions: { pageWidth: number; pageHeight: number; margin: number; maxWidth: number };
-  startY: number;
-}
-
-/**
- * Renders the results section
- */
-function renderResults(config: RenderResultsConfig): number {
-  const { doc, results, isQAOnly, dimensions, startY } = config;
-  const { pageWidth, pageHeight, margin, maxWidth } = dimensions;
-  let y = startY;
-
-  if (results.length === 0) return y;
-
-  doc.setDrawColor(229, 231, 235);
-  doc.line(margin, y - 5, pageWidth - margin, y - 5);
-
-  doc.setFontSize(14);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(75, 85, 99);
-  const sectionTitle = isQAOnly ? 'Questions & Answers' : 'Fact-Check Results';
-  doc.text(sectionTitle, margin, y + 10);
-  y += 35;
-
-  let resultIdx = 0;
-  for (const result of results) {
-    // Check if we need a new page (with more space buffer)
-    if (y > pageHeight - 150) {
-      doc.addPage();
-      y = 50;
-    }
-
+  results.forEach((result, idx) => {
     if (isQAResult(result)) {
-      y = renderQAResult(doc, result, resultIdx, margin, maxWidth, y);
+      y = renderQAResult(doc, result, idx, margin, maxWidth, pageWidth, pageHeight, y);
     } else {
-      y = renderFactCheckResult(doc, result, resultIdx, margin, maxWidth, y);
+      y = renderClaimResult(doc, result, idx, margin, maxWidth, pageWidth, pageHeight, y);
     }
-
-    y += 25; // Space between results
-    resultIdx++;
-  }
-
-  return y;
+  });
 }
 
 /**
- * Renders the footer on all pages
+ * Renders footer on all pages
  */
-function renderFooter(doc: jsPDF, pageHeight: number, margin: number): void {
+function renderFooter(doc: jsPDF, pageWidth: number, pageHeight: number, margin: number): void {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const totalPages = (doc as any).internal.getNumberOfPages();
+
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
-    doc.setFontSize(8);
+
+    doc.setDrawColor(...COLORS.border);
+    doc.setLineWidth(0.5);
+    doc.line(margin, pageHeight - 35, pageWidth - margin, pageHeight - 35);
+
+    doc.setFontSize(FONT_SIZE.tiny);
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(156, 163, 175);
-    doc.text(`Generated by FactuAI - Page ${i} of ${totalPages}`, margin, pageHeight - 20);
+    doc.setTextColor(...COLORS.muted);
+    doc.text('Generated by FactuAI — AI-Powered Fact-Checking', margin, pageHeight - 22);
+    doc.text(`Page ${i} of ${totalPages}`, pageWidth - margin, pageHeight - 22, { align: 'right' });
   }
 }
 
 /**
- * Main function to export results to PDF
+ * Main export function - handles all edge cases
  */
 export function exportToPdf(options: PdfExportOptions): void {
   const { results, summary, averageConfidence, aiScore, isQAOnly } = options;
@@ -437,25 +493,26 @@ export function exportToPdf(options: PdfExportOptions): void {
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 50;
+  const margin = 45;
   const maxWidth = pageWidth - 2 * margin;
 
-  // Render sections
   let y = renderHeader(doc, pageWidth, margin);
-  y = renderSummary(doc, summary, pageWidth, margin, maxWidth, y);
-  y = renderMetrics(doc, averageConfidence, aiScore, pageWidth, margin, y);
-  renderResults({
+  y = renderSummary(doc, summary, margin, maxWidth, pageHeight, y);
+  y = renderMetrics(
     doc,
+    averageConfidence,
+    aiScore,
     results,
-    isQAOnly,
-    dimensions: { pageWidth, pageHeight, margin, maxWidth },
-    startY: y,
-  });
+    pageWidth,
+    margin,
+    maxWidth,
+    pageHeight,
+    y
+  );
+  renderResults(doc, results, isQAOnly, pageWidth, pageHeight, margin, maxWidth, y);
 
-  // Add footer to all pages
-  renderFooter(doc, pageHeight, margin);
+  renderFooter(doc, pageWidth, pageHeight, margin);
 
-  // Save the PDF
   const filename = `FactuAI-Report-${new Date().toISOString().split('T')[0]}.pdf`;
   doc.save(filename);
 }

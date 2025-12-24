@@ -152,15 +152,6 @@ export default function ClaimCard({ result, index, textSize }: Readonly<ClaimCar
 
         {/* Evidence / Reasoning Preview */}
         <div className="mt-auto space-y-3">
-          {/* Primary Evidence Snippet */}
-          {result.source_quotes?.[0] && (
-            <div className="bg-muted/30 border-l-2 border-primary/20 pl-3 py-1">
-              <p className="text-sm text-muted-foreground italic line-clamp-2">
-                &ldquo;{result.source_quotes[0].quote}&rdquo;
-              </p>
-            </div>
-          )}
-
           {/* Analysis (Collapsed by default unless very short) */}
           {expanded && result.reasoning && (
             <div className="text-sm text-muted-foreground animate-in fade-in slide-in-from-top-1 duration-200">

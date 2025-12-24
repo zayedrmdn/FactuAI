@@ -57,31 +57,36 @@ class _ClaimListOutput(BaseModel):
     )
 ```
 
-**Key Feature:** `global_context` extraction - identifies shared entities/locations across all claims to improve search query quality in Phase 1.
+**Key Features:**
+- **`global_context` extraction** - Identifies shared entities (people, organizations), locations, events, and background info across all claims
+- **Used by Strategist** - Context is passed to query generation to make queries more specific
+- **Example:** For "Governor Muhidin's helicopter crashed in South Kalimantan", context would be: "South Kalimantan, Governor Muhidin, helicopter crash"
+- **Objective extraction** - System extracts claims objectively without pre-judging truth/falsity
 
 ### Actual System Prompt
 
 ```
-You are a claim extraction assistant. Your task is to analyze text and extract distinct, verifiable factual claims.
+You are a claim extraction assistant. Your task is to analyze text and extract distinct, verifiable assertions.
 
 Rules:
-1. Extract only FACTUAL claims that can be verified with evidence (true/false).
-2. Ignore opinions, predictions, questions, and rhetorical statements.
-3. Each claim should be self-contained and understandable without context.
-4. Generate a concise web search query to find evidence for each claim.
-5. Generate a verification question that can be answered with yes/no.
-6. Do NOT extract duplicate or overlapping claims.
-7. If no verifiable claims exist, return an empty list.
-8. **IMPORTANT**: Extract a global_context summarizing key entities (people, organizations), 
-   locations, events, and background information shared across all claims. This context helps 
-   ground search queries. Example: "South Kalimantan, Governor Muhidin, helicopter crash site"
+1. Extract all factual assertions that can be verified with evidence, regardless of whether they appear true or false to you.
+2. A claim is verifiable if it makes a specific, falsifiable statement about the world (e.g., historical dates, scientific properties, geographical locations, or specific actions by entities).
+3. Do NOT skip claims simply because they contradict scientific consensus, appear to be myths, or seem controversial. The extraction phase must be objective; the verification phase will handle truth-checking.
+4. Ignore pure opinions ("I like..."), predictions ("The world will end in..."), or rhetorical statements that lack a specific falsifiable core.
+5. Each claim should be self-contained and understandable without context.
+6. Generate a concise web search query to find evidence for each claim.
+7. Generate a verification question that can be answered with yes/no.
+8. Do NOT extract duplicate or overlapping claims.
+9. If no verifiable claims exist, return an empty list.
+10. **IMPORTANT**: Extract a global_context summarizing key entities, locations, and events shared across all claims to ground search queries.
 
-Examples of GOOD claims:
+Examples of assertions to EXTRACT:
 - "The Eiffel Tower is 330 meters tall."
+- "The moon is made of green cheese." (extractable even if false)
 - "Apple was founded in 1976."
 - "Water boils at 100°C at sea level."
 
-Examples of BAD claims (do NOT extract):
+Examples of statements to IGNORE:
 - "I think the weather will be nice." (opinion/prediction)
 - "Is Python a good language?" (question)
 - "Everyone knows about climate change." (vague/rhetorical)
@@ -128,15 +133,24 @@ async def _extract_claims(
 
 ### Model Configuration Priority
 
-1. **Frontend override** (if user selects model in UI)
+**Model Selection:**
+1. **Frontend override** (if user selects model in UI) - **HIGHEST PRIORITY**
 2. **Intent-specific config** (`INTENT_LLM_MODEL`)
-3. **Main LLM config** (`OPENROUTER_MODEL`)
+3. **Main LLM config** (`OPENROUTER_MODEL`) - fallback
 
-**Fallback chain** for API keys/URLs:
+**API Configuration Fallback:**
 ```python
-api_key = settings.intent_llm_api_key or settings.llm_api_key
+# Frontend model takes priority over environment settings
+request_model = model  # From API request
+settings_model = settings.intent_llm_model
+intent_model = request_model or settings_model  # Frontend wins
+
+# API keys/URLs fall back to main LLM config
 api_base = settings.intent_llm_api_base_url or settings.llm_api_base_url
+api_key = settings.intent_llm_api_key or settings.llm_api_key
 ```
+
+**Note:** Frontend model selection allows users to choose different models per pipeline stage (intent, extraction, reasoning).
 
 
 

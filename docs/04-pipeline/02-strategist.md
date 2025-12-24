@@ -1,12 +1,17 @@
-# Phase 1: Strategist
+# Phase 1: Strategist (Deep Mode Only)
 
 Multi-angle query generation for comprehensive evidence gathering.
+
+**Note:** This phase is **skipped in Quick Mode**, which uses the claim directly as a search query.
 
 ---
 
 ## Purpose
 
 Generate 3 strategic search queries per claim to maximize evidence quality and diversity.
+
+**When Used:** Deep Mode only (default)  
+**Context:** Uses `global_context` from Intent Extraction to make queries more specific
 
 ---
 

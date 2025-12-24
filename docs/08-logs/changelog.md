@@ -2,6 +2,58 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.0.5] - 2025-12-24
+
+### Critical Bug Fixes & PDF Export Redesign
+
+This release fixes critical browser crashes and completely redesigns the PDF export feature.
+
+#### Fixed
+
+- **Browser Crash on Toast Interaction** - Fixed infinite re-render loop causing browser crashes:
+  - Root cause: Type mismatch in `useAppState.ts` - `updated` was a string but treated as Date
+  - Root cause: Zustand store reference instability in `useHistory.ts`
+  - Solution: Changed to `getState()` pattern for stable function references
+
+- **React Grab Development Tool Removed** - This external script intercepted text selection events, causing crashes on double-click:
+  - Removed from `app/layout.tsx`
+  - Was loading before React hydration, conflicting with event handling
+
+- **Double Paste Issue** - Fixed text being pasted twice in `TextInput.tsx`:
+  - Removed redundant custom `onPaste` handler
+  - Browser's native paste + onChange is now the sole input mechanism
+
+- **React Hydration Mismatch** - Fixed SSR/CSR ID mismatches in Radix UI DropdownMenu:
+  - Added client-side rendering guard in `Header.tsx`
+  - Uses `mounted` state to prevent server-side rendering of dynamic components
+
+#### Changed
+
+- **PDF Export Completely Redesigned** - Professional formatting for formal purposes:
+  - Clean header with FactuAI branding and date
+  - Overview section with metrics boxes (Trust Score, Claims, Verified, False)
+  - Robust pagination with `checkPageBreak()` function
+  - Configurable limits: `maxEvidence: 3`, `maxSources: 10`, `urlMaxLength: 90`
+  - Line-by-line rendering with dynamic page breaks
+  - Consistent typography via `LINE_HEIGHT` and `FONT_SIZE` constants
+  - Proper text wrapping (no overflow or weird letter spacing)
+
+- **Claim Cards Simplified** - Removed truncated evidence preview:
+  - Italic quote snippet was confusing when cut off
+  - Full evidence still available on card expansion
+
+#### Files Modified
+
+- `frontend/src/lib/pdfExport.ts` - Complete rewrite
+- `frontend/src/lib/hooks/useAppState.ts` - Fixed type mismatch
+- `frontend/src/features/history/hooks/useHistory.ts` - Fixed store pattern
+- `frontend/src/features/analyze/components/ClaimCard.tsx` - Removed quote preview
+- `frontend/src/features/analyze/components/TextInput.tsx` - Removed redundant paste handler
+- `frontend/src/features/dashboard-shell/components/Header.tsx` - Fixed hydration
+- `frontend/src/app/layout.tsx` - Removed React Grab
+
+---
+
 ## [4.0.4] - 2025-12-15
 
 ### RAG Retrieval Loop Implementation

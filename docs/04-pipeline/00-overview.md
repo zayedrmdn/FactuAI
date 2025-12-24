@@ -6,23 +6,34 @@ Comprehensive overview of Fact uAI's core analysis pipeline.
 
 ## Overview
 
-FactuAI uses a **4-phase analysis pipeline** for robust claim verification:
+FactuAI uses a **4-phase analysis pipeline** with two modes for robust claim verification:
 
-1. **Phase 0: Intent Extraction** - Parse raw text into structured claims
-2. **Phase 1: Strategist** - Generate 3 multi-angle search queries per claim
-3. **Phase 2: Parallel Search** - Gather evidence from Tavily + internal RAG memory
-4. **Phase 3: Pivot Loop** - Detect new concepts → execute follow-up research
-5. **Phase 4: Verification** - Synthesize evidence into verdict with confidence
+### Analysis Modes
+
+**Quick Mode:**
+- Intent Extraction → Single Direct Search → Verification
+- ~7-11s total latency
+- Best for simple, straightforward claims
+
+**Deep Mode (Default):**
+1. **Phase 1: Intent Extraction + Strategist** - Parse text into claims & generate 3 multi-angle queries
+2. **Phase 2: Parallel Search** - Gather evidence from Tavily + internal RAG memory
+3. **Phase 3: Pivot Loop** - Detect new concepts → execute follow-up research  
+4. **Phase 4: Verification** - Synthesize evidence into verdict with confidence
+- ~10-16s total latency (with pivot)
+- Comprehensive multi-angle evidence gathering
 
 ---
 
 ## Pipeline Flow Diagram
 
+### Deep Mode (Default)
+
 ```mermaid
 graph TD
-    A[User Input] --> B[Phase 0: Intent Extraction]
-    B --> C[Phase 1: STRATEGIST<br/>Multi-Angle Query Generation]
-    C --> D[Phase 2: PARALLEL SEARCH<br/>Tavily + RAG Memory]
+    A[User Input] --> B[Phase 1A: Intent Extraction<br/>Parse Claims + Global Context]
+    B --> C[Phase 1B: STRATEGIST<br/>Multi-Angle Query Generation]
+    C --> D[Phase 2: PARALLEL SEARCH<br/>3 Queries + RAG Memory]
     D --> E[Phase 3: PIVOT LOOP<br/>Detect New Concepts]
     E -->|Pivot Needed| F[Follow-up Search]
     F --> G[Merge Evidence]
@@ -32,41 +43,58 @@ graph TD
     I --> J[Persistence + Learning]
 ```
 
+### Quick Mode
+
+```mermaid
+graph TD
+    A[User Input] --> B[Phase 1: Intent Extraction<br/>Parse Claims]
+    B --> C[Phase 2: Direct Search<br/>15 Results]
+    C --> D[Phase 4: VERIFICATION<br/>LLM Synthesis]
+    D --> E[Verdict + Confidence]
+    E --> F[Persistence]
+```
+
 ---
 
 ## Phase Summaries
 
-### Phase 0: Intent Extraction (LLM-Based)
+### Phase 1: Intent Extraction + Strategist
 
-**Purpose:** Extract structured, verifiable claims from raw user input.
+**Part A: Intent Extraction (LLM-Based)**
+
+**Purpose:** Extract structured, verifiable claims from raw user input + global context.
 
 **Input:** Raw text (e.g., "The Earth is flat and vaccines cause autism")  
-**Output:** List of `IntentClaim` objects
+**Output:** `IntentResult` with global context and claims
 
 ```json
-[
-  {
-    "claim_text": "The Earth is flat",
-    "search_query": "Earth shape flat evidence",
-    "verification_question": "Is the Earth flat?"
-  },
-  {
-    "claim_text": "Vaccines cause autism",
-    "search_query": "vaccines autism link scientific studies",
-    "verification_question": "Do vaccines cause autism?"
-  }
-]
+{
+  "global_context": "Earth, vaccines, scientific consensus, medical research",
+  "claims": [
+    {
+      "claim_text": "The Earth is flat",
+      "search_query": "Earth shape flat evidence",
+      "verification_question": "Is the Earth flat?"
+    },
+    {
+      "claim_text": "Vaccines cause autism",
+      "search_query": "vaccines autism link scientific studies",
+      "verification_question": "Do vaccines cause autism?"
+    }
+  ]
+}
 ```
 
 **Implementation:**
-- Uses `LLMIntentAdapter` by default
-- Configured via `INTENT_LLM_MODEL` (fast/cheap model recommended)
+- Uses `LLMIntentAdapter` (LangChain + structured output)
+- Configured via `INTENT_LLM_MODEL` or falls back to `OPENROUTER_MODEL`
+- **Key Feature:** Extracts `global_context` (entities, locations, events) to improve query generation
 
 **See:** [01-intent.md](01-intent.md)
 
 ---
 
-### Phase 1: Strategist - Multi-Angle Query Generation
+**Part B: Strategist - Multi-Angle Query Generation (Deep Mode Only)**
 
 **Purpose:** Generate 3 strategic search queries per claim to maximize evidence quality.
 
@@ -190,46 +218,52 @@ See [../05-features/continuous-learning.md](../05-features/continuous-learning.m
 
 ## Phase Timing (Typical)
 
-| Phase | Typical Latency |
-|-------|----------------|
-| Phase 0: Intent | 1-2s |
-| Phase 1: Strategist | 0.5-1s |
-| Phase 2: Search (parallel) | 3-5s |
-| Phase 3: Pivot (if triggered) | +3-5s |
-| Phase 4: Verification | 2-3s |
-| **Total (no pivot)** | **7-11s** |
-| **Total (with pivot)** | **10-16s** |
+| Phase | Quick Mode | Deep Mode (No Pivot) | Deep Mode (With Pivot) |
+|-------|-----------|---------------------|----------------------|
+| Phase 1: Intent | 1-2s | 1-2s | 1-2s |
+| Phase 1B: Strategist | N/A | 0.5-1s | 0.5-1s |
+| Phase 2: Search | 3-5s (single) | 3-5s (parallel) | 3-5s (parallel) |
+| Phase 3: Pivot | N/A | N/A | +3-5s |
+| Phase 4: Verification | 2-3s | 2-3s | 2-3s |
+| **Total Latency** | **6-10s** | **7-11s** | **10-16s** |
 
 ---
 
-## Example: Full Pipeline Execution
+## Example: Full Pipeline Execution (Deep Mode)
 
 **Input:** "The Great Wall of China is visible from space with the naked eye"
 
-**Phase 0 → Intent:**
+**Phase 1A → Intent Extraction:**
 ```json
 {
-  "claim_text": "The Great Wall of China is visible from space with the naked eye",
-  "search_query": "Great Wall China visible space",
-  "verification_question": "Is the Great Wall of China visible from space?"
+  "global_context": "Great Wall of China, space, visibility, astronomy",
+  "claims": [
+    {
+      "claim_text": "The Great Wall of China is visible from space with the naked eye",
+      "search_query": "Great Wall China visible space naked eye",
+      "verification_question": "Is the Great Wall of China visible from space with the naked eye?"
+    }
+  ]
 }
 ```
 
-**Phase 1 → Strategist:**
+**Phase 1B → Strategist:**
 - Factual: "Great Wall China visible from space scientific evidence"
-- Hoax: "Great Wall space myth debunked"
-- Scientific: "Great Wall China satellite imagery visibility"
+- Hoax: "Great Wall space myth debunked fact-check"
+- Scientific: "Great Wall China satellite imagery visibility astronauts"
 
-**Phase 2 → Search:**
-- Tavily (3 queries in parallel) → 15 results
+**Phase 2 → Parallel Search:**
+- Query 1 (Factual) → 5 results
+- Query 2 (Hoax) → 5 results  
+- Query 3 (Scientific) → 5 results
 - RAG (internal memory) → 2 results tagged `[INTERNAL MEMORY]`
-- Merged: 17 unique sources
+- **Merged & Deduplicated:** 15 unique sources
 
-**Phase 3 → Pivot:**
+**Phase 3 → Pivot Decision:**
 ```json
 {
   "needs_pivot": false,
-  "reason": "No new specific entities detected; sufficient evidence gathered"
+  "reason": "No new specific entities detected; sufficient evidence from fact-check sites and NASA sources"
 }
 ```
 
@@ -238,13 +272,14 @@ See [../05-features/continuous-learning.md](../05-features/continuous-learning.m
 {
   "verdict": "false",
   "confidence": 0.92,
-  "reasoning": "Multiple authoritative sources (NASA, fact-check sites) confirm the Great Wall is NOT visible from space with the naked eye. This is a common myth. Low Earth orbit astronauts cannot see it."
+  "reasoning": "Multiple authoritative sources (NASA, fact-check sites) confirm the Great Wall is NOT visible from space with the naked eye. This is a common myth. Low Earth orbit astronauts cannot see it without optical aid."
 }
 ```
 
 **Persistence + Learning:**
-- Stored in DB (confidence 0.92 ≥ 0.85 threshold)
-- Embeddings generated and stored for future RAG retrieval
+- Stored in DB with all evidence
+- Confidence 0.92 ≥ 0.85 threshold → embeddings generated
+- Available for future RAG retrieval
 
 ---
 
@@ -252,11 +287,11 @@ See [../05-features/continuous-learning.md](../05-features/continuous-learning.m
 
 For detailed documentation on each phase:
 
-- [Phase 0: Intent Extraction](01-intent.md)
-- [Phase 1: Strategist (Multi-Angle Queries)](02-strategist.md)
-- [Phase 2: Parallel Search (Tavily + RAG)](03-search.md)
-- [Phase 3: Pivot Loop](04-pivot.md)
-- [Phase 4: Verification](05-verification.md)
+- [Phase 1: Intent Extraction + Strategist](01-intent.md)
+- [Phase 1B: Strategist (Multi-Angle Queries)](02-strategist.md)
+- [Phase 2: Parallel Search (Hybrid External + Internal)](03-search.md)
+- [Phase 3: Pivot Loop (Deep Mode)](04-pivot.md)
+- [Phase 4: Verification (LLM Synthesis)](05-verification.md)
 
 ---
 
