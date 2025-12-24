@@ -22,6 +22,8 @@ The frontend allows users to select which LLM model to use for verification, ove
 
 **Location:** `frontend/src/features/ai-providers/`
 
+### Global Model Override
+
 1. User selects model from dropdown
 2. Selection stored in Zustand state
 3. Sent to backend in analyze request
@@ -35,9 +37,30 @@ const response = await fetch('/api/analyze', {
   method: 'POST',
   body: JSON.stringify({
     text: input,
-    model_id: selection.modelId  // ← Override
+    model_id: selection.modelId  // ← Global override
   })
 });
+```
+
+### Per-Stage Model Override
+
+Users can also select different models for each pipeline stage:
+
+```typescript
+const response = await fetch('/api/analyze', {
+  method: 'POST',
+  body: JSON.stringify({
+    text: input,
+    pipeline_models: {
+      intent: { model_id: 'openai/gpt-4o-mini' },       // Fast for extraction
+      extraction: { model_id: 'openai/gpt-4o-mini' },   // Best structured output
+      reasoning: { model_id: 'meta-llama/llama-3.3-70b-instruct' }  // Deep reasoning
+    }
+  })
+});
+```
+
+**Use Case:** Optimize speed vs quality per stage (e.g., fast extraction, deep reasoning)
 ```
 
 ---
@@ -73,23 +96,22 @@ class AnalyzeRequest(BaseModel):
 
 ## Available Models
 
-### OpenRouter Models (Recommended)
+### OpenRouter Models (Current)
 
 **Location:** `frontend/src/features/ai-providers/registry.ts`
 
-| Model | Provider | Cost | Speed | Use Case |
-|-------|----------|------|-------|----------|
-| `meta-llama/llama-3.3-70b-instruct` | Meta | Low | Fast | **Recommended** - Superior reasoning (131K context) |
-| `tngtech/deepseek-r1t2-chimera:free` | TNG | Free | Fast | **Current Default** - Excellent reasoning (160K+ context) |
-| `z-ai/glm-4.5-air:free` | Z.AI | Free | Very Fast | Recommended for intent detection (MoE, 131K context) |
-| `alibaba/tongyi-deepresearch-30b-a3b:free` | Alibaba | Free | Medium | Deep research with reasoning (128K context) |
-| `allenai/olmo-3-32b-think:free` | AllenAI | Free | Medium | Reasoning-focused model (32K context) |
-| `openai/gpt-oss-120b:free` | OpenAI | Free | Medium | Large open-source (8K context) |
-| `nvidia/nemotron-nano-9b-v2:free` | NVIDIA | Free | Very Fast | Fast, efficient fact-checking (4K context) |
-| `meituan/longcat-flash-chat:free` | Meituan | Free | Ultra Fast | Extended context conversations (32K context) |
-| `openai/gpt-oss-20b:free` | OpenAI | Free | Fast | MoE with function calling (131K context) |
-| `google/gemma-3-27b-it:free` | Google | Free | Fast | Multimodal vision model (131K context) |
-| `mistralai/mistral-7b-instruct:free` | Mistral | Free | Very Fast | Industry-standard 7.3B (32K context) |
+**Current Default:** `meta-llama/llama-3.3-70b-instruct` (131K context)
+
+**Key Models:**
+
+| Model | Provider | Tier | Context | Use Case |
+|-------|----------|------|---------|----------|
+| `meta-llama/llama-3.3-70b-instruct` | Meta | Premium | 131K | **DEFAULT** - Superior reasoning ($0.10/M) |
+| `meta-llama/llama-3.3-70b-instruct:free` | Meta | Free | 131K | Free tier of default model |
+| `openai/gpt-4o-mini` | OpenAI | Premium | 128K | **Recommended for extraction/strategist** - Best structured output |
+| `alibaba/tongyi-deepresearch-30b-a3b:free` | Alibaba | Free | 128K | Deep research with reasoning |
+
+**Note:** The registry contains 20+ models. See `frontend/src/features/ai-providers/registry.ts` for full list.
 
 ### Model Registry Format
 

@@ -14,31 +14,31 @@ Strict filtering of search results to block social media and low-quality sources
 
 ## The Social Media Blocklist
 
-### Blocked Domains (20 total)
+### Blocked Domains (19 total)
+
+**Location:** `backend/app/core/constants.py`
 
 ```python
-SOCIAL_MEDIA_DOMAINS = [
+SOCIAL_MEDIA_DOMAINS: List[str] = [
     "facebook.com",
-    "fb.com",
+    "instagram.com",
     "tiktok.com",
     "twitter.com",
     "x.com",
     "reddit.com",
-    "instagram.com",
-    "youtube.com",
     "linkedin.com",
     "pinterest.com",
-    "snapchat.com",
-    "medium.com",
-    "substack.com",
     "quora.com",
     "tumblr.com",
-    "vk.com",
+    "snapchat.com",
     "weibo.com",
     "telegram.org",
     "discord.com",
+    "youtube.com",
+    "medium.com",
+    "substack.com",
     "vimeo.com",
-    "wikipedia.org"  # User-generated, often disputed
+    "wikipedia.org",  # User-generated, often disputed
 ]
 ```
 
@@ -98,12 +98,28 @@ async def search(self, query: str):
 
 ## What We DO Accept
 
-**Prioritized Sources:**
-- ✅ Fact-check sites (Snopes, PolitiFact, FactCheck.org)
-- ✅ Primary sources (NASA, CDC, WHO, government agencies)
-- ✅ Peer-reviewed journals (Nature, Science, JAMA)
-- ✅ Reputable news outlets (AP, Reuters, BBC)
-- ✅ Academic institutions (.edu domains)
+**Trusted Domains Reference List:**
+
+**Location:** `backend/app/core/constants.py`
+
+```python
+TRUSTED_NEWS_DOMAINS: List[str] = [
+    # News Wire Services
+    "reuters.com", "apnews.com",
+    # Major News
+    "bloomberg.com", "bbc.com", "cnn.com", "npr.org", "pbs.org",
+    "wsj.com", "nytimes.com", "washingtonpost.com",
+    "ft.com", "economist.com",
+    # Scientific
+    "nature.com", "science.org",
+    # TLDs
+    "gov", "edu", "mil",
+    # Fact-Checkers
+    "snopes.com", "politifact.com",
+]
+```
+
+**Note:** This list is for reference/prioritization. Sources outside this list are not blocked.
 
 ---
 

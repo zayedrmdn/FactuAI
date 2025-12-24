@@ -159,18 +159,29 @@ UPDATE evidence SET snippet_embedding = NULL;
 
 ### Async Execution
 
-Learning happens **after** the verification response is returned to the user:
+Learning happens **after** the main verification flow completes:
+
+**Implementation:** `backend/app/features/analyze/service.py`
 
 ```python
-# Return response immediately
-response = AnalyzeResponse(...)
-await response.send()
+# Main flow
+verdict = await verifier.verify_claim(...)
+analysis = ClaimAnalysis(...)
 
-# Then learn asynchronously (non-blocking)
-asyncio.create_task(learn_from_verification(result))
+# Persist to database
+await repository.store_verification(...)
+
+# THEN trigger learning (if confidence >= 0.85)
+if analysis.confidence >= settings.learning_confidence_threshold:
+    try:
+        await rag_learning.store_claim_embeddings(claim)
+        await rag_learning.store_evidence_embeddings(evidence)
+    except Exception as e:
+        logger.error(f"Learning failed: {e}")
+        # Continue - don't fail the request
 ```
 
-**Latency Impact:** Zero (learning is async)
+**Latency Impact:** Zero (user gets response before learning starts)
 
 ### pgvector Index
 

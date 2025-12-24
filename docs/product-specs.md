@@ -46,12 +46,29 @@ FactuAI is a full-stack AI-powered fact-checking system that analyzes claims, ga
 ```json
 {
   "text": "string",
-  "options": {
-    "use_search": true,
-    "verification_enabled": true
+  "provider": "openrouter",
+  "model_id": "meta-llama/llama-3.3-70b-instruct",
+  "max_claims": 3,
+  "enable_web_search": true,
+  "enable_kb": true,
+  "analysis_mode": "deep",
+  "pipeline_models": {
+    "intent": {
+      "model_id": "openai/gpt-4o-mini"
+    },
+    "extraction": {
+      "model_id": "openai/gpt-4o-mini"
+    },
+    "reasoning": {
+      "model_id": "meta-llama/llama-3.3-70b-instruct"
+    }
   }
 }
 ```
+
+**Analysis Modes:**
+- `quick`: Single direct search, no strategist, no pivot (~6-10s)
+- `deep`: Full 4-phase pipeline with multi-angle queries and pivot loop (~10-16s)
 
 ### Response Schema
 
@@ -173,20 +190,34 @@ LEARNING_CONFIDENCE_THRESHOLD=0.85
 
 ### 1. Fact-Check Analysis Flow
 
+**Deep Mode (Default):**
 ```
 POST /api/analyze
   ↓
-Analyze Feature (orchestrator)
+Phase 1: Intent Extraction + Strategist → Claims[] + Multi-Angle Queries
   ↓
-Intent Extraction → Claims[]
+Phase 2: Parallel Search (3 queries + RAG) → Evidence[]
   ↓
-Search Providers → Evidence[]
+Phase 3: Pivot Loop (conditional) → Additional Evidence[]
   ↓
-Verification LLM → Verdict + Confidence
+Phase 4: Verification LLM → Verdict + Confidence
   ↓
 Persistence → DB
   ↓
-[If confidence ≥ threshold] Continuous Learning → Compute & Store Embeddings
+[If confidence ≥ 0.85] Continuous Learning → Embeddings
+  ↓
+Response
+```
+
+**Quick Mode:**
+```
+POST /api/analyze (analysis_mode=quick)
+  ↓
+Phase 1: Intent Extraction → Claims[]
+  ↓
+Phase 2: Direct Search (15 results) → Evidence[]
+  ↓
+Phase 4: Verification LLM → Verdict + Confidence
   ↓
 Response
 ```
